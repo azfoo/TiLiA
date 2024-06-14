@@ -803,7 +803,7 @@ class TimelineUIs:
         self.set_playback_lines_position(time)
 
     def set_auto_scroll(self, value: bool):
-        settings.edit("general", "auto-scroll", value)
+        settings.set("general", "auto-scroll", value)
         # noinspection PyAttributeOutsideInit
         self.auto_scroll_is_enabled = value
 

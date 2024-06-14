@@ -11,11 +11,7 @@ class OptionsToolbar(QToolBar):
         super().__init__()
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
         self.check_box = QCheckBox("Auto-scroll")
-        self.check_box.setCheckState(
-            Qt.CheckState(Qt.CheckState.Checked)
-            if settings.get("general", "auto-scroll")
-            else Qt.CheckState(Qt.CheckState.Unchecked)
-        )
+        self.check_box.setChecked(True if settings.get("general", "auto-scroll") == 'true' else False)
         self.check_box.stateChanged.connect(self.on_state_changed)
         self.addWidget(self.check_box)
 

@@ -1,7 +1,6 @@
-from pathlib import Path
-import tomlkit
+from PyQt6.QtCore import QSettings
 
-from tilia.utils import open_with_os
+import tilia.constants
 
 DEFAULT_SETTINGS = {
     "general": {
@@ -76,51 +75,56 @@ DEFAULT_SETTINGS = {
     "dev": {"log_events": False, "log_requests": False, "dev_mode": False},
 }
 
-_settings = DEFAULT_SETTINGS
-_settings_path = Path()
+_settings = NotImplemented
+
+def load(reset = False):
+    global _settings
+    _settings = QSettings(tilia.constants.APP_NAME, f"Desktop-v.{tilia.constants.VERSION}")
+    if reset or (not _settings.allKeys() or len(_settings.allKeys()) < sum(len(setting) for setting in DEFAULT_SETTINGS.values())):
+        _reset()
 
 
-def load(settings_path: Path):
-    with open(settings_path, "r") as f:
-        loaded_settings = tomlkit.load(f)
+def _reset():
+    _settings.clear()
+    _settings.beginGroup("editable")
+    for group, settings in DEFAULT_SETTINGS.items():
+        _settings.beginGroup(group)
+        for key, value in settings.items():
+            _settings.setValue(key, value)
+        _settings.endGroup()
+    _settings.endGroup()
+    
 
-    global _settings, _settings_path
-    _settings = loaded_settings
-    _settings_path = settings_path
-
-
-def get(table_name: str, setting: str):
+def get(group_name: str, setting: str, in_default = True):
+    key = _get_key(group_name, setting, in_default)
     try:
-        table = _settings[table_name]
-    except KeyError:
-        _set_default_table(table_name)
-        return get(table_name, setting)
+        value = _settings.value(key, None)
+    except AttributeError:
+        load()
+        value = _settings.value(key, None)
 
-    try:
-        return table[setting]
-    except KeyError:
-        _set_default_setting(table_name, setting)
-        return get(table, setting)
+    if not value:
+        try:
+            value = DEFAULT_SETTINGS[group_name][setting]
+        except KeyError:
+            return None
+        _settings.setValue(key, value)
 
-
-def edit(table: str, name: str, value) -> None:
-    _settings[table][name] = value
-    _save()
+    return value
 
 
-def _save():
-    with open(_settings_path, "w") as f:
-        tomlkit.dump(_settings, f)
+def set(group_name: str, setting: str, value, in_default = True):
+    key = _get_key(group_name, setting, in_default)
+    _settings.setValue(key, value)
 
 
-def _set_default_setting(table, name):
-    edit(table, name, DEFAULT_SETTINGS[table][name])
+def _get_key(group_name: str, setting: str, in_default: bool) -> str:
+    return f"{'editable/' if in_default else ''}{group_name}/{setting}"
 
 
-def _set_default_table(table):
-    _settings[table] = DEFAULT_SETTINGS[table]
-    _save()
 
 
-def open_settings_on_os():
-    open_with_os(_settings_path)
+
+
+if __name__ == "__main__":
+    load(True)

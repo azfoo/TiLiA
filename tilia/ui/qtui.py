@@ -90,10 +90,10 @@ class TiliaMainWindow(QMainWindow):
         event.ignore()
 
     def on_close(self):
-        settings.edit("general", "window_width", self.width())
-        settings.edit("general", "window_height", self.height())
-        settings.edit("general", "window_x", self.x())
-        settings.edit("general", "window_y", self.y())
+        settings.set("general", "window_width", self.width())
+        settings.set("general", "window_height", self.height())
+        settings.set("general", "window_x", self.x())
+        settings.set("general", "window_y", self.y())
         super().closeEvent(None)
 
 
@@ -101,6 +101,7 @@ class QtUI:
     def __init__(self):
         self.app = None
         self.q_application = QApplication(sys.argv)
+        self._setup_settings()
         self._setup_main_window()
         self._setup_fonts()
         self._setup_player()
@@ -166,6 +167,9 @@ class QtUI:
 
         for request, callback in SERVES:
             serve(self, request, callback)
+
+    def _setup_settings(self):
+        settings.load()
 
     def _setup_main_window(self):
         def get_initial_geometry():

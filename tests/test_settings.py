@@ -4,7 +4,7 @@ from tilia import settings
 
 
 def test_get_missing_setting_gets_default():
-    settings._settings["dev"].pop("dev_mode")
+    settings.set("dev", "dev_mode", None)
 
     assert (
         settings.get("dev", "dev_mode") == settings.DEFAULT_SETTINGS["dev"]["dev_mode"]
