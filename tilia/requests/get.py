@@ -56,8 +56,10 @@ class Get(Enum):
     TIMELINE_UI_BY_ATTR = auto()
     TIMELINE_UI_ELEMENT = auto()
     TIMELINE_WIDTH = auto()
+    WINDOW_GEOMETRY = auto()
     WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_CURRENT = auto()
     WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_TO_PERMUTE = auto()
+    WINDOW_STATE = auto()
 
 
 _requests_to_callbacks: weakref.WeakKeyDictionary[Get, Callable] = (

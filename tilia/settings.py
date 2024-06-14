@@ -133,6 +133,32 @@ def _get_key(group_name: str, setting: str, in_default: bool) -> str:
     return f"{'editable/' if in_default else ''}{group_name}/{setting}"
 
 
+def update_recent_files(path, geometry, state):
+    recent_files = _settings.value("private/recent_files", [])
+    if path in recent_files:
+        recent_files.remove(path)
+    recent_files.insert(0, path)
+    _settings.setValue("private/recent_files", recent_files)
+    _settings.setValue(f"private/recent_files/{path}/geometry", geometry)
+    _settings.setValue(f"private/recent_files/{path}/state", state)
+
+
+def remove_from_recent_files(path):
+    recent_files = _settings.value("private/recent_files", [])
+    if path in recent_files:
+        recent_files.remove(path)
+    _settings.setValue("private/recent_files", recent_files)
+
+    
+def get_recent_files():
+    return _settings.value("private/recent_files", [])[:10]
+
+
+def get_geometry_and_state_from_path(path):
+    geometry = _settings.value(f"private/recent_files/{path}/geometry", None)
+    state = _settings.value(f"private/recent_files/{path}/state", None)
+
+    return geometry, state
 
 
 def get_dict() -> dict:

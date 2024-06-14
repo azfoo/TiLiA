@@ -38,6 +38,7 @@ class Post(Enum):
     EXPLORER_SEARCH = auto()
     FILE_MEDIA_DURATION_CHANGED = auto()
     FILE_OPEN = auto()
+    FILE_OPEN_PATH = auto()
     FILE_SAVE = auto()
     FILE_SAVE_AS = auto()
     FOCUS_TIMELINES = auto()

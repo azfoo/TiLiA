@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QToolBar
 
 import tilia.constants
 import tilia.errors
+from tilia.file.tilia_file import TiliaFile
 import tilia.ui.dialogs.file
 import tilia.ui.timelines.constants
 import tilia.parsers.csv.pdf
@@ -91,10 +92,6 @@ class TiliaMainWindow(QMainWindow):
         event.ignore()
 
     def on_close(self):
-        settings.set("general", "window_width", self.width())
-        settings.set("general", "window_height", self.height())
-        settings.set("general", "window_x", self.x())
-        settings.set("general", "window_y", self.y())
         super().closeEvent(None)
 
 
@@ -129,6 +126,7 @@ class QtUI:
 
     def _setup_requests(self):
         LISTENS = {
+            (Post.APP_FILE_LOAD, self.on_file_load),
             (Post.PLAYBACK_AREA_SET_WIDTH, self.on_timeline_set_width),
             (Post.UI_MEDIA_LOAD_LOCAL, self.on_media_load_local),
             (Post.UI_MEDIA_LOAD_YOUTUBE, self.on_media_load_youtube),
@@ -161,7 +159,9 @@ class QtUI:
             (Get.TIMELINE_WIDTH, lambda: self.timeline_width),
             (Get.PLAYBACK_AREA_WIDTH, lambda: self.playback_area_width),
             (Get.LEFT_MARGIN_X, lambda: self.playback_area_margin),
-            (Get.RIGHT_MARGIN_X, lambda: self.playback_area_width + self.playback_area_margin)
+            (Get.RIGHT_MARGIN_X, lambda: self.playback_area_width + self.playback_area_margin),
+            (Get.WINDOW_GEOMETRY, self.get_window_geometry),
+            (Get.WINDOW_STATE, self.get_window_state),
         }
 
         for post, callback in LISTENS:
@@ -265,8 +265,17 @@ class QtUI:
         # Code = 0 means a succesful run, code = 1 means an unhandled exception.
         self.q_application.exit(code)
 
-    def get_window_size(self):
-        return self.main_window.width()
+    def get_window_geometry(self):
+        return self.main_window.saveGeometry()
+    
+    def get_window_state(self):
+        return self.main_window.saveState()
+    
+    def on_file_load(self, file: TiliaFile) -> None:
+        geometry, state = settings.get_geometry_and_state_from_path(file.file_path)
+        if geometry and state:
+            self.main_window.restoreGeometry(geometry)
+            self.main_window.restoreState(state)
 
     def _setup_widgets(self):
         self.timeline_toolbars = QToolBar()

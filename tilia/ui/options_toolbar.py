@@ -9,6 +9,7 @@ from tilia.ui.actions import TiliaAction
 class OptionsToolbar(QToolBar):
     def __init__(self):
         super().__init__()
+        self.setObjectName("options_toolbar")
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
         self.check_box = QCheckBox("Auto-scroll")
         self.check_box.setChecked(True if settings.get("general", "auto-scroll") == 'true' else False)
