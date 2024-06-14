@@ -36,6 +36,7 @@ from .windows.manage_timelines import ManageTimelines
 from .windows.metadata import MediaMetadataWindow
 from .windows.about import About
 from .windows.inspect import Inspect
+from .windows.settings import SettingsWindow
 from .windows.kinds import WindowKind
 from ..media.player import QtAudioPlayer
 from ..parsers.csv.beat import beats_from_csv
@@ -133,16 +134,17 @@ class QtUI:
             (Post.UI_MEDIA_LOAD_YOUTUBE, self.on_media_load_youtube),
             (Post.TIMELINE_ELEMENT_INSPECT, self.on_timeline_element_inspect),
             (Post.WEBSITE_HELP_OPEN, self.on_website_help_open),
-            (Post.WINDOW_MANAGE_TIMELINES_OPEN, lambda: self.on_window_open(WindowKind.MANAGE_TIMELINES)),
-            (Post.WINDOW_METADATA_OPEN, lambda: self.on_window_open(WindowKind.MEDIA_METADATA)),
-            (Post.WINDOW_METADATA_CLOSED, lambda: self.on_window_close_done(WindowKind.MEDIA_METADATA)),
+            (Post.WINDOW_ABOUT_CLOSED, lambda: self.on_window_close_done(WindowKind.ABOUT)),
             (Post.WINDOW_ABOUT_OPEN, lambda: self.on_window_open(WindowKind.ABOUT)),
-            (Post.WINDOW_INSPECT_OPEN, lambda: self.on_window_open(WindowKind.INSPECT)),
             (Post.WINDOW_INSPECT_CLOSE, lambda: self.on_window_close(WindowKind.INSPECT)),
             (Post.WINDOW_INSPECT_CLOSED, lambda: self.on_window_close_done(WindowKind.INSPECT)),
+            (Post.WINDOW_INSPECT_OPEN, lambda: self.on_window_open(WindowKind.INSPECT)),
             (Post.WINDOW_MANAGE_TIMELINES_CLOSE_DONE, lambda: self.on_window_close_done(WindowKind.MANAGE_TIMELINES)),
+            (Post.WINDOW_MANAGE_TIMELINES_OPEN, lambda: self.on_window_open(WindowKind.MANAGE_TIMELINES)),
             (Post.WINDOW_METADATA_CLOSED, lambda: self.on_window_close_done(WindowKind.MEDIA_METADATA)),
-            (Post.WINDOW_ABOUT_CLOSED, lambda: self.on_window_close_done(WindowKind.ABOUT)),
+            (Post.WINDOW_METADATA_OPEN, lambda: self.on_window_open(WindowKind.MEDIA_METADATA)),
+            (Post.WINDOW_SETTINGS_CLOSED, lambda: self.on_window_close_done(WindowKind.SETTINGS)),
+            (Post.WINDOW_SETTINGS_OPEN, lambda: self.on_window_open(WindowKind.SETTINGS)),
             (Post.REQUEST_CLEAR_UI, self.on_clear_ui),
             (Post.TIMELINE_KIND_INSTANCED, self.on_timeline_kind_change),
             (Post.TIMELINE_KIND_NOT_INSTANCED, self.on_timeline_kind_change),
@@ -222,6 +224,7 @@ class QtUI:
             WindowKind.MEDIA_METADATA: None,
             WindowKind.MANAGE_TIMELINES: None,
             WindowKind.ABOUT: None,
+            WindowKind.SETTINGS: None,
         }
 
     def update_dynamic_menus(self):
@@ -287,6 +290,7 @@ class QtUI:
             WindowKind.MANAGE_TIMELINES: ManageTimelines,
             WindowKind.MEDIA_METADATA: self.open_media_metadata_window,
             WindowKind.ABOUT: self.open_about_window,
+            WindowKind.SETTINGS: self.open_settings_window,
         }
 
         if not self._windows[kind]:
@@ -310,6 +314,10 @@ class QtUI:
     @staticmethod
     def open_media_metadata_window():
         return MediaMetadataWindow()
+    
+    @staticmethod
+    def open_settings_window():
+        return SettingsWindow()
 
     def on_window_close(self, kind: WindowKind):
         if window := self._windows[kind]:

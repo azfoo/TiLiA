@@ -1,0 +1,237 @@
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QColorDialog,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QFrame,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget
+)
+from PyQt6.QtGui import QColor
+
+from tilia import settings
+from tilia.requests import get, Get, post, Post
+from tilia.ui.windows import WindowKind
+from tilia.timelines.harmony.constants import HARMONY_DISPLAY_MODES
+
+
+class SettingsWindow(QDialog):
+    KIND = WindowKind.SETTINGS
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Settings")
+        self.setFixedSize(400, 400)
+        self.settings = {}
+        self.settings_original = {}
+        self.setLayout(QVBoxLayout())
+        self.setup_layout()
+        self.show()
+
+        post(Post.WINDOW_SETTINGS_OPENED)
+
+    def setup_layout(self):        
+        self._setup_widgets()
+        self._setup_buttons()
+        self.populate()
+
+    def _setup_widgets(self):
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setSizeAdjustPolicy(QScrollArea.SizeAdjustPolicy.AdjustToContents)
+        self.scroll_area.setAutoFillBackground(False)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShadow(QFrame.Shadow.Sunken)
+        self.scroll_area.setFrameShape(QFrame.Shape.Panel)
+
+        content = QWidget()
+        self.form_layout = QFormLayout(content)
+        self.scroll_area.setWidget(content)
+        self.layout().addWidget(self.scroll_area)
+
+    def _setup_buttons(self):
+        self.button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.RestoreDefaults | QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Discard
+        )
+        self.button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(self.reset_fields)
+        self.button_box.button(QDialogButtonBox.StandardButton.Save).clicked.connect(self.save_fields)
+        self.button_box.button(QDialogButtonBox.StandardButton.Discard).clicked.connect(self.discard_fields)
+        self.layout().addWidget(self.button_box)
+
+    def clear_layout(self):
+        self.layout().removeWidget(self.scroll_area)
+        self.layout().removeWidget(self.button_box)
+        self.settings.clear()
+
+    def add_separator(self):
+        line = QFrame()
+        line.setFrameStyle(QFrame.Shape.HLine | QFrame.Shadow.Sunken)
+        self.form_layout.addRow(line)
+
+    def populate(self):
+        def add_group(group_name):            
+            self.form_layout.addRow(pretty_label(group_name), None)
+            self.settings[group_name] = {}
+            for name, value in self.settings_original[group_name].items():
+                widget = get_widget_for_value(value)
+                self.form_layout.addRow(pretty_label(name), widget)
+                self.settings[group_name][name] = widget
+            filled_fields.append(group_name)
+            self.add_separator()
+
+        self.settings_original = settings.get_dict()
+        filled_fields = []
+        add_group("general")
+        for group_name in (group_name for group_name in self.settings_original.keys() if "timeline" in group_name):
+            add_group(group_name)
+        for group_name in self.settings_original.keys() - set(filled_fields + ["dev"]):
+            add_group(group_name)        
+        add_group("dev")
+        self.adjustSize()
+
+    def reset_fields(self):
+        settings.load(True)
+        self.clear_layout()
+        self.setup_layout()
+
+    def save_fields(self):
+        self._save_edits(self._get_edits())
+        self.clear_layout()
+        self.setup_layout()
+
+    def discard_fields(self):
+        self.clear_layout()
+        self.setup_layout()
+
+    def closeEvent(self, event):
+        edited_settings = self._get_edits()
+        if edited_settings and get(Get.FROM_USER_YES_OR_NO,
+                                   "Save settings",
+                                   "Save settings?<br>This <i>cannot</i> be undone later."
+                                   ):
+            for group_name, setting in edited_settings.items():
+                for name, value in setting.items():
+                    settings.set(group_name, name, value)
+
+        post(Post.WINDOW_SETTINGS_CLOSED)
+        super().closeEvent(event)
+
+    def _get_edits(self) -> dict:
+        new_settings = {
+            group_name: {
+                name: get_value_for_widget(widget)
+                for name, widget in setting.items()
+            }
+            for group_name, setting in self.settings.items()
+        }
+        return {
+            group_name: { name: value }
+            for group_name, setting in new_settings.items()
+            for name, value in setting.items()
+            if new_settings[group_name][name] != self.settings_original[group_name][name]
+        }
+    
+    def _save_edits(self, edited_settings: dict) -> None:
+        for group_name, setting in edited_settings.items():
+            for name, value in setting.items():
+                settings.set(group_name, name, value)
+
+
+
+def pretty_label(input_string: str):
+    return QLabel(' '.join([word.title() if word.islower() else word for word in input_string.split('_')]))
+
+
+def select_color_button(value):
+    def select_color(old_color):
+        new_color = QColorDialog.getColor(QColor(old_color), None, "Choose Color", QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        if new_color.isValid() and new_color != old_color:
+            set_color(new_color.name())
+
+    def set_color(color):
+        button.setText(color)
+        button.setStyleSheet(f"background-color: {color}; color: {color};")
+
+    button = QPushButton()
+    set_color(value)
+    button.clicked.connect(lambda _: select_color(value))
+    button.setObjectName("color")
+    return button
+
+
+def get_widget_for_value(value) -> QWidget:
+    match value:
+        case int():
+            int_input = QSpinBox()
+            int_input.setMaximum(2147483647)
+            int_input.setMinimum(1)
+            int_input.setValue(value)
+            int_input.setObjectName("int")
+            return int_input
+        
+        case list():
+            widget = QWidget()
+            widget.setObjectName("list")
+            layout = QVBoxLayout(widget)
+            for item in value: 
+                sub_widget = get_widget_for_value(item)
+                layout.addWidget(sub_widget)
+            return widget
+        
+        case str():
+            if value in ['true', 'false']:
+                checkbox = QCheckBox()
+                checkbox.setChecked(True if value == 'true' else False)
+                checkbox.setObjectName("checkbox")
+                return checkbox                
+
+            if len(value) and value[0] == '#':
+                return select_color_button(value)
+            
+            if len(value) and value in HARMONY_DISPLAY_MODES:
+                combobox = QComboBox()
+                for mode in HARMONY_DISPLAY_MODES:
+                    combobox.addItem(mode.title(), mode)
+                combobox.setCurrentText(value.title())
+                combobox.setObjectName("combobox")
+                return combobox
+            
+            line_edit = QLineEdit(str(value).title())
+            line_edit.setObjectName("str")
+            return line_edit
+                    
+        case _:
+            raise NotImplementedError
+
+
+def get_value_for_widget(widget: QWidget):
+    match widget.objectName():
+        case "int":
+            return widget.value()
+        
+        case "list":
+            output_list = []
+            for i in range(widget.layout().count()):
+                output_list.append(get_value_for_widget(widget.layout().itemAt(i).widget()))
+            return output_list
+        
+        case "checkbox":
+            return 'true' if widget.isChecked() else 'false'
+        
+        case "color":
+            return widget.text()
+        
+        case "combobox":
+            return widget.currentText().lower()
+        
+        case "str":
+            return widget.text().lower()
+        
+        case _:
+            raise NotImplementedError

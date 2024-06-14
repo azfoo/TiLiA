@@ -77,21 +77,32 @@ DEFAULT_SETTINGS = {
 
 _settings = NotImplemented
 
-def load(reset = False):
+def load(reset_to_default = False, clear_recent_files = False):
     global _settings
     _settings = QSettings(tilia.constants.APP_NAME, f"Desktop-v.{tilia.constants.VERSION}")
-    if reset or (not _settings.allKeys() or len(_settings.allKeys()) < sum(len(setting) for setting in DEFAULT_SETTINGS.values())):
-        _reset()
+    
+    if reset_to_default:
+        _reset_to_default()
+
+    if clear_recent_files:
+        _clear_recent_files()
 
 
-def _reset():
-    _settings.clear()
+
+def _reset_to_default():
     _settings.beginGroup("editable")
+    _settings.remove("")
     for group, settings in DEFAULT_SETTINGS.items():
         _settings.beginGroup(group)
         for key, value in settings.items():
             _settings.setValue(key, value)
         _settings.endGroup()
+    _settings.endGroup()
+    
+
+def _clear_recent_files():
+    _settings.beginGroup("private")
+    _settings.remove("")
     _settings.endGroup()
     
 
@@ -124,7 +135,14 @@ def _get_key(group_name: str, setting: str, in_default: bool) -> str:
 
 
 
-
-
-if __name__ == "__main__":
-    load(True)
+def get_dict() -> dict:
+    editable_settings = {}
+    _settings.beginGroup("editable")
+    for group_name in _settings.childGroups():
+        _settings.beginGroup(group_name)
+        editable_settings[group_name] = {}
+        for setting in _settings.childKeys():
+            editable_settings[group_name][setting] = _settings.value(setting)
+        _settings.endGroup()
+    _settings.endGroup()
+    return editable_settings
