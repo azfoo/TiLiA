@@ -2,6 +2,7 @@ import os
 import weakref
 from enum import Enum, auto
 from typing import Callable, Any
+from tilia.settings import settings
 
 
 class Post(Enum):
@@ -117,6 +118,7 @@ class Post(Enum):
     REQUEST_SAVE_TO_PATH = auto()
     SELECTION_BOX_DESELECT_ITEM = auto()
     SELECTION_BOX_SELECT_ITEM = auto()
+    SETTINGS_UPDATED = auto()
     SLIDER_DRAG = auto()
     SLIDER_DRAG_END = auto()
     SLIDER_DRAG_START = auto()

@@ -16,8 +16,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QColor
 
-from tilia import settings
-from tilia.requests import get, Get, post, Post
+from tilia.settings import settings
+from tilia.requests import post, Post
 from tilia.ui.windows import WindowKind
 from tilia.timelines.harmony.constants import HARMONY_DISPLAY_MODES
 
@@ -76,10 +76,18 @@ class SettingsWindow(QDialog):
 
     def populate(self):
         def add_group(group_name):            
+            if group_name == "PDF_timeline":
+                filled_fields.append(group_name)
+                return
+            
             self.form_layout.addRow(pretty_label(group_name), None)
             self.settings[group_name] = {}
             for name, value in self.settings_original[group_name].items():
+                if group_name == "beat_timeline" and name == "default_height":
+                    continue
                 widget = get_widget_for_value(value)
+                if "timeline" in group_name and name == "default_height" and widget.objectName() == "int":
+                    widget.setMinimum(10)
                 self.form_layout.addRow(pretty_label(name), widget)
                 self.settings[group_name][name] = widget
             filled_fields.append(group_name)
@@ -96,7 +104,22 @@ class SettingsWindow(QDialog):
         self.adjustSize()
 
     def reset_fields(self):
-        settings.load(True)
+        default_settings = settings.DEFAULT_SETTINGS        
+        current_settings = {
+            group_name: {
+                name: get_value_for_widget(widget)
+                for name, widget in setting.items()
+            }
+            for group_name, setting in self.settings.items()
+        }
+        edited_settings = {}
+        for group_name, setting in current_settings.items():
+            for name in setting.keys():
+                if current_settings[group_name][name] != default_settings[group_name][name]:
+                    edited_settings.setdefault(group_name, {})
+                    edited_settings[group_name][name] = default_settings[group_name][name]
+        self._save_edits(edited_settings)
+        settings.reset_to_default()
         self.clear_layout()
         self.setup_layout()
 
@@ -115,9 +138,7 @@ class SettingsWindow(QDialog):
                                    "Save settings",
                                    "Save settings?<br>This <i>cannot</i> be undone later."
                                    ):
-            for group_name, setting in edited_settings.items():
-                for name, value in setting.items():
-                    settings.set(group_name, name, value)
+            self._save_edits(edited_settings)
 
         post(Post.WINDOW_SETTINGS_CLOSED)
         super().closeEvent(event)
@@ -130,18 +151,20 @@ class SettingsWindow(QDialog):
             }
             for group_name, setting in self.settings.items()
         }
-        return {
-            group_name: { name: value }
-            for group_name, setting in new_settings.items()
-            for name, value in setting.items()
-            if new_settings[group_name][name] != self.settings_original[group_name][name]
-        }
+        edited_settings = {}
+        for group_name, setting in new_settings.items():
+            for name, value in setting.items():
+                if new_settings[group_name][name] != self.settings_original[group_name][name]:
+                    edited_settings.setdefault(group_name, {})
+                    edited_settings[group_name][name] = value
+        return edited_settings
     
     def _save_edits(self, edited_settings: dict) -> None:
         for group_name, setting in edited_settings.items():
             for name, value in setting.items():
                 settings.set(group_name, name, value)
 
+        post(Post.SETTINGS_UPDATED, [*edited_settings])
 
 
 def pretty_label(input_string: str):

@@ -41,7 +41,8 @@ from .windows.settings import SettingsWindow
 from .windows.kinds import WindowKind
 from ..media.player import QtAudioPlayer
 from ..parsers.csv.beat import beats_from_csv
-from tilia import settings, constants
+from tilia import constants
+from tilia.settings import settings
 from tilia.utils import get_tilia_class_string
 from tilia.timelines.timeline_kinds import TimelineKind as TlKind
 from tilia.requests import Post, listen, post, serve, Get, get
@@ -99,7 +100,6 @@ class QtUI:
     def __init__(self):
         self.app = None
         self.q_application = QApplication(sys.argv)
-        self._setup_settings()
         self._setup_main_window()
         self._setup_fonts()
         self._setup_player()
@@ -169,9 +169,6 @@ class QtUI:
 
         for request, callback in SERVES:
             serve(self, request, callback)
-
-    def _setup_settings(self):
-        settings.load()
 
     def _setup_main_window(self):
         def get_initial_geometry():

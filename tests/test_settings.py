@@ -1,6 +1,6 @@
 import pytest
 
-from tilia import settings
+from tilia.settings import settings
 
 
 def test_get_missing_setting_gets_default():

@@ -3,7 +3,7 @@ import weakref
 from enum import Enum, auto
 from typing import Callable, Any
 
-from tilia import settings
+from tilia.settings import settings
 from tilia.exceptions import NoReplyToRequest, NoCallbackAttached
 
 logger = logging.getLogger(__name__)
@@ -69,8 +69,6 @@ _servers_to_requests: weakref.WeakKeyDictionary[Any, set[Get]] = (
     weakref.WeakKeyDictionary()
 )
 
-log_requests = settings.get("dev", "log_requests")
-
 
 def get(request: Get, *args, **kwargs) -> Any:
     """
@@ -79,7 +77,7 @@ def get(request: Get, *args, **kwargs) -> Any:
     """
     logging_level = 10
 
-    if log_requests:
+    if settings.get("dev", "log_requests"):
         logger.log(logging_level, f"Posting {request} with {args=} and {kwargs=}.")
     try:
         return _requests_to_callbacks[request](*args, **kwargs)
