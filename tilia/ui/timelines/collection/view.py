@@ -26,33 +26,42 @@ class TimelineUIsView(QGraphicsView):
 
     def wheelEvent(self, event) -> None:
         if Qt.KeyboardModifier.ShiftModifier in event.modifiers():
-            x = event.angleDelta().y()
-            y = event.angleDelta().x()
+            dx = event.angleDelta().y()
+            dy = event.angleDelta().x()
         else:
-            x = event.angleDelta().x()
-            y = event.angleDelta().y()
+            dx = event.angleDelta().x()
+            dy = event.angleDelta().y()
             
         if event.inverted():
-            temp = x
-            x = y
-            y = temp
+            temp = dx
+            dx = dy
+            dy = temp
 
         if Qt.KeyboardModifier.ControlModifier in event.modifiers():
-            if y > 0:
+            max_x = self.horizontalScrollBar().maximum()
+            cur_x = self.horizontalScrollBar().value() / max_x if max_x != 0 else 0.5
+            max_y = self.verticalScrollBar().maximum()
+            cur_y = self.verticalScrollBar().value() / max_y if max_y != 0 else 0.5
+
+            if dy > 0:
                 post(Post.VIEW_ZOOM_IN)
             else:
                 post(Post.VIEW_ZOOM_OUT)
 
+            if self.horizontalScrollBar().maximum() != 0:
+                self.horizontalScrollBar().setValue(round(cur_x * self.horizontalScrollBar().maximum()))
+            if self.verticalScrollBar().maximum() != 0:
+                self.verticalScrollBar().setValue(round(cur_y * self.verticalScrollBar().maximum()))
             return
         
         else:
-            if x < 0:
+            if dx < 0:
                 self.horizontalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
-            elif x > 0:
+            elif dx > 0:
                 self.horizontalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepSub)
-            if y < 0:
+            if dy < 0:
                 self.verticalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
-            elif y > 0:
+            elif dy > 0:
                 self.verticalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepSub)
 
 
