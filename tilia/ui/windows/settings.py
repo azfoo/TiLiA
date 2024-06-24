@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSpinBox,
+    QTextEdit,
     QVBoxLayout,
     QWidget
 )
@@ -20,6 +21,8 @@ from tilia.settings import settings
 from tilia.requests import post, Post
 from tilia.ui.windows import WindowKind
 from tilia.timelines.harmony.constants import HARMONY_DISPLAY_MODES
+from tilia.ui.color import get_tinted_color
+from tilia.ui.consts import TINT_FACTOR_ON_SELECTION
 
 
 class SettingsWindow(QDialog):
@@ -160,24 +163,24 @@ def pretty_label(input_string: str):
     return QLabel(' '.join([word.title() if word.islower() else word for word in input_string.split('_')]))
 
 
-def select_color_button(value):
+def select_color_button(value, text = None):
     def select_color(old_color):
         new_color = QColorDialog.getColor(QColor(old_color), None, "Choose Color", QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if new_color.isValid() and new_color != old_color:
             set_color(new_color.name())
 
     def set_color(color):
-        button.setText(color)
-        button.setStyleSheet(f"background-color: {color}; color: {color};")
+        button.setStyleSheet(f"background-color: {color}; color: {get_tinted_color(color, TINT_FACTOR_ON_SELECTION)};")
 
     button = QPushButton()
+    button.setText(text)
     set_color(value)
     button.clicked.connect(lambda _: select_color(value))
     button.setObjectName("color")
     return button
 
 
-def get_widget_for_value(value) -> QWidget:
+def get_widget_for_value(value, text = None) -> QWidget:
     match value:
         case int():
             int_input = QSpinBox()
@@ -188,12 +191,19 @@ def get_widget_for_value(value) -> QWidget:
             return int_input
         
         case list():
-            widget = QWidget()
-            widget.setObjectName("list")
-            layout = QVBoxLayout(widget)
-            for item in value: 
-                sub_widget = get_widget_for_value(item)
-                layout.addWidget(sub_widget)
+            if len(value[0]) and value[0][0] == '#':
+                widget = QWidget()
+                widget.setObjectName("list")
+                layout = QVBoxLayout(widget)
+                for i in range(len(value)): 
+                    sub_widget = get_widget_for_value(value[i], f"Level {i + 1}")
+                    layout.addWidget(sub_widget)
+
+            else:
+                widget = QTextEdit()
+                widget.setText("\n".join(value))
+                widget.setObjectName("text_edit")
+
             return widget
         
         case str():
@@ -204,7 +214,7 @@ def get_widget_for_value(value) -> QWidget:
                 return checkbox                
 
             if len(value) and value[0] == '#':
-                return select_color_button(value)
+                return select_color_button(value, text)
             
             if len(value) and value in HARMONY_DISPLAY_MODES:
                 combobox = QComboBox()
@@ -227,6 +237,9 @@ def get_value_for_widget(widget: QWidget):
         case "int":
             return widget.value()
         
+        case "text_edit":
+            return [item for item in widget.toPlainText().split("\n") if item != ""]
+        
         case "list":
             output_list = []
             for i in range(widget.layout().count()):
@@ -237,7 +250,7 @@ def get_value_for_widget(widget: QWidget):
             return 'true' if widget.isChecked() else 'false'
         
         case "color":
-            return widget.text()
+            return widget.styleSheet().lstrip("background-color: ").split(';')[0]
         
         case "combobox":
             return widget.currentText().lower()
