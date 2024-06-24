@@ -57,11 +57,11 @@ class SettingsWindow(QDialog):
 
     def _setup_buttons(self):
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.RestoreDefaults | QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Discard
+            QDialogButtonBox.StandardButton.RestoreDefaults | QDialogButtonBox.StandardButton.Apply | QDialogButtonBox.StandardButton.Cancel 
         )
         self.button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(self.reset_fields)
-        self.button_box.button(QDialogButtonBox.StandardButton.Save).clicked.connect(self.save_fields)
-        self.button_box.button(QDialogButtonBox.StandardButton.Discard).clicked.connect(self.discard_fields)
+        self.button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.apply_fields)
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).clicked.connect(self.close)
         self.layout().addWidget(self.button_box)
 
     def clear_layout(self):
@@ -123,23 +123,12 @@ class SettingsWindow(QDialog):
         self.clear_layout()
         self.setup_layout()
 
-    def save_fields(self):
+    def apply_fields(self):
         self._save_edits(self._get_edits())
         self.clear_layout()
         self.setup_layout()
 
-    def discard_fields(self):
-        self.clear_layout()
-        self.setup_layout()
-
     def closeEvent(self, event):
-        edited_settings = self._get_edits()
-        if edited_settings and get(Get.FROM_USER_YES_OR_NO,
-                                   "Save settings",
-                                   "Save settings?<br>This <i>cannot</i> be undone later."
-                                   ):
-            self._save_edits(edited_settings)
-
         post(Post.WINDOW_SETTINGS_CLOSED)
         super().closeEvent(event)
 
