@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QGraphicsView
+from PyQt6.QtWidgets import QGraphicsView, QAbstractSlider
+from tilia.requests import post, Post
 
 
 class TimelineUIsView(QGraphicsView):
@@ -22,5 +23,36 @@ class TimelineUIsView(QGraphicsView):
 
     def center_on(self, x, y):
         self.centerOn(x, y + 1)
+
+    def wheelEvent(self, event) -> None:
+        if Qt.KeyboardModifier.ShiftModifier in event.modifiers():
+            x = event.angleDelta().y()
+            y = event.angleDelta().x()
+        else:
+            x = event.angleDelta().x()
+            y = event.angleDelta().y()
+            
+        if event.inverted():
+            temp = x
+            x = y
+            y = temp
+
+        if Qt.KeyboardModifier.ControlModifier in event.modifiers():
+            if y > 0:
+                post(Post.VIEW_ZOOM_IN)
+            else:
+                post(Post.VIEW_ZOOM_OUT)
+
+            return
+        
+        else:
+            if x < 0:
+                self.horizontalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
+            elif x > 0:
+                self.horizontalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepSub)
+            if y < 0:
+                self.verticalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepAdd)
+            elif y > 0:
+                self.verticalScrollBar().triggerAction(QAbstractSlider.SliderAction.SliderSingleStepSub)
 
 
