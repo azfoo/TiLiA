@@ -18,7 +18,9 @@ from tilia.ui.cli import (
     save,
     io,
     metadata,
+    generate_scripts,
 )
+from tilia.ui.cli.io import ask_yes_or_no
 from tilia.ui.cli.player import CLIVideoPlayer, CLIYoutubePlayer
 
 
@@ -27,7 +29,6 @@ class CLI:
         self.parser = argparse.ArgumentParser(exit_on_error=False)
         self.subparsers = self.parser.add_subparsers(dest="command")
         self.setup_parsers()
-        self.setup_player()
         self.exception = None
 
         listen(
@@ -36,6 +37,8 @@ class CLI:
 
         serve(self, Get.PLAYER_CLASS, self.get_player_class)
 
+        serve(self, Get.FROM_USER_YES_OR_NO, on_ask_yes_or_no)
+
     def setup_parsers(self):
         timelines.setup_parser(self.subparsers)
         quit.setup_parser(self.subparsers)
@@ -43,11 +46,8 @@ class CLI:
         load_media.setup_parser(self.subparsers)
         components.setup_parser(self.subparsers)
         metadata.setup_parser(self.subparsers)
-        script.setup_parser(self.subparsers, self.run_script)
-
-    def setup_player(self):
-        self.player = QtPlayer()
-        post(Post.PLAYER_AVAILABLE, self.player)
+        generate_scripts.setup_parser(self.subparsers, self.parse_and_run)
+        script.setup_parser(self.subparsers, self.parse_and_run)
 
     @staticmethod
     def parse_command(arg_string):
@@ -82,12 +82,17 @@ class CLI:
         print("--- TiLiA CLI v0.1 ---")
         while True:
             cmd = input(">>> ")
-            args = self.parse_command(cmd)
-            if args is None:
-                post(Post.DISPLAY_ERROR, "", "Parse error: Invalid quoted arguments")
-            self.run(args)
+            self.parse_and_run(cmd)
 
-    def run(self, cmd):
+    def parse_and_run(self, cmd):
+        """Returns True if command was unsuccessful, False otherwise"""
+        args = self.parse_command(cmd)
+        if args is None:
+            post(Post.DISPLAY_ERROR, "Parse error: Invalid quoted arguments")
+            return True
+        return self.run(args)
+
+    def run(self, cmd: str) -> bool:
         """
         Parses the commands entered by the user.
         Return True if an uncaught exception ocurred.
@@ -134,3 +139,7 @@ class CLI:
     @staticmethod
     def show_crash_dialog(exc_message) -> None:
         io.output(exc_message)
+
+
+def on_ask_yes_or_no(title: str, prompt: str) -> bool:
+    return ask_yes_or_no(f"{title}: {prompt}")

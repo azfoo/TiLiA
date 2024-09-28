@@ -23,6 +23,7 @@ from tilia.requests import (
     stop_listening_to_all,
     stop_serving_all,
 )
+from tilia.timelines.base.timeline import TimelineFlag
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.timelines.base.timeline import TimelineUI
 
@@ -83,29 +84,24 @@ class ManageTimelines(QDialog):
         self.on_list_current_item_changed(self.list_widget.currentItem())
 
     def on_list_current_item_changed(self, item):
-        def update_checkbox_state(timeline_ui):
-            self.checkbox.setCheckState(
-                Qt.CheckState.Checked
-                if timeline_ui.get_data("is_visible")
-                else Qt.CheckState.Unchecked
-            )
-
-        def update_delete_and_clear_buttons(timeline_ui):
-            if timeline_ui.TIMELINE_KIND == TimelineKind.SLIDER_TIMELINE:
-                self.delete_button.setEnabled(False)
-                self.clear_button.setEnabled(False)
-            else:
-                self.delete_button.setEnabled(True)
-                self.clear_button.setEnabled(True)
-
-        if not item:  # when list is being cleared
+        if not item:
             return
 
-        update_checkbox_state(item.timeline_ui)
-        update_delete_and_clear_buttons(item.timeline_ui)
+        timeline = get(Get.TIMELINE, item.timeline_ui.id)
+
+        self.checkbox.setCheckState(
+            Qt.CheckState.Checked
+            if timeline.get_data("is_visible")
+            else Qt.CheckState.Unchecked
+        )
+        self.delete_button.setEnabled(TimelineFlag.NOT_DELETABLE not in timeline.FLAGS)
+        self.clear_button.setEnabled(TimelineFlag.NOT_CLEARABLE not in timeline.FLAGS)
 
     def on_checkbox_state_changed(self, state):
-        timeline_ui = self.list_widget.currentItem().timeline_ui
+        item = self.list_widget.currentItem()
+        if not item:
+            return
+        timeline_ui = item.timeline_ui
         if timeline_ui.get_data("is_visible") != bool(state):
             post(Post.TIMELINE_IS_VISIBLE_SET_FROM_MANAGE_TIMELINES)
 
@@ -153,7 +149,6 @@ class TimelinesListWidget(QListWidget):
             (Post.TIMELINE_SET_DATA_DONE, self.on_timeline_set_data_done),
             (Post.TIMELINE_DELETE_DONE, self.update_current_selection),
             (Post.TIMELINE_CREATE_DONE, self.update_current_selection),
-            (Post.TIMELINE_COLLECTION_STATE_RESTORED, self.update_items)
         }
 
         for post, callback in LISTENS:

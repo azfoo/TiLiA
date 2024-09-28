@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import bisect
 from abc import ABC
+from enum import StrEnum, auto
 from typing import Any, Callable, TYPE_CHECKING, TypeVar, Generic, Set
 
 from tilia.timelines import serialize
@@ -16,8 +17,8 @@ from .validators import (
     validate_string,
     validate_read_only,
     validate_bounded_integer,
-    validate_timeline_ordinal,
     validate_boolean,
+    validate_positive_integer,
 )
 from ...requests import get, Get, post, Post, stop_listening_to_all
 
@@ -35,12 +36,13 @@ T = TypeVar("T", bound="Timeline")
 class Timeline(ABC, Generic[TC]):
     SERIALIZABLE_BY_VALUE = ["name", "height", "is_visible", "ordinal"]
     KIND: TimelineKind | None = None
+    FLAGS = []
 
     validators = {
         "name": validate_string,
         "id": validate_read_only,
         "height": functools.partial(validate_bounded_integer, lower=10),
-        "ordinal": validate_timeline_ordinal,
+        "ordinal": validate_positive_integer,
         "is_visible": validate_boolean,
     }
 
@@ -133,7 +135,7 @@ class Timeline(ABC, Generic[TC]):
         if self.validate_get_data(attr):
             return getattr(self, attr)
 
-    def create_timeline_component(
+    def create_component(
         self, kind: ComponentKind, *args, **kwargs
     ) -> tuple[TC | None, str | None]:
         component_id = get(Get.ID)
@@ -191,6 +193,12 @@ class Timeline(ABC, Generic[TC]):
     def delete(self):
         self.component_manager.clear()
 
+    def scale(self, factor: float) -> None:
+        self.component_manager.scale(factor)
+
+    def crop(self, length: float) -> None:
+        self.component_manager.crop(length)
+
     def deserialize_components(self, components: dict[int, dict[str]]):
         return self.component_manager.deserialize_components(components)
 
@@ -236,7 +244,7 @@ class TimelineComponentManager(Generic[T, TC]):
         return True, ""
 
     def create_component(
-        self, kind: ComponentKind, timeline, id, *args, **kwargs
+        self, kind: ComponentKind | None, timeline, id, *args, **kwargs
     ) -> tuple[bool, TC | None, str]:
         self._validate_component_kind(kind)
         valid, reason = self._validate_component_creation(kind, *args, **kwargs)
@@ -395,3 +403,14 @@ class TimelineComponentManager(Generic[T, TC]):
 
     def post_component_event(self, event: Post, component_id: int, *args, **kwargs):
         post(event, self.timeline.KIND, self.timeline.id, component_id, *args, **kwargs)
+
+    def crop(self, length: float) -> None:
+        raise NotImplementedError
+
+    def scale(self, length: float) -> None:
+        raise NotImplementedError
+
+
+class TimelineFlag(StrEnum):
+    NOT_CLEARABLE = auto()
+    NOT_DELETABLE = auto()

@@ -1,4 +1,3 @@
-import logging
 import weakref
 from enum import Enum, auto
 from typing import Callable, Any
@@ -6,14 +5,13 @@ from typing import Callable, Any
 from tilia.settings import settings
 from tilia.exceptions import NoReplyToRequest, NoCallbackAttached
 
-logger = logging.getLogger(__name__)
-
 
 class Get(Enum):
     APP_STATE = auto()
     TIMELINE_ELEMENTS_SELECTED = auto()
     CLIPBOARD_CONTENTS = auto()
     CONTEXT_MENU_TIMELINE_UIS_TO_PERMUTE = auto()
+    CONTEXT_MENU_TIMELINE_UI = auto()
     FIRST_TIMELINE_UI_IN_SELECT_ORDER = auto()
     FROM_USER_BEAT_PATTERN = auto()
     FROM_USER_COLOR = auto()
@@ -60,6 +58,7 @@ class Get(Enum):
     TIMELINE_UI_BY_ATTR = auto()
     TIMELINE_UI_ELEMENT = auto()
     TIMELINE_WIDTH = auto()
+    TIMELINES_FROM_CLI = auto()
     WINDOW_GEOMETRY = auto()
     WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_CURRENT = auto()
     WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_TO_PERMUTE = auto()
@@ -79,10 +78,7 @@ def get(request: Get, *args, **kwargs) -> Any:
     Calls the callback specified by the replier when attaching to the request.
     Raises a NoReplyToRequest() if no callback is attached.
     """
-    logging_level = 10
 
-    if settings.get("dev", "log_requests"):
-        logger.log(logging_level, f"Posting {request} with {args=} and {kwargs=}.")
     try:
         return _requests_to_callbacks[request](*args, **kwargs)
     except KeyError:
@@ -133,3 +129,10 @@ def stop_serving_all(replier: Any) -> None:
 
     for request in _servers_to_requests[replier].copy():
         stop_serving(replier, request)
+
+
+def reset() -> None:
+    global _requests_to_callbacks, _servers_to_requests
+
+    _requests_to_callbacks.clear()
+    _servers_to_requests.clear()

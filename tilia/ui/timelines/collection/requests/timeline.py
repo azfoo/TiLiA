@@ -15,6 +15,9 @@ request_to_scope: dict[Post, TlRequestSelector] = {
     Post.TIMELINE_DELETE_FROM_MANAGE_TIMELINES: TlRequestSelector(
         ALL, TimelineSelector.FROM_MANAGE_TIMELINES_CURRENT
     ),
+    Post.TIMELINE_DELETE_FROM_CLI: TlRequestSelector(
+        ALL, TimelineSelector.FROM_CLI
+    ),
     Post.TIMELINE_CLEAR_FROM_MANAGE_TIMELINES: TlRequestSelector(
         ALL, TimelineSelector.FROM_MANAGE_TIMELINES_CURRENT
     ),
@@ -34,6 +37,9 @@ request_to_scope: dict[Post, TlRequestSelector] = {
     ),
     Post.HARMONY_TIMELINE_HIDE_KEYS: TlRequestSelector(
         [TlKind.HARMONY_TIMELINE], TimelineSelector.FIRST
+    ),
+    Post.TIMELINE_DELETE_FROM_CONTEXT_MENU: TlRequestSelector(
+        ALL, TimelineSelector.FROM_CONTEXT_MENU
     ),
     Post.TIMELINE_ORDINAL_DECREASE_FROM_CONTEXT_MENU: TlRequestSelector(
         ALL, TimelineSelector.FROM_CONTEXT_MENU_TO_PERMUTE

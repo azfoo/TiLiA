@@ -5,7 +5,7 @@ import pydub.exceptions
 import pydub.utils
 
 from tilia.settings import settings
-from tilia.timelines.base.timeline import Timeline
+from tilia.timelines.base.timeline import Timeline, TimelineFlag
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.requests import get, Get, post, Post
@@ -16,6 +16,7 @@ import tilia.errors
 class AudioWaveTimeline(Timeline):
     KIND = TimelineKind.AUDIOWAVE_TIMELINE    
     component_manager: AudioWaveTLComponentManager
+    FLAGS = [TimelineFlag.NOT_CLEARABLE]
 
     @property
     def default_height(self):
@@ -42,7 +43,7 @@ class AudioWaveTimeline(Timeline):
     
     def _create_components(self, duration: float, amplitudes: float):
         for i in range(len(amplitudes)):
-            self.create_timeline_component(
+            self.create_component(
                 kind = ComponentKind.AUDIOWAVE,
                 start = i * duration,
                 end = (i + 1) * duration,
@@ -65,6 +66,12 @@ class AudioWaveTimeline(Timeline):
 
     def get_dB(self, start_time, end_time):
         return self.audio[start_time * 1000: end_time * 1000].dBFS
+
+    def clear(self):
+        # AudioWave timelines shouldn't be cleared
+        # as user can't reacreate its components
+        pass
+
 
 class AudioWaveTLComponentManager(TimelineComponentManager):
     COMPONENT_TYPES = [ComponentKind.AUDIOWAVE]

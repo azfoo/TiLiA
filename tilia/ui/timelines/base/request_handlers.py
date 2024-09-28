@@ -14,6 +14,7 @@ class TimelineRequestHandler(RequestHandler):
         base_request_to_callback = {
             Post.TIMELINE_DELETE_FROM_MANAGE_TIMELINES: self.on_timeline_delete,
             Post.TIMELINE_CLEAR_FROM_MANAGE_TIMELINES: self.on_timeline_clear,
+            Post.TIMELINE_DELETE_FROM_CLI: functools.partial(self.on_timeline_delete, True),
             Post.TIMELINE_NAME_SET: functools.partial(
                 self.on_timeline_data_set, "name"
             ),
@@ -25,6 +26,7 @@ class TimelineRequestHandler(RequestHandler):
             ),
             Post.TIMELINE_ORDINAL_INCREASE_FROM_MANAGE_TIMELINES: self.on_timeline_ordinal_permute_from_manage_timelines,
             Post.TIMELINE_ORDINAL_DECREASE_FROM_MANAGE_TIMELINES: self.on_timeline_ordinal_permute_from_manage_timelines,
+            Post.TIMELINE_DELETE_FROM_CONTEXT_MENU: self.on_timeline_delete,
             Post.TIMELINE_ORDINAL_DECREASE_FROM_CONTEXT_MENU: self.on_timeline_ordinal_permute_from_context_menu,
             Post.TIMELINE_ORDINAL_INCREASE_FROM_CONTEXT_MENU: self.on_timeline_ordinal_permute_from_context_menu,
         }

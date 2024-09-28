@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import logging
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPointF
@@ -34,8 +33,6 @@ if TYPE_CHECKING:
     from tilia.ui.timelines.base.element_manager import ElementManager
     from tilia.ui.timelines.scene import TimelineScene
     from tilia.ui.timelines.view import TimelineView
-
-logger = logging.getLogger(__name__)
 
 
 class PdfTimelineUI(TimelineUI):
@@ -195,7 +192,7 @@ class PdfTimelineUI(TimelineUI):
             # deepcopying so popping won't affect original data
             marker_time = pdf_marker_data["support_by_component_value"].pop("time")
 
-            self.timeline.create_timeline_component(
+            self.timeline.create_component(
                 ComponentKind.PDF_MARKER,
                 target_time + (marker_time - reference_time),
                 **pdf_marker_data["by_element_value"],

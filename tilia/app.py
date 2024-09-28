@@ -1,15 +1,15 @@
 from __future__ import annotations
 import itertools
-import logging
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import tilia.errors
 import tilia.constants
 import tilia.dirs
+from tilia.exceptions import NoReplyToRequest
 from tilia.file.tilia_file import TiliaFile
-from tilia.media.loader import MediaLoader
+from tilia.media.loader import load_media
 from tilia.utils import get_tilia_class_string
 from tilia.requests import get, post, serve, listen, Get, Post
 from tilia.timelines.collection.collection import Timelines
@@ -22,8 +22,6 @@ if TYPE_CHECKING:
     from tilia.clipboard import Clipboard
     from tilia.undo_manager import UndoManager
 
-logger = logging.getLogger(__name__)
-
 
 class App:
     def __init__(
@@ -31,13 +29,16 @@ class App:
         file_manager: FileManager,
         clipboard: Clipboard,
         undo_manager: UndoManager,
+        player: Player,
     ):
         self._id_counter = itertools.count()
         self.player: Player | None = None
         self.file_manager = file_manager
         self.clipboard = clipboard
         self.undo_manager = undo_manager
+        self.player = player
         self.duration = 0.0
+        self.should_scale_timelines = 'prompt'
         self._setup_timelines()
         self._setup_requests()
 
@@ -53,8 +54,7 @@ class App:
             (Post.APP_STATE_RESTORE, self.on_restore_state),
             (Post.APP_SETUP_FILE, self.setup_file),
             (Post.APP_RECORD_STATE, self.on_record_state),
-            (Post.PLAYER_AVAILABLE, self.on_player_available),
-            (Post.PLAYER_DURATION_AVAILABLE, self.on_player_duration_available),
+            (Post.PLAYER_DURATION_AVAILABLE, self.set_file_media_duration),
             # Listening on tilia.dirs would need to be top-level.
             # That sounds like a bad idea, so we're listening here.
             (Post.AUTOSAVES_FOLDER_OPEN, tilia.dirs.open_autosaves_dir),
@@ -76,11 +76,10 @@ class App:
     def _setup_timelines(self):
         self.timelines = Timelines(self)
 
-    def on_player_available(self, player: Player):
-        self.player = player
-
-    def on_player_duration_available(self, duration: float):
-        self.duration = duration
+    def set_file_media_duration(self, duration: float, scale_timelines: Literal['yes', 'no', 'prompt'] | None = None) -> None:
+        if scale_timelines:
+            self.should_scale_timelines = scale_timelines
+        self.on_media_duration_changed(duration)
         post(Post.FILE_MEDIA_DURATION_CHANGED, duration)
 
     def on_close(self) -> None:
@@ -93,23 +92,23 @@ class App:
 
         post(Post.UI_EXIT, 0)
 
-    def load_media(self, path: str, record: bool = True) -> None:
+    def load_media(self, path: str, record: bool = True, scale_timelines: Literal['yes', 'no', 'prompt'] = 'prompt') -> None:
+        self.should_scale_timelines = scale_timelines
         if not path:
             self.player.unload_media()
             return
 
-        player = MediaLoader(self.player).load(path)
+        player = load_media(self.player, path)
         if player and record:
             self.player = player
+            post(Post.PLAYER_CANCEL_LOOP)
             post(Post.APP_RECORD_STATE, "media load")
 
     def on_restore_state(self, state: dict) -> None:
-        logging.disable(logging.CRITICAL)
         with PauseUndoManager():
             self.timelines.restore_state(state["timelines"])
             self.file_manager.set_media_metadata(state["media_metadata"])
             self.restore_player_state(state["media_path"])
-        logging.disable(logging.NOTSET)
 
     def on_record_state(self, action, no_repeat=False, repeat_identifier=""):
         self.undo_manager.record(
@@ -125,9 +124,41 @@ class App:
         """
         return next(self._id_counter)
 
-    def set_media_duration(self, duration):
-        post(Post.FILE_MEDIA_DURATION_CHANGED, duration)
+    def on_media_duration_changed(self, duration: float):
+        if not self.timelines.is_blank and duration != self.duration:
+            crop_or_scale = ''
+            if self.should_scale_timelines == 'prompt':
+                if self.prompt_scale_timelines():
+                    crop_or_scale = 'scale'
+                else:
+                    if duration < self.duration:
+                        if self.prompt_crop_timelines():
+                            crop_or_scale = 'crop'
+                        else:
+                            crop_or_scale = 'scale'
+            elif self.should_scale_timelines == 'yes':
+                crop_or_scale = 'scale'
+            elif duration < self.duration:  # self.should_scale_timelines == 'no'
+                crop_or_scale = 'crop'
+
+            if crop_or_scale == 'scale':
+                self.timelines.scale_timeline_components(duration / self.duration)
+            elif crop_or_scale == 'crop':
+                self.timelines.crop_timeline_components(duration)
+
         self.duration = duration
+
+    def prompt_scale_timelines(self):
+        scale_prompt = "Would you like to scale existing timelines to new media length?"
+        return get(Get.FROM_USER_YES_OR_NO, "Scale timelines", scale_prompt)
+
+    def prompt_crop_timelines(self):
+        crop_prompt = (
+            "New media is smaller, "
+            "so components may get deleted or cropped. "
+            "Are you sure you don't want to scale existing timelines?"
+        )
+        return get(Get.FROM_USER_YES_OR_NO, "Crop timelines", crop_prompt)
 
     @staticmethod
     def _check_if_media_exists(path: str) -> bool:
@@ -135,7 +166,7 @@ class App:
 
     def _setup_file_media(self, path: str, duration: float | None):
         if duration:
-            self.set_media_duration(duration)
+            self.set_file_media_duration(duration)
 
         if not self._check_if_media_exists(path):
             tilia.errors.display(tilia.errors.MEDIA_NOT_FOUND, path)
@@ -176,7 +207,6 @@ class App:
         return self.timelines.serialize_timelines()
 
     def get_app_state(self) -> dict:
-        logging.disable(logging.CRITICAL)
         params = {
             "media_metadata": dict(self.file_manager.file.media_metadata),
             "timelines": self.get_timelines_state(),
@@ -185,7 +215,6 @@ class App:
             "version": tilia.constants.VERSION,
             "app_name": tilia.constants.APP_NAME,
         }
-        logging.disable(logging.NOTSET)
         return params
 
     def setup_file(self):

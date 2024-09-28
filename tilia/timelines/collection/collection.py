@@ -102,11 +102,7 @@ class Timelines:
     def __bool__(self):
         return True  # so it doesn't evaluate to False when there are no timelines
     
-    def _setup_requests(self):        
-        LISTENS = {    
-            (Post.FILE_MEDIA_DURATION_CHANGED, self.on_media_duration_changed)
-        }
-
+    def _setup_requests(self):
         SERVES = {
             (Get.TIMELINE_COLLECTION, lambda: self),
             (Get.TIMELINES, self.get_timelines),
@@ -116,9 +112,6 @@ class Timelines:
             (Get.TIMELINES_BY_ATTR, self.get_timelines_by_attr),
             (Get.METRIC_POSITION, self.get_metric_position)
         }
-
-        for post, callback in LISTENS:
-            listen(self, post, callback)
 
         for request, callback in SERVES:
             serve(self, request, callback)
@@ -220,6 +213,9 @@ class Timelines:
         return [tl for tl in self if getattr(tl, attr) == value]
 
     def set_timeline_data(self, id: int, attr: str, value: Any):
+        timeline = self.get_timeline(id)
+        if timeline.get_data(attr) == value:
+            return
         value, success = self.get_timeline(id).set_data(attr, value)
         if success:
             post(Post.TIMELINE_SET_DATA_DONE, id, attr, value)
@@ -293,8 +289,6 @@ class Timelines:
             kind = TimelineKind(params.pop("kind"))
             self.create_timeline(kind, **params)
 
-        post(Post.TIMELINE_COLLECTION_STATE_RESTORED)
-
     def _restore_timeline_state(self, timeline: Timeline, state: dict[str, dict]):
         timeline.clear()
         timeline.deserialize_components(state["components"])
@@ -336,11 +330,6 @@ class Timelines:
         if not prev_duration or new_duration == prev_duration or self.is_blank:
             self.cached_media_duration = new_duration
             return
-
-        post(
-            Post.REQUEST_CHANGE_TIMELINE_WIDTH,
-            get(Get.TIMELINE_WIDTH) * new_duration / prev_duration,
-        )
 
         self._scale_or_crop_timelines(new_duration, prev_duration)
 

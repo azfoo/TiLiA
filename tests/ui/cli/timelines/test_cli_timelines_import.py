@@ -1,14 +1,12 @@
-from pathlib import Path
-from unittest.mock import patch
-import argparse
 import pytest
 
-from tests.mock import PatchGet
+from tests.mock import Serve
+
 from tilia.exceptions import WrongTimelineForImport
 from tilia.requests import Get
 from tilia.timelines.timeline_kinds import TimelineKind
+from tilia.ui.actions import TiliaAction
 from tilia.ui.cli.timelines.imp import (
-    import_timeline,
     get_timelines_for_import,
     validate_timelines_for_import,
 )
@@ -17,164 +15,68 @@ GET_TIMELINES_FOR_IMPORT_PATH = "tilia.ui.cli.timelines.imp.get_timelines_for_im
 CSV_PARSER_PATH = "tilia.parsers.csv"
 
 
-class DummyMarkerTl:
-    KIND = TimelineKind.MARKER_TIMELINE
-
-    def clear(self):
-        pass
-
-
-class DummyHierarchyTl:
-    KIND = TimelineKind.HIERARCHY_TIMELINE
-
-    def clear(self):
-        pass
-
-
-class DummyBeatTl:
-    KIND = TimelineKind.BEAT_TIMELINE
-
-    def clear(self):
-        pass
+def tmp_csv(tmp_path, data):
+    with open(tmp_path / "tmp.csv", "w") as f:
+        f.write(data)
+    return tmp_path / "tmp.csv"
 
 
 class TestImportTimeline:
-    def test_markers_by_measure(self):
-        namespace = argparse.Namespace(
-            target_ordinal=1,
-            target_name="target_name",
-            reference_tl_ordinal=2,
-            reference_tl_name="ref_name",
-            measure_or_time="by-measure",
-            tl_kind="marker",
-            file="test.csv",
-        )
+    def test_markers_by_measure(self, cli, marker_tl, beat_tl, tmp_path, tilia_state, actions):
+        beat_tl.beat_pattern = [1]
+        for i in range(5):
+            tilia_state.current_time = i
+            actions.trigger(TiliaAction.BEAT_ADD)
 
-        tl, ref_tl = DummyMarkerTl(), DummyBeatTl()
+        data = "measure\n1\n2\n3\n4\n5"
+        csv_path = tmp_csv(tmp_path, data)
 
-        with (
-            patch(
-                GET_TIMELINES_FOR_IMPORT_PATH,
-                return_value=(tl, ref_tl),
-            ) as get_tls_mock,
-            patch(
-                CSV_PARSER_PATH + ".markers_by_measure_from_csv",
-                return_value="csv_data",
-            ) as parse_mock,
-        ):
-            import_timeline(namespace)
-            get_tls_mock.assert_called_with(
-                1, "target_name", 2, "ref_name", "by-measure"
-            )
-            parse_mock.assert_called_once_with(tl, ref_tl, Path("test.csv"))
+        cli.parse_and_run(f'timelines import csv marker by-measure --target-ordinal 1 --reference-tl-ordinal 2 --file {str(csv_path.resolve())}')
+        for i in range(5):
+            assert marker_tl[i].get_data('time') == i
 
-    def test_markers_by_time(self):
-        namespace = argparse.Namespace(
-            target_ordinal=1,
-            target_name="target_name",
-            reference_tl_ordinal=2,
-            reference_tl_name="ref_name",
-            measure_or_time="by-time",
-            tl_kind="marker",
-            file="test.csv",
-        )
+    def test_markers_by_time(self, cli, tmp_path, marker_tl):
+        data = "time\n1\n2\n3\n4\n5"
+        csv_path = tmp_csv(tmp_path, data)
 
-        tl, ref_tl = DummyMarkerTl(), DummyBeatTl()
+        cli.parse_and_run(f'timeline import csv marker by-time --file {str(csv_path.resolve())} --target-ordinal 1')
+        assert len(marker_tl) == 5
+        for i in range(5):
+            assert marker_tl[i].get_data('time') == i + 1
 
-        with (
-            patch(
-                GET_TIMELINES_FOR_IMPORT_PATH,
-                return_value=(tl, ref_tl),
-            ) as get_tls_mock,
-            patch(
-                CSV_PARSER_PATH + ".markers_by_time_from_csv", return_value="csv_data"
-            ) as parse_mock,
-        ):
-            import_timeline(namespace)
-            get_tls_mock.assert_called_with(1, "target_name", 2, "ref_name", "by-time")
-            parse_mock.assert_called_once_with(tl, Path("test.csv"))
+    def test_hierarchies_by_measure(self, cli, hierarchy_tl, beat_tl, tmp_path, tilia_state, actions):
+        beat_tl.beat_pattern = [1]
+        for i in range(6):
+            tilia_state.current_time = i
+            actions.trigger(TiliaAction.BEAT_ADD)
 
-    def test_hierarchies_by_measure(self):
-        namespace = argparse.Namespace(
-            target_ordinal=1,
-            target_name="target_name",
-            reference_tl_ordinal=2,
-            reference_tl_name="ref_name",
-            measure_or_time="by-measure",
-            tl_kind="hierarchy",
-            file="test.csv",
-        )
+        data = "start,end,level\n1,2,1\n2,3,1\n3,4,1\n4,5,1\n5,6,1"
+        csv_path = tmp_csv(tmp_path, data)
 
-        tl, ref_tl = DummyHierarchyTl(), DummyBeatTl()
+        cli.parse_and_run(
+            f'timelines import csv hierarchy by-measure --target-ordinal 1 --reference-tl-ordinal 2 --file {str(csv_path.resolve())}')
 
-        with (
-            patch(
-                GET_TIMELINES_FOR_IMPORT_PATH,
-                return_value=(tl, ref_tl),
-            ) as get_tls_mock,
-            patch(
-                CSV_PARSER_PATH + ".hierarchies_by_measure_from_csv",
-                return_value="csv_data",
-            ) as parse_mock,
-        ):
-            import_timeline(namespace)
-            get_tls_mock.assert_called_with(
-                1, "target_name", 2, "ref_name", "by-measure"
-            )
-            parse_mock.assert_called_once_with(tl, ref_tl, Path("test.csv"))
+        for i in range(5):
+            assert hierarchy_tl[i].get_data('start') == i
+            assert hierarchy_tl[i].get_data('end') == i + 1
 
-    def test_hierarchies_by_time(self):
-        namespace = argparse.Namespace(
-            target_ordinal=1,
-            target_name="target_name",
-            reference_tl_ordinal=2,
-            reference_tl_name="ref_name",
-            measure_or_time="by-time",
-            tl_kind="hierarchy",
-            file="test.csv",
-        )
+    def test_hierarchies_by_time(self, cli, hierarchy_tl, tmp_path, tilia_state, actions):
+        data = "start,end,level\n1,2,1\n2,3,1\n3,4,1\n4,5,1\n5,6,1"
+        csv_path = tmp_csv(tmp_path, data)
 
-        tl, ref_tl = DummyHierarchyTl(), DummyBeatTl()
+        cli.parse_and_run(f'timeline import csv hierarchy by-time --file {str(csv_path.resolve())} --target-ordinal 1')
+        for i in range(5):
+            assert hierarchy_tl[i].get_data('start') == i + 1
+            assert hierarchy_tl[i].get_data('end') == i + 2
 
-        with (
-            patch(
-                GET_TIMELINES_FOR_IMPORT_PATH,
-                return_value=(tl, ref_tl),
-            ) as get_tls_mock,
-            patch(
-                CSV_PARSER_PATH + ".hierarchies_by_time_from_csv",
-                return_value="csv_data",
-            ) as parse_mock,
-        ):
-            import_timeline(namespace)
-            get_tls_mock.assert_called_with(1, "target_name", 2, "ref_name", "by-time")
-            parse_mock.assert_called_once_with(tl, Path("test.csv"))
+    def test_beats(self, cli, beat_tl, tmp_path, tilia_state, actions):
+        data = "time\n1\n2\n3\n4\n5"
+        csv_path = tmp_csv(tmp_path, data)
 
-    def test_beats(self):
-        namespace = argparse.Namespace(
-            target_ordinal=1,
-            target_name="target_name",
-            reference_tl_ordinal=2,
-            reference_tl_name="ref_name",
-            tl_kind="beat",
-            file="test.csv",
-        )
-
-        tl, ref_tl = DummyBeatTl(), None
-
-        with (
-            patch(
-                GET_TIMELINES_FOR_IMPORT_PATH,
-                return_value=(tl, ref_tl),
-            ) as get_tls_mock,
-            patch(
-                CSV_PARSER_PATH + ".beats_from_csv",
-                return_value="csv_data",
-            ) as parse_mock,
-        ):
-            import_timeline(namespace)
-            get_tls_mock.assert_called_with(1, "target_name", 2, "ref_name", None)
-            parse_mock.assert_called_once_with(tl, Path("test.csv"))
+        cli.parse_and_run(f'timeline import csv beat --file {str(csv_path.resolve())} --target-ordinal 1')
+        assert len(beat_tl) == 5
+        for i in range(5):
+            assert beat_tl[i].get_data('time') == i + 1
 
 
 class ImportTestCase:
@@ -189,9 +91,7 @@ class TestGetTimelinesForImport:
     @staticmethod
     def run_test_case(case: ImportTestCase, tls):
         for kind, name in case.timelines:
-            with PatchGet(
-                "tilia.timelines.collection", Get.FROM_USER_BEAT_PATTERN, [2]
-            ):
+            with Serve(Get.FROM_USER_BEAT_PATTERN, [2]):
                 tls.create_timeline(kind=kind, name=name)
 
         tl, ref_tl = get_timelines_for_import(*case.get_timelines_params)

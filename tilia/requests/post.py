@@ -25,7 +25,6 @@ class Post(Enum):
     BEAT_RESET_MEASURE_NUMBER = auto()
     BEAT_SET_AMOUNT_IN_MEASURE = auto()
     BEAT_SET_MEASURE_NUMBER = auto()
-    BEAT_TIME_CHANGED = auto()
     CANVAS_RIGHT_CLICK = auto()
     DEBUG = auto()
     DISPLAY_ERROR = auto()
@@ -118,7 +117,6 @@ class Post(Enum):
     PLAYER_URL_CHANGED = auto()
     PLAYER_VOLUME_CHANGE = auto()
     PLAYER_VOLUME_MUTE = auto()
-    REQUEST_CHANGE_TIMELINE_WIDTH = auto()
     REQUEST_CLEAR_ALL_TIMELINES = auto()
     REQUEST_CLEAR_TIMELINE = auto()
     REQUEST_CLEAR_UI = auto()
@@ -144,7 +142,6 @@ class Post(Enum):
     TIMELINE_ADD_AUDIOWAVE_TIMELINE = auto()
     TIMELINE_ADD_PDF_TIMELINE = auto()
     TIMELINE_CLEAR_FROM_MANAGE_TIMELINES = auto()
-    TIMELINE_COLLECTION_STATE_RESTORED = auto()
     TIMELINE_COMPONENT_CREATED = auto()
     TIMELINE_COMPONENT_DELETED = auto()
     TIMELINE_COMPONENT_DESELECTED = auto()
@@ -152,8 +149,9 @@ class Post(Enum):
     TIMELINE_COMPONENT_SET_DATA_DONE = auto()
     TIMELINE_COMPONENT_SET_DATA_FAILED = auto()
     TIMELINE_CREATE_DONE = auto()
-    TIMELINE_DELETE = auto()
+    TIMELINE_DELETE_FROM_CLI = auto()
     TIMELINE_DELETE_DONE = auto()
+    TIMELINE_DELETE_FROM_CONTEXT_MENU = auto()
     TIMELINE_DELETE_FROM_MANAGE_TIMELINES = auto()
     TIMELINE_ELEMENT_COLOR_RESET = auto()
     TIMELINE_ELEMENT_COLOR_SET = auto()
@@ -275,3 +273,9 @@ def stop_listening_to_all(listener: Any) -> None:
 
     for post in _listeners_to_posts[listener].copy():
         stop_listening(listener, post)
+
+
+def reset() -> None:
+    global _posts_to_listeners, _listeners_to_posts
+    _posts_to_listeners = weakref.WeakKeyDictionary({post: {} for post in Post})
+    _listeners_to_posts.clear()

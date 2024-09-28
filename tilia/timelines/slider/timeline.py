@@ -1,9 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from tilia.requests import Get, get
 from tilia.settings import settings
-from tilia.timelines.base.timeline import Timeline
+from tilia.timelines.base.timeline import Timeline, TimelineFlag
 from tilia.timelines.timeline_kinds import TimelineKind
 
 if TYPE_CHECKING:
@@ -12,16 +11,13 @@ if TYPE_CHECKING:
 
 class SliderTimeline(Timeline):
     SERIALIZABLE_BY_VALUE = ["is_visible", "ordinal", "height"]
-
     KIND = TimelineKind.SLIDER_TIMELINE
+    FLAGS = [TimelineFlag.NOT_CLEARABLE, TimelineFlag.NOT_DELETABLE]
 
     @property
     def default_height(self):
         return settings.get("slider_timeline", "default_height")
 
-    def _validate_delete_components(self, component: TimelineComponent):
-        """Nothing to do. Must impement abstract method."""
-            
     def get_state(self) -> dict:
         result = {}
 
@@ -33,8 +29,11 @@ class SliderTimeline(Timeline):
 
         return result
 
+    def _validate_delete_components(self, component: TimelineComponent):
+        """Nothing to do."""
+
     def deserialize_components(self, components: dict[int, dict[str]]):
-        pass
+        """Nothing to do."""
 
     def clear(self, _=True):
         """Nothing to do."""
@@ -42,5 +41,8 @@ class SliderTimeline(Timeline):
     def delete(self):
         """Nothing to do."""
 
-    def crop(self):
+    def crop(self, length: float):
+        """Nothing to do"""
+
+    def scale(self, length: float):
         """Nothing to do"""

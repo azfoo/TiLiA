@@ -125,7 +125,7 @@ class SettingsManager(QObject):
         elif value == "false":
             return False
         elif sys.platform == 'linux' and isinstance(value, str) and value.isnumeric():
-            # For some reason, QSettings parses numeric values as strings in Linux.
+            # For some reason, PyQt parses numeric values as strings in Linux.
             # Is this a Qt bug?
             return int(value)
 

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import logging
 import pypdf
 
 from tilia.settings import settings
@@ -9,8 +8,6 @@ from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.timelines.base.component import TimelineComponent
 from tilia.timelines.base.timeline import Timeline, TimelineComponentManager
-
-logger = logging.getLogger(__name__)
 
 
 class PdfTimeline(Timeline):
@@ -60,7 +57,7 @@ class PdfTimeline(Timeline):
             self.is_pdf_valid = False
 
     def setup_blank_timeline(self):
-        self.create_timeline_component(
+        self.create_component(
             ComponentKind.PDF_MARKER,
             time=0,
             page_number=1

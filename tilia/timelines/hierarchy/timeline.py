@@ -23,7 +23,7 @@ class HierarchyTimeline(Timeline):
 
     def setup_blank_timeline(self):
         """Create unit of level 1 encompassing whole timeline"""
-        self.create_timeline_component(
+        self.create_component(
             kind=ComponentKind.HIERARCHY,
             start=0,
             end=get(Get.MEDIA_DURATION),
@@ -33,13 +33,18 @@ class HierarchyTimeline(Timeline):
     def _validate_delete_components(self, component: Hierarchy) -> None:
         pass
 
-    def create_children(self, components: list[Hierarchy]) -> None:
+    def create_children(self, components: list[Hierarchy]) -> bool:
+        results = []
         for component in components:
             success, reason = self.component_manager.create_child(component)
             if not success:
                 tilia.errors.display(tilia.errors.HIERARCHY_CREATE_CHILD_FAILED, reason)
 
-    def alter_levels(self, components: list[Hierarchy], amount: int) -> None:
+            results.append(success)
+
+        return any(results)
+
+    def alter_levels(self, components: list[Hierarchy], amount: int) -> bool:
         def validate_level(hierarchy, level):
             if level < 1:
                 return False, "minimum level is 1."
@@ -54,39 +59,45 @@ class HierarchyTimeline(Timeline):
             return True, ""
 
         if not amount:
-            return
+            return False
 
+        result = []
         for component in components:
             success, reason = validate_level(component, component.level + amount)
             if not success:
                 tilia.errors.display(tilia.errors.HIERARCHY_CHANGE_LEVEL_FAILED, reason)
-                return
+                continue
 
             self.component_manager.set_component_data(
                 component.id, "level", component.level + amount
             )
 
+            result.append(success)
+
+        return any(result)
+
     def group(self, components: list[Hierarchy]) -> None:
         success, reason = self.component_manager.group(components)
         if not success:
             tilia.errors.display(tilia.errors.HIERARCHY_GROUP_FAILED, reason)
+        return success
 
-    def split(self, time: float) -> None:
-        if unit_to_split := self.component_manager.get_unit_to_split(time):
-            success, reason = self.component_manager.split(unit_to_split, time)
-            if not success:
-                tilia.errors.display(tilia.errors.HIERARCHY_SPLIT_FAILED, reason)
+    def split(self, time: float) -> bool:
+        unit_to_split = self.component_manager.get_unit_to_split(time)
+        if not unit_to_split:
+            return False
+
+        success, reason = self.component_manager.split(unit_to_split, time)
+        if not success:
+            tilia.errors.display(tilia.errors.HIERARCHY_SPLIT_FAILED, reason)
+
+        return success
 
     def merge(self, units: list[Hierarchy]) -> None:
         success, reason = self.component_manager.merge(units)
         if not success:
             tilia.errors.display(tilia.errors.HIERARCHY_MERGE_FAILED, reason)
-
-    def scale(self, factor: float) -> None:
-        self.component_manager.scale(factor)
-
-    def crop(self, length: float) -> None:
-        self.component_manager.crop(length)
+        return success
 
     def do_genealogy(self):
         self.component_manager.do_genealogy()
@@ -168,10 +179,10 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             if hrc1.start < hrc2.start < hrc1.end or hrc1.start < hrc2.end < hrc1.end:
                 # hrc2 starts or ends inside hrc1
                 if hrc2.level >= hrc1.level:
-                    # if its on the same level or higher, there's a conflict
+                    # if it is on the same level or higher, there's a conflict
                     conflicts.append((hrc1, hrc2))
                 elif not hrc1.start > hrc2.start and hrc1.end < hrc2.end:
-                    # if its doesn't start AND end inside, there's a conflict
+                    # if it doesn't start AND end inside, there's a conflict
                     conflicts.append((hrc1, hrc2))
 
             # repeat swapping hr1 and hrc2
@@ -210,7 +221,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             return success, reason
 
         # create new child
-        created_unit, fail_reason = self.timeline.create_timeline_component(
+        created_unit, fail_reason = self.timeline.create_component(
             kind=ComponentKind.HIERARCHY,
             start=hierarchy.start,
             end=hierarchy.end,
@@ -335,7 +346,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
         if not success:
             return success, reason
 
-        grouping_unit, fail_reason = self.timeline.create_timeline_component(
+        grouping_unit, fail_reason = self.timeline.create_component(
             kind=ComponentKind.HIERARCHY,
             start=start_time,
             end=end_time,
@@ -431,7 +442,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
         post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit_to_split.id)
         self.delete_component(unit_to_split)
 
-        left_unit, fail_reason = self.timeline.create_timeline_component(
+        left_unit, fail_reason = self.timeline.create_component(
             kind=ComponentKind.HIERARCHY,
             start=unit_to_split.start,
             end=split_time,
@@ -441,7 +452,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
         if not left_unit:
             return False, fail_reason
 
-        right_unit, fail_reason = self.timeline.create_timeline_component(
+        right_unit, fail_reason = self.timeline.create_component(
             kind=ComponentKind.HIERARCHY,
             start=split_time,
             end=unit_to_split.end,
@@ -553,7 +564,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
             post(Post.LOOP_IGNORE_COMPONENT, self.timeline.id, unit.id)
             self.delete_component(unit)
 
-        merger_unit, fail_reason = self.timeline.create_timeline_component(
+        merger_unit, fail_reason = self.timeline.create_component(
             kind=ComponentKind.HIERARCHY,
             start=hierarchies[0].start,
             end=hierarchies[-1].end,

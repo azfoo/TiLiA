@@ -53,6 +53,7 @@ from ..pdf import PdfTimelineToolbar
 from ..selection_box import SelectionBoxQt
 from ..slider.timeline import SliderTimelineUI
 from ...actions import TiliaAction
+from ...request_handler import RequestFailure
 
 
 class TimelineUIs:
@@ -136,10 +137,6 @@ class TimelineUIs:
             (Post.TIMELINE_VIEW_LEFT_BUTTON_DRAG, self._on_timeline_ui_left_drag),
             (Post.TIMELINE_VIEW_LEFT_BUTTON_RELEASE, self.on_timeline_ui_left_released),
             (Post.TIMELINE_VIEW_RIGHT_CLICK, self._on_timeline_ui_right_click),
-            (
-                Post.TIMELINE_COLLECTION_STATE_RESTORED,
-                self.update_timeline_uis_position,
-            ),
             (
                 Post.TIMELINES_AUTO_SCROLL_ENABLE,
                 functools.partial(self.set_auto_scroll, True),
@@ -289,6 +286,8 @@ class TimelineUIs:
     def on_timeline_set_data_done(self, id: int, attr: str, _: Any):
         self.get_timeline_ui(id).update(attr)
         if attr in self.UPDATE_TRIGGERS:
+            # these are the collection updaters
+            # they're different from timeline ui updaters
             getattr(self, "update_" + attr)()
 
     def delete_timeline_ui(self, timeline_ui: TimelineUI):
@@ -873,7 +872,7 @@ class TimelineUIs:
         tilia.ui.timelines.collection.requests.post_process.post_process_request(
             request, result
         )
-        if request not in self.DO_NOT_RECORD:
+        if request not in self.DO_NOT_RECORD and not all([isinstance(r, RequestFailure) for r in result]):
             post(Post.APP_RECORD_STATE, f"timeline element request: {request.name}")
 
     def on_timeline_ui_request(self, request: Post, *args, **kwargs):
@@ -945,7 +944,13 @@ class TimelineUIs:
         def filter_if_from_manage_timelines_current(_):
             return [get(Get.WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_CURRENT)]
 
+        def filter_if_from_cli(_):
+            return [get(Get.TIMELINES_FROM_CLI)]
+
         def filter_if_from_context_menu(_):
+            return get(Get.CONTEXT_MENU_TIMELINE_UI)
+
+        def filter_if_from_context_menu_to_permute(_):
             return get(Get.CONTEXT_MENU_TIMELINE_UIS_TO_PERMUTE)
 
         selector_to_func = {
@@ -955,8 +960,10 @@ class TimelineUIs:
             TimelineSelector.PASTE: filter_for_pasting,
             TimelineSelector.FROM_MANAGE_TIMELINES_TO_PERMUTE: filter_if_from_manage_timelines_to_permute,
             TimelineSelector.FROM_MANAGE_TIMELINES_CURRENT: filter_if_from_manage_timelines_current,
+            TimelineSelector.FROM_CLI: filter_if_from_cli,
             TimelineSelector.ANY: filter_if_first_on_select_order,
-            TimelineSelector.FROM_CONTEXT_MENU_TO_PERMUTE: filter_if_from_context_menu,
+            TimelineSelector.FROM_CONTEXT_MENU: filter_if_from_context_menu,
+            TimelineSelector.FROM_CONTEXT_MENU_TO_PERMUTE: filter_if_from_context_menu_to_permute,
         }
 
         try:

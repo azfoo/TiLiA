@@ -1,6 +1,10 @@
 import functools
+import sys
+from pathlib import Path
+from typing import Literal
 
 import pytest
+from PyQt6.QtWidgets import QApplication
 
 from tests.mock import Serve
 from tilia.media.player.base import MediaTimeChangeReason
@@ -9,7 +13,6 @@ from tilia.ui import actions as tilia_actions_module
 from tilia.app import App
 from tilia.boot import setup_logic
 from tilia.requests import (
-    stop_listening_to_all,
     Post,
     stop_listening,
     post,
@@ -17,11 +20,12 @@ from tilia.requests import (
     get,
     listen,
 )
-from tilia.ui.actions import TiliaAction
-from tilia.ui.qtui import QtUI
+from tilia.ui.actions import TiliaAction, setup_actions
+from tilia.ui.qtui import QtUI, TiliaMainWindow
 from tilia.ui.cli.ui import CLI
 from tilia.ui.windows import WindowKind
-from tilia.ui.dialogs.basic import display_error
+from tilia.requests.get import reset as reset_get
+from tilia.requests.post import reset as reset_post
 
 pytest_plugins = [
     "tests.timelines.hierarchy.fixtures",
@@ -35,9 +39,7 @@ pytest_plugins = [
 
 
 class TiliaErrors:
-    def __init__(self, ui: QtUI):
-        self.ui = ui
-        stop_listening(self.ui, Post.DISPLAY_ERROR)
+    def __init__(self):
         listen(self, Post.DISPLAY_ERROR, self._on_display_error)
         self.errors = []
 
@@ -56,16 +58,14 @@ class TiliaErrors:
     def reset(self):
         self.errors = []
         stop_listening(self, Post.DISPLAY_ERROR)
-        listen(self.ui, Post.DISPLAY_ERROR, display_error)
 
 
 class TiliaState:
-    def __init__(self, tilia: App, ui: QtUI):
+    def __init__(self, tilia: App, player):
         self.app = tilia
-        self.player = tilia.player
+        self.player = player
         self.undo_manager = tilia.undo_manager
         self.file_manager = tilia.file_manager
-        self.ui = ui
 
     def reset(self):
         self.app.on_clear()
@@ -73,7 +73,6 @@ class TiliaState:
         self.current_time = 0
         self.media_path = ""
         self._reset_undo_manager()
-        self.ui.on_clear_ui()
         self._reset_file_manager()
 
     def _reset_file_manager(self):
@@ -98,7 +97,11 @@ class TiliaState:
 
     @duration.setter
     def duration(self, value):
-        self.app.set_media_duration(value)
+        self.app.set_file_media_duration(value)
+
+    def set_duration(self, value, scale_timelines: Literal['yes', 'no', 'prompt'] = 'prompt'):
+        """Use this if you want to pass scale_timelines."""
+        self.app.set_file_media_duration(value, scale_timelines)
 
     @property
     def media_path(self):
@@ -113,53 +116,78 @@ class TiliaState:
     def is_undo_manager_cleared(self):
         return self.undo_manager.is_cleared
 
-    def is_window_open(self, kind: WindowKind):
-        return self.ui.is_window_open(kind)
+    @staticmethod
+    def is_window_open(ui, kind: WindowKind):
+        return ui.is_window_open(kind)
+
+    @property
+    def metadata(self):
+        return get(Get.MEDIA_METADATA)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def qapplication():
+    q_application = QApplication(sys.argv)
+    yield q_application
+
+
+@pytest.fixture
+def cli():
+    _cli = CLI()
+    yield _cli
 
 
 @pytest.fixture(autouse=True)
-def tilia_state(tilia, qtui):
-    state = TiliaState(tilia, qtui)
+def tilia_state(tilia):
+    state = TiliaState(tilia, tilia.player)
     yield state
     state.reset()
 
 
 @pytest.fixture
-def tilia_errors(qtui):
-    errors = TiliaErrors(qtui)
+def tilia_errors():
+    errors = TiliaErrors()
     yield errors
     errors.reset()
 
 
-@pytest.fixture(scope="session")
-def qtui():
-    qtui_ = QtUI()
+@pytest.fixture()
+def resources() -> Path:
+    return Path(__file__).parent / "resources"
+
+
+@pytest.fixture(scope="module")
+def qtui(cleanup_requests, qapplication):
+    mw = TiliaMainWindow()
+    qtui_ = QtUI(qapplication, mw)
     stop_listening(qtui_, Post.DISPLAY_ERROR)
     yield qtui_
-    # stop_listening_to_all(qtui_.timeline_uis)
-    # stop_serving_all(qtui_.timeline_uis)
-    # stop_listening_to_all(qtui_)
-    # stop_serving_all(qtui_)
 
 
 # noinspection PyProtectedMember
-@pytest.fixture(scope="session")
-def tilia(qtui):
+@pytest.fixture(scope="module")
+def tilia(cleanup_requests):
+    mw = TiliaMainWindow()
+    setup_actions(mw)
     tilia_ = setup_logic(autosaver=False)
-    tilia_.player = qtui.player
-    tilia_.set_media_duration(100)
+    tilia_.set_file_media_duration(100)
     tilia_.reset_undo_manager()
     yield tilia_
 
 
 @pytest.fixture
-def tluis(qtui):
+def tluis(qtui, tls):
     _tluis = qtui.timeline_uis
     yield _tluis
     post(Post.TIMELINE_VIEW_LEFT_BUTTON_RELEASE)
-    _tluis._setup_auto_scroll()
-    _tluis._setup_drag_tracking_vars()
-    _tluis._setup_selection_box()
+
+
+@pytest.fixture(scope="module")
+def cleanup_requests():
+    yield
+
+    reset_get()
+    reset_post()
 
 
 @pytest.fixture
@@ -182,13 +210,6 @@ def tls(tilia):
     _tls.add_timeline_with_post = add_timeline_with_post
     yield _tls
     _tls.clear()  # deletes created timelines
-
-
-@pytest.fixture
-def cli():
-    _cli = CLI()
-    yield _cli
-    stop_listening_to_all(_cli)
 
 
 @pytest.fixture(params=["marker", "harmony", "beat", "hierarchy", "audiowave"])
@@ -229,6 +250,6 @@ class ActionManager:
 
 
 @pytest.fixture
-def actions(qtui):
+def actions():
     action_manager = ActionManager()
     yield action_manager
