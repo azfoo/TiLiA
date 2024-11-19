@@ -25,7 +25,7 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QDockWidget, QScrollArea
 
 from tilia.ui.windows.view_window import ViewWindow
-from tilia.requests import get, Get
+from tilia.requests import get, Get, post, Post
 import tilia.errors
 
 
@@ -419,14 +419,7 @@ class SvgWidget(QSvgWidget):
         self.remove_from_selection(self.selected_elements)
         if self.viewer.measure_box:
             self.viewer.measure_box.save_data(ET.tostring(self.root, "unicode"))
-
-    # def hideEvent(self, a0):
-    #     self.save_to_file()
-    #     return super().hideEvent(a0)
-
-    # def closeEvent(self, a0):
-    #     self.save_to_file()
-    #     return super().closeEvent(a0)
+            post(Post.APP_RECORD_STATE, "score annotation")
 
 
 class SvgWebEngineTracker(QObject):
