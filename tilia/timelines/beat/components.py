@@ -33,11 +33,11 @@ class Beat(PointLikeTimelineComponent):
         comments="",
         **_,
     ):
-        super().__init__(timeline, id)
-
         self.time = time
         self.comments = comments
         self.is_first_in_measure = False
+
+        super().__init__(timeline, id)
 
     def __str__(self):
         return f"Beat({self.time})"
@@ -51,7 +51,11 @@ class Beat(PointLikeTimelineComponent):
         beat_index = self.timeline.get_beat_index(self)
         measure_index, index_in_measure = self.timeline.get_measure_index(beat_index)
 
-        return MetricPosition(self.timeline.measure_numbers[measure_index], index_in_measure + 1, self.timeline.beats_in_measure[measure_index])
+        return MetricPosition(
+            self.timeline.measure_numbers[measure_index],
+            index_in_measure + 1,
+            self.timeline.beats_in_measure[measure_index],
+        )
 
     @property
     def measure_number(self):
