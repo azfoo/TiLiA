@@ -13,7 +13,14 @@ if TYPE_CHECKING:
 
 
 class Clef(TimelineComponent):
-    SERIALIZABLE_BY_VALUE = ["staff_index", "time", "line_number", "step", "octave", "icon"]
+    SERIALIZABLE_BY_VALUE = [
+        "staff_index",
+        "time",
+        "line_number",
+        "step",
+        "octave",
+        "icon",
+    ]
     ORDERING_ATTRS = ("time",)
 
     KIND = ComponentKind.CLEF
@@ -56,14 +63,16 @@ class Clef(TimelineComponent):
         super().__init__(timeline, id)
 
     def central_step(self):
-        return self.get_data('step') + self.get_data('line_number') * -2, self.get_data('octave')
+        return self.get_data("step") + self.get_data("line_number") * -2, self.get_data(
+            "octave"
+        )
 
     class Shorthand(Enum):
         BASS = auto()
         TREBLE = auto()
         TREBLE_8VB = auto()
         ALTO = auto()
-        
+
     def from_shorthand(self, shorthand: Clef.Shorthand):
         if shorthand == Clef.Shorthand.BASS:
             self.line_number = 1

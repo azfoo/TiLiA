@@ -444,7 +444,12 @@ class TestOpen:
             contents = json.load(f)  # read contents
 
         assert len(tls) == 2  # assert load was successful
-        assert contents['timelines'][str(prev_tl_id)]['components'][str(prev_marker_id)]['time'] == 0
+        assert (
+            contents["timelines"][str(prev_tl_id)]["components"][str(prev_marker_id)][
+                "time"
+            ]
+            == 0
+        )
 
     def test_open_without_saving_changes(self, tilia, tls, marker_tlui, tmp_path):
         previous_path = tmp_path / "previous.tla"

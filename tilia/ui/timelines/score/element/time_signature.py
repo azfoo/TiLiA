@@ -5,26 +5,35 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 
 from tilia.ui.coords import time_x_converter
-from tilia.ui.timelines.score.element.with_collision import TimelineUIElementWithCollision
+from tilia.ui.timelines.score.element.with_collision import (
+    TimelineUIElementWithCollision,
+)
 
 
 class TimeSignatureUI(TimelineUIElementWithCollision):
     MARGIN_X = 2
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self.MARGIN_X,*args, **kwargs)
+        super().__init__(self.MARGIN_X, *args, **kwargs)
         self._setup_body()
 
     @staticmethod
     def get_icon_path(number: int | str) -> Path:
-        return Path('ui', 'img', f'time-signature-{number}.svg')
+        return Path("ui", "img", f"time-signature-{number}.svg")
 
     @property
     def x(self):
-        return time_x_converter.get_x_by_time(self.get_data('time'))
+        return time_x_converter.get_x_by_time(self.get_data("time"))
 
     def _setup_body(self):
-        self.body = TimeSignatureBody(self.x, self.timeline_ui.get_y_for_symbols_above_staff(self.get_data('staff_index')), self.get_data('numerator'), self.get_data('denominator'))
+        self.body = TimeSignatureBody(
+            self.x,
+            self.timeline_ui.get_y_for_symbols_above_staff(
+                self.get_data("staff_index")
+            ),
+            self.get_data("numerator"),
+            self.get_data("denominator"),
+        )
         self.body.moveBy(self.x_offset, 0)
         self.scene.addItem(self.body)
 
@@ -32,7 +41,14 @@ class TimeSignatureUI(TimelineUIElementWithCollision):
         return [self.body]
 
     def update_position(self):
-        self.body.set_position(self.x + self.x_offset + (self.margin_x if self.x_offset is not None else 0), self.timeline_ui.get_y_for_symbols_above_staff(self.get_data('staff_index')))
+        self.body.set_position(
+            self.x
+            + self.x_offset
+            + (self.margin_x if self.x_offset is not None else 0),
+            self.timeline_ui.get_y_for_symbols_above_staff(
+                self.get_data("staff_index")
+            ),
+        )
 
     def selection_triggers(self):
         return []
@@ -53,7 +69,12 @@ class TimeSignatureBody(QGraphicsItem):
         self.numerator_items = []
         for i, digit in enumerate(str(numerator)):
             path = str(TimeSignatureUI.get_icon_path(digit).resolve())
-            item = QGraphicsPixmapItem(QPixmap(path).scaledToHeight(self.PIXMAP_HEIGHT, mode=Qt.TransformationMode.SmoothTransformation), self)
+            item = QGraphicsPixmapItem(
+                QPixmap(path).scaledToHeight(
+                    self.PIXMAP_HEIGHT, mode=Qt.TransformationMode.SmoothTransformation
+                ),
+                self,
+            )
             item.setPos(i * item.pixmap().width(), 0)
             self.numerator_items.append(item)
 
@@ -61,7 +82,12 @@ class TimeSignatureBody(QGraphicsItem):
         self.denominator_items = []
         for i, digit in enumerate(str(denominator)):
             path = str(TimeSignatureUI.get_icon_path(digit).resolve())
-            item = QGraphicsPixmapItem(QPixmap(path).scaledToHeight(self.PIXMAP_HEIGHT, mode=Qt.TransformationMode.SmoothTransformation), self)
+            item = QGraphicsPixmapItem(
+                QPixmap(path).scaledToHeight(
+                    self.PIXMAP_HEIGHT, mode=Qt.TransformationMode.SmoothTransformation
+                ),
+                self,
+            )
             item.setPos(i * item.pixmap().width(), item.pixmap().height())
             self.denominator_items.append(item)
 
@@ -90,4 +116,5 @@ class TimeSignatureBody(QGraphicsItem):
             bounding_rect = bounding_rect.united(item.boundingRect())
         return bounding_rect
 
-    def paint(self, painter, option, widget): ...
+    def paint(self, painter, option, widget):
+        ...

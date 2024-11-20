@@ -15,7 +15,13 @@ class NoteBody(CursorMixIn, QGraphicsRectItem):
     Y_OFFSET = 1
 
     def __init__(
-            self, start_x: float, end_x: float, top_y: float, note_height: float, color: str, tie_type: Note.TieType
+        self,
+        start_x: float,
+        end_x: float,
+        top_y: float,
+        note_height: float,
+        color: str,
+        tie_type: Note.TieType,
     ):
         super().__init__(cursor_shape=Qt.CursorShape.PointingHandCursor)
         self.tie_type = tie_type
@@ -38,7 +44,9 @@ class NoteBody(CursorMixIn, QGraphicsRectItem):
         pen.setWidth(2)
         self.setPen(pen)
 
-    def set_position(self, start_x: float, end_x: float, top_y: float, note_height: float):
+    def set_position(
+        self, start_x: float, end_x: float, top_y: float, note_height: float
+    ):
         self.setRect(self.get_rect(start_x, end_x, top_y, note_height))
 
     def on_select(self):
@@ -55,12 +63,14 @@ class NoteBody(CursorMixIn, QGraphicsRectItem):
         self.set_no_pen()
         self.setZValue(1)
 
-    def get_rect(self, start_x: float, end_x: float, top_y: float, note_height: float) -> QRectF:
+    def get_rect(
+        self, start_x: float, end_x: float, top_y: float, note_height: float
+    ) -> QRectF:
         x0 = start_x + (-1 if self.tie_type == Note.TieType.STOP else self.X_OFFSET)
         x1 = end_x - (-1 if self.tie_type == Note.TieType.START else self.X_OFFSET)
         y0 = top_y + self.Y_OFFSET / 2
         y1 = top_y + note_height - self.Y_OFFSET / 2
         return QRectF(
-                QPointF(x0, y0),
-                QPointF(x1, y1),
-            )
+            QPointF(x0, y0),
+            QPointF(x1, y1),
+        )

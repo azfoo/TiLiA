@@ -515,7 +515,6 @@ class TestUndoRedo:
         post(Post.EDIT_REDO)
         assert len(tlui) == 0
 
-
     def test_paste(self, tlui, tluis, user_actions):
         tlui.create_hierarchy(0, 1, 1, label="paste test")
         tlui.create_hierarchy(0, 1, 2)

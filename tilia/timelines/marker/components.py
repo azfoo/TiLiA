@@ -46,6 +46,7 @@ class Marker(PointLikeTimelineComponent):
         comments="",
         **_,
     ):
+
         self.time = time
         self.label = label
         self.color = color
