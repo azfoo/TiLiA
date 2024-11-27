@@ -17,7 +17,6 @@ from tilia.settings import settings
 from tilia.ui.color import get_tinted_color
 from tilia.ui.consts import TINT_FACTOR_ON_SELECTION
 from tilia.ui.coords import time_x_converter
-from tilia.ui.smooth_scroll import setup_smooth, smooth
 from tilia.ui.timelines.base.timeline import TimelineUI
 from tilia.ui.timelines.collection.requests.enums import ElementSelector
 from tilia.ui.timelines.cursors import CursorMixIn
@@ -389,7 +388,6 @@ class ScoreTimelineUI(TimelineUI):
         self.dragged = False
         self.measure_tracker = MeasureTracker()
         self.scene.addItem(self.measure_tracker)
-        setup_smooth(self)
 
     def on_left_click(self, item, modifier, double, x, y):
         if item != self.measure_tracker:
@@ -421,15 +419,6 @@ class ScoreTimelineUI(TimelineUI):
     def update_measure_tracker_position(
         self, start: float = None, end: float = None
     ) -> None:
-        def __get_tracker_position():
-            return [self.tracker_start, self.tracker_end]
-
-        @smooth(self, __get_tracker_position)
-        def __set_tracker_position(start, end):
-            self.tracker_start = start
-            self.tracker_end = end
-            __update_position()
-
         def __update_position():
             self.measure_tracker.update_position(
                 time_x_converter.get_x_by_time(self.tracker_start),
@@ -437,10 +426,11 @@ class ScoreTimelineUI(TimelineUI):
                 self.view.height(),
             )
 
-        if not (start and end):
-            __update_position()
-        else:
-            __set_tracker_position(start, end)
+        if start and end:
+            self.tracker_start = start
+            self.tracker_end = end
+
+        __update_position()
 
 
 class MeasureTracker(CursorMixIn, QGraphicsRectItem):

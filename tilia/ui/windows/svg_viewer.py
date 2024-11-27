@@ -23,7 +23,6 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWidgets import QDockWidget, QScrollArea
 
 from tilia.ui.windows.view_window import ViewWindow
-from tilia.ui.smooth_scroll import smooth, setup_smooth
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.requests import get, Get, post, Post
 import tilia.errors
@@ -636,7 +635,6 @@ class SvgViewer(ViewWindow, QDockWidget):
             {"number": 1, "fraction": 0},
         ]
         self.relative_start_x = {}
-        setup_smooth(self)
 
     def engine_loaded(self):
         self.is_loaded = True
@@ -708,13 +706,6 @@ class SvgViewer(ViewWindow, QDockWidget):
         # relative_start_x[a] - relative_start_x[a - 1] = length of measure a
         # relative_start_x[a - 1] = start position of measure a
 
-        def __get_h_bar_position():
-            return [self.scroll_area.horizontalScrollBar().value()]
-
-        @smooth(self, __get_h_bar_position)
-        def __set_h_bar_position(position):
-            self.scroll_area.horizontalScrollBar().setValue(position)
-
         beat_tl = get(
             Get.TIMELINE_COLLECTION
         ).get_beat_timeline_for_measure_calculation()
@@ -727,14 +718,14 @@ class SvgViewer(ViewWindow, QDockWidget):
         time_index = bisect(times, time)
 
         if time_index == 0:
-            return __set_h_bar_position(0)
+            return self.scroll_area.horizontalScrollBar().setValue(0)
 
         if (
             measure := beats[time_index - 1].metric_position.measure
         ) not in self.relative_start_x.keys():
             if measure < list(self.relative_start_x.keys())[0]:
-                return __set_h_bar_position(0)
-            return __set_h_bar_position(
+                return self.scroll_area.horizontalScrollBar().setValue(0)
+            return self.scroll_area.horizontalScrollBar().setValue(
                 self.scroll_area.horizontalScrollBar().maximum()
             )
 
@@ -757,6 +748,6 @@ class SvgViewer(ViewWindow, QDockWidget):
             )
             beat_x += dx
 
-        __set_h_bar_position(
+        self.scroll_area.horizontalScrollBar().setValue(
             round(beat_x * self.scroll_area.horizontalScrollBar().maximum())
         )

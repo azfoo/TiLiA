@@ -11,6 +11,12 @@ def setup_smooth(self):
     self.step_queue = []
 
 
+def reset_smooth(self):
+    if hasattr(self, "smoothing_timer"):
+        self.smoothing_timer.stop()
+        self.step_queue = []
+
+
 def smooth(self: Any, args_getter: Callable[[], tuple[Any]]):
     """
     Function Wrapper
@@ -23,8 +29,8 @@ def smooth(self: Any, args_getter: Callable[[], tuple[Any]]):
 
     `args_getter` and `args_setter` must refer to the same variables in `args_setpoint` in the same order.
     """
-    fps = 500
-    smoothing_duration = 150
+    fps = 150
+    smoothing_duration = 100
     steps_total = fps * smoothing_duration / 1000
     is_ints = [isinstance(o, int) for o in args_getter()]
 

@@ -21,6 +21,7 @@ from tilia.requests import (
     get,
     stop_serving_all,
 )
+from tilia.ui.smooth_scroll import setup_smooth, smooth, reset_smooth
 
 
 class MediaTimeChangeReason(Enum):
@@ -50,6 +51,7 @@ class Player(ABC):
         self.loop_end = 0
         self.qtimer = QTimer()
         self.qtimer.timeout.connect(self._play_loop)
+        setup_smooth(self)
 
     def __str__(self):
         return get_tilia_class_string(self)
@@ -152,6 +154,7 @@ class Player(ABC):
 
     def stop(self):
         """Stops music playback and resets slider position"""
+        reset_smooth(self)
         post(Post.PLAYER_STOPPING)
         if not self.is_playing and self.current_time == 0.0:
             return
@@ -248,16 +251,27 @@ class Player(ABC):
         self.qtimer.stop()
 
     def _play_loop(self) -> None:
-        self.current_time = self._engine_get_current_time() - self.playback_start
-        if self.check_not_loop_back(self.current_time):
+        time = self._engine_get_current_time() - self.playback_start
+        if self.check_not_loop_back(time):
+            if time >= self.playback_length:
+                self.stop()
+            else:
+                self.set_current_time(time)
+
+    def set_current_time(self, time):
+        def __get_time():
+            return [self.current_time]
+
+        @smooth(self, __get_time)
+        def __set_time(time):
+            self.current_time = time
             post(
                 Post.PLAYER_CURRENT_TIME_CHANGED,
                 self.current_time,
                 MediaTimeChangeReason.PLAYBACK,
             )
 
-            if self.current_time >= self.playback_length:
-                self.stop()
+        __set_time(time)
 
     def check_seek_outside_loop(self, time):
         if self.is_looping and any(

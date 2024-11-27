@@ -34,7 +34,6 @@ from tilia.ui.coords import time_x_converter
 from tilia.ui.dialogs.choose import ChooseDialog
 from tilia.ui.modifier_enum import ModifierEnum
 from tilia.ui.player import PlayerToolbarElement
-from tilia.ui.smooth_scroll import setup_smooth, smooth
 from tilia.ui.timelines.base.element_manager import ElementManager
 from tilia.ui.timelines.base.timeline import TimelineUI
 from tilia.ui.timelines.scene import TimelineScene
@@ -82,7 +81,6 @@ class TimelineUIs:
         self.loop_time = (self.selected_time, self.selected_time)
         self.loop_elements = set()
         self.loop_delete_ignore = set()
-        setup_smooth(self)
 
     def __str__(self) -> str:
         return self.__class__.__name__ + "-" + str(id(self))
@@ -1019,19 +1017,12 @@ class TimelineUIs:
         )
 
     def on_media_time_change(self, time: float, reason: MediaTimeChangeReason) -> None:
-        def __get_time():
-            return [self.selected_time]
-
-        @smooth(self, __get_time)
-        def __set_time(time):
-            self.set_playback_lines_position(time)
-            self.selected_time = time
-
         if self._should_auto_scroll(reason):
             self.center_on_time(time)
 
         if not self.is_dragging:
-            __set_time(time)
+            self.set_playback_lines_position(time)
+            self.selected_time = time
 
     def set_is_dragging(self, is_dragging: bool) -> None:
         # noinspection PyAttributeOutsideInit

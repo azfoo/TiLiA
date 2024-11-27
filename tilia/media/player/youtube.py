@@ -141,12 +141,7 @@ class YouTubePlayer(Player):
     def set_current_time(self, time):
         self.check_seek_outside_loop(time)
         if self.check_not_loop_back(time):
-            self.current_time = time
-            post(
-                Post.PLAYER_CURRENT_TIME_CHANGED,
-                time,
-                MediaTimeChangeReason.PLAYBACK,
-            )
+            super().set_current_time(time)
 
     def retry_get_duration(self):
         timer = QTimer()
