@@ -60,7 +60,6 @@ def notes_from_musicXML(
     Returns an array of descriptions of any CreateComponentErrors raised during note creation.
     """
     errors = []
-    parts = {}
     metric_division = MetricDivision()
 
     sign_to_octave = {"C": 4, "F": 3, "G": 4}
