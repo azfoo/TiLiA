@@ -52,8 +52,8 @@ def notes_from_musicXML(
     score_tl: ScoreTimeline,
     beat_tl: BeatTimeline,
     path: Path,
-    file_kwargs: Optional[dict[str | Any]] = None,
-    reader_kwargs: Optional[dict[str | Any]] = None,
+    file_kwargs: Optional[dict[str, Any]] = None,
+    reader_kwargs: Optional[dict[str, Any]] = None,
 ) -> list[str]:
     """
     Create notes in a timeline from data extracted from a .musicXML(uncompressed) or .mxl(compressed) file.
