@@ -7,6 +7,7 @@ import dotenv
 from PyQt6.QtWidgets import QApplication
 
 from tilia import dirs
+from tilia.logging import logger
 from tilia.app import App
 from tilia.clipboard import Clipboard
 from tilia.file.file_manager import FileManager
@@ -21,19 +22,13 @@ ui = None
 
 
 def handle_expection(type, value, tb):
-    if app:
-        # The app state should be dumped to a file
-        # for debugging purposes.
-        pass
     exc_message = "".join(traceback.format_exception(type, value, tb))
+    logger.critical(exc_message)
+    if app:
+        logger.debug(app.get_app_state())
     if ui:
-        # Additonally. the exception info should
-        # also be dumped to a file.
         ui.show_crash_dialog(exc_message)
-        print(exc_message)
         ui.exit(1)
-    else:
-        print(exc_message)
 
 
 def boot():
@@ -41,11 +36,12 @@ def boot():
     dotenv.load_dotenv()
     args = setup_parser()
     setup_dirs()
+    logger.setup_file_log()
     q_application = QApplication(sys.argv)
     global app, ui
     app = setup_logic()
     ui = setup_ui(q_application, args.user_interface)
-
+    logger.debug("INITIALISED")
     # has to be done after ui has been created, so timelines will get displayed
     if file := get_initial_file(args.file):
         app.file_manager.open(file)
