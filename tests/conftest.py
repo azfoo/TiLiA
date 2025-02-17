@@ -9,8 +9,9 @@ from PyQt6.QtCore import QSettings
 from PyQt6.QtWidgets import QApplication
 from colorama import Fore, Style
 
-import tilia.settings as settings_module
 import tilia.constants as constants_module
+import tilia.logging as logging_module
+import tilia.settings as settings_module
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.ui import actions as tilia_actions_module
 from tilia.app import App
@@ -192,6 +193,14 @@ def use_test_settings(qapplication):
     )
     settings_module.settings._check_all_default_settings_present()
     settings_module.settings.set("general", "prioritise_performance", True)
+    yield
+
+
+@pytest.fixture(autouse=True)
+def use_test_logger(qapplication):
+    logging_module.sentry_sdk.integrations.logging.ignore_logger(
+        logging_module.logger.name
+    )
     yield
 
 
