@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Tuple, Literal
 
-from tilia.parsers import csv, score
+from tilia.parsers import csv, musicxml
 from tilia.exceptions import WrongTimelineForImport
 from tilia.requests import get, Get, post, Post
 from tilia.timelines.base.timeline import Timeline
@@ -193,7 +193,7 @@ def import_timeline(namespace):
 
     elif tl_kind == "score":
         tl: ScoreTimeline
-        success, errors = score.musicxml.notes_from_musicXML(tl, ref_tl, file)
+        success, errors = musicxml.score.notes_from_musicXML(tl, ref_tl, file)
     else:
         raise ValueError(f"Unknown timeline kind: {tl_kind}")
 
