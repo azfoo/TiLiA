@@ -1,6 +1,4 @@
 import itertools
-from pathlib import Path
-from zipfile import ZipFile
 from typing import Any
 from dataclasses import dataclass
 from bisect import bisect
@@ -8,7 +6,8 @@ from bisect import bisect
 from lxml import etree
 
 from tilia.requests import Get, get, Post, post
-from tilia.parsers.score.musicxml_to_svg import musicxml_to_svg
+from tilia.parsers.musicxml.musicxml_to_svg import musicxml_to_svg
+from tilia.parsers.musicxml.base import TiliaMXLReader
 from tilia.timelines.beat.timeline import BeatTimeline
 from tilia.timelines.score.components import Note
 from tilia.timelines.score.timeline import ScoreTimeline
@@ -20,43 +19,6 @@ from tilia.ui.strings import (
     INSERT_MEASURE_ZERO_FAILED,
 )
 from tilia.ui.timelines.harmony.constants import NOTE_NAME_TO_INT
-
-
-class TiliaMXLReader:
-    def __init__(
-        self,
-        path: str,
-        file_kwargs: dict[str, Any] | None = None,
-        reader_kwargs: dict[str, Any] | None = None,
-    ):
-        self.path = path
-        self.file_kwargs = file_kwargs or {}
-        self.reader_kwargs = reader_kwargs or {}
-
-    def _get_mxl_data(self):
-        with (
-            ZipFile(self.path) as zipfile,
-            zipfile.open("META-INF/container.xml", **self.file_kwargs) as meta,
-        ):
-            full_path = (
-                etree.parse(meta, **self.reader_kwargs)
-                .findall(".//rootfile")[0]
-                .get("full-path")
-            )
-            data = zipfile.open(full_path, **self.file_kwargs)
-        return data
-
-    def __enter__(self):
-
-        if ".mxl" in self.path:
-            self.file = self._get_mxl_data()
-        else:
-            self.file = open(self.path, **self.file_kwargs)
-
-        return self.file
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self.file.close()
 
 
 def notes_from_musicXML(
@@ -456,14 +418,7 @@ def notes_from_musicXML(
 
         for id in part_id_to_staves.keys():
             staff_numbers = sorted(
-                list(
-                    set(
-                        [
-                            s.text
-                            for s in tree.findall(f".//part[@id='{id}']//note/staff")
-                        ]
-                    )
-                )
+                set([s.text for s in tree.findall(f".//part[@id='{id}']//note/staff")])
             )
             if not staff_numbers:
                 staff_numbers = ["1"]
@@ -480,17 +435,11 @@ def notes_from_musicXML(
 
         return part_id_to_staves
 
-    reader_kwargs = reader_kwargs or {}
-
     svg_converter = musicxml_to_svg(score_tl.id)
-    with TiliaMXLReader(path, file_kwargs, reader_kwargs) as file:
-        parser = etree.XMLParser(remove_blank_text=True)
-        tree = etree.parse(file, parser=parser, **reader_kwargs).getroot()
-
-    if tree.tag == "score-timewise":
-        tree = _convert_to_partwise(tree)
-    elif tree.tag != "score-partwise":
-        return False, [f"File `{path}` is not valid musicxml."]
+    with TiliaMXLReader(path, file_kwargs, reader_kwargs) as reader:
+        if not reader.is_read:
+            return False, [f"File `{path}` is not valid musicxml."]
+        tree = reader.tree
 
     if (
         tree.find('.//measure[@number="0"]') is not None
@@ -544,17 +493,8 @@ class MetricDivision:
         }
 
 
-def _convert_to_partwise(element: etree.Element) -> etree.Element:
-    xsl_path = Path("parsers", "score", "timewise_to_partwise.xsl")
-    with open(str(xsl_path.resolve()), "r", encoding="utf-8") as xsl:
-        xsl_tree = etree.parse(xsl)
-
-    transform = etree.XSLT(xsl_tree)
-    return transform(element)
-
-
 def _insert_measure_zero(
-    tree: etree.Element, beat_tl: BeatTimeline
+    tree: etree._Element, beat_tl: BeatTimeline
 ) -> tuple[bool, str]:
     measure_zero = tree.find('.//measure[@number="0"]')
     measure_zero_divisions = sum(
@@ -565,7 +505,3 @@ def _insert_measure_zero(
         [int(d.text) for d in measure_one.findall("note//duration")]
     )
     return beat_tl.add_measure_zero(measure_zero_divisions / measure_one_divisions)
-
-
-def _pretty_str_from_xml_element(element: etree.Element):
-    return etree.tostring(element, pretty_print=True).decode("utf-8")

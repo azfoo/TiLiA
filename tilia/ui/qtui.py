@@ -28,7 +28,7 @@ import tilia.parsers.csv.harmony
 import tilia.parsers.csv.hierarchy
 import tilia.parsers.csv.beat
 import tilia.parsers.csv.marker
-import tilia.parsers.score.musicxml
+import tilia.parsers.musicxml.score
 from . import actions
 from .actions import TiliaAction
 from .dialog_manager import DialogManager
