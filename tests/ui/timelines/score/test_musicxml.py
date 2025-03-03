@@ -1,6 +1,6 @@
 from tests.mock import Serve
 from tests.constants import EXAMPLE_MUSICXML_PATH
-from tilia.parsers.score.musicxml import notes_from_musicXML
+from tilia.parsers.musicxml.score import notes_from_musicXML
 from tilia.requests import Get
 from tilia.timelines.component_kinds import ComponentKind
 

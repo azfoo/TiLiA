@@ -10,7 +10,7 @@ from .csv.harmony import import_by_measure as harmony_by_measure
 from .csv.harmony import import_by_time as harmony_by_time
 from .csv.pdf import import_by_measure as pdf_by_measure
 from .csv.pdf import import_by_time as pdf_by_time
-from .score.musicxml import notes_from_musicXML as score_from_musicxml
+from .musicxml.score import notes_from_musicXML as score_from_musicxml
 
 
 def get_import_function(tl_kind: TlKind, by=Literal["time", "measure"]):

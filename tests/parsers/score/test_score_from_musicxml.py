@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from PyQt6.QtWidgets import QMessageBox
 
-from tilia.parsers.score.musicxml import notes_from_musicXML
+from tilia.parsers.musicxml.score import notes_from_musicXML
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.score.components import Clef
 from tilia.timelines.score.timeline import ScoreTimeline
