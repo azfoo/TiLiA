@@ -1,12 +1,12 @@
 name: Checks
 
 on:
-  push:
-    branches:
-      - main
-      - dev
+  # push:
+  #   branches:
+  #     - main
+  #     - dev
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 
 jobs:
   build:
