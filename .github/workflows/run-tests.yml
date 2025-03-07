@@ -67,6 +67,7 @@ jobs:
     - name: Lint with flake8
       run: |
         flake8
+        echo hello
       continue-on-error: true
 
     - name: Generate Coverage Report
