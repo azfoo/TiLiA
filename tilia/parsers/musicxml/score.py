@@ -437,8 +437,6 @@ def notes_from_musicXML(
 
     svg_converter = musicxml_to_svg(score_tl.id)
     with TiliaMXLReader(path, file_kwargs, reader_kwargs) as reader:
-        if not reader.is_read:
-            return False, [f"File `{path}` is not valid musicxml."]
         tree = reader.tree
 
     if (
