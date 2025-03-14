@@ -58,8 +58,8 @@ class TiliaMXLReader:
 
 
 def _convert_to_partwise(element: etree._Element) -> etree._Element:
-    xsl_path = Path("parsers", "musicxml", "timewise_to_partwise.xsl")
-    with open(str(xsl_path.resolve()), "r", encoding="utf-8") as xsl:
+    xsl_path = Path(__file__).resolve().parent / "timewise_to_partwise.xsl"
+    with open(str(xsl_path), "r", encoding="utf-8") as xsl:
         xsl_tree = etree.parse(xsl)
 
     transform = etree.XSLT(xsl_tree)
