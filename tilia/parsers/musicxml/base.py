@@ -47,6 +47,10 @@ class TiliaMXLReader:
         elif self.tree.tag != "score-partwise":
             self.is_read = False
 
+        if self.is_read:
+            self.is_read = _validate_musicxml(self.tree)
+        if not self.is_read:
+            raise SyntaxError
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -60,6 +64,14 @@ def _convert_to_partwise(element: etree._Element) -> etree._Element:
 
     transform = etree.XSLT(xsl_tree)
     return transform(element)
+
+
+def _validate_musicxml(element: etree._Element) -> bool:
+    xsd_path = Path(__file__).resolve().parent / "musicxml.xsd"
+    with open(str(xsd_path), "r", encoding="utf-8") as xsd:
+        xsd_schema = etree.XMLSchema(etree.parse(xsd))
+
+    return xsd_schema.validate(element)
 
 
 def _pretty_str_from_xml_element(element: etree._Element):
