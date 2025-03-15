@@ -17,10 +17,10 @@ MEDIA_METADATA_SET_DATA_FAILED = Error(
     "Set media metadata",
     "Cannot set media metadata to {}. Media length must be a positive number.",
 )
-CSV_IMPORT_FAILED = Error("CSV import failed", "Import failed:\n{}")
-CSV_IMPORT_SUCCESS_ERRORS = Error(
-    "CSV import",
-    "Import was successful, but some components may not have been imported.\nThe following errors occured:\n{}",
+TIMELINE_IMPORT_FAILED = Error("Timeline import failed", "Import failed:\n{}")
+TIMELINE_IMPORT_SUCCESS_ERRORS = Error(
+    "Timeline import",
+    "Import was successful, but some components may not have been imported.\nThe following errors occurred:\n{}",
 )
 CREATE_TIMELINE_WITHOUT_MEDIA = Error(
     "Create timeline error", "Cannot create timeline with no media loaded."
