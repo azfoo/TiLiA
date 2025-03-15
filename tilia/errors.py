@@ -75,7 +75,7 @@ HIERARCHY_SPLIT_FAILED = Error("Split hierarchy", "Split failed: {}")
 COMPONENTS_COPY_ERROR = Error("Copy components error", "{}")
 COMPONENTS_LOAD_ERROR = Error(
     "Load components error",
-    "Some components were not loaded. The following errors occured:\n{}",
+    "Some components were not loaded. The following errors occurred:\n{}",
 )
 COMPONENTS_PASTE_ERROR = Error("Paste components error", "{}")
 FILE_NOT_FOUND = Error(
@@ -83,7 +83,7 @@ FILE_NOT_FOUND = Error(
 )
 LOOP_DISJUNCT = Error("Loop Selection Error", "Selected Hierarchies are disjunct.")
 PLAYER_TOOLBAR_ERROR = Error("Updating Player Toolbar", "{}")
-YOUTUBE_PLAYER_ERROR = Error("Youtube Player Error", "{}")
+YOUTUBE_PLAYER_ERROR = Error("YouTube Player Error", "{}")
 METADATA_FIELD_NOT_FOUND = Error("Metadata field not found", "Field '{}' not found.")
 
 CLI_METADATA_CANT_SET_MEDIA_LENGTH = Error(
