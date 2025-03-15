@@ -21,10 +21,10 @@ METADATA_FIELD_INVALID = Error(
     "Invalid metadata field",
     "The following fields contain non-alphanumeric characters and will not be added:\n{}",
 )
-CSV_IMPORT_FAILED = Error("CSV import failed", "Import failed:\n{}")
-CSV_IMPORT_SUCCESS_ERRORS = Error(
-    "CSV import",
-    "Import was successful, but some components may not have been imported.\nThe following errors occured:\n{}",
+TIMELINE_IMPORT_FAILED = Error("Timeline import failed", "Import failed:\n{}")
+TIMELINE_IMPORT_SUCCESS_ERRORS = Error(
+    "Timeline import",
+    "Import was successful, but some components may not have been imported.\nThe following errors occurred:\n{}",
 )
 CREATE_TIMELINE_WITHOUT_MEDIA = Error(
     "Create timeline error", "Cannot create timeline with no media loaded."

@@ -29,7 +29,7 @@ def on_import_from_csv(
         return "cancelled", ["User cancelled when choosing timeline."]
 
     timeline = get(Get.TIMELINE, timeline_ui.id)
-    if timeline.components and not _confirm_timeline_overwrite_on_import_from_csv():
+    if timeline.components and not _confirm_timeline_overwrite_on_timeline_import():
         return "cancelled", ["User rejected components overwrite."]
 
     if tlkind == TlKind.SCORE_TIMELINE:
@@ -100,17 +100,17 @@ def _validate_timeline_kind_on_import_from_csv(
 ):
     if not timeline_uis.get_timeline_uis_by_attr("TIMELINE_KIND", tlkind):
         tilia.errors.display(
-            tilia.errors.CSV_IMPORT_FAILED,
+            tilia.errors.TIMELINE_IMPORT_FAILED,
             f"No timelines of type '{tlkind}' found.",
         )
         return False
     return True
 
 
-def _confirm_timeline_overwrite_on_import_from_csv():
+def _confirm_timeline_overwrite_on_timeline_import():
     return get(
         Get.FROM_USER_YES_OR_NO,
-        "Import from CSV",
+        "Timeline Import",
         "Selected timeline is not empty. Existing components will be deleted when importing. Are you sure you want to continue?",
     )
 
@@ -121,7 +121,7 @@ def _get_beat_timeline_ui_for_import_from_csv(timeline_uis: TimelineUIs):
     )
     if not beat_tls:
         tilia.errors.display(
-            tilia.errors.CSV_IMPORT_FAILED,
+            tilia.errors.TIMELINE_IMPORT_FAILED,
             "No beat timelines found. Must have a beat timeline if importing by measure.",
         )
         return
