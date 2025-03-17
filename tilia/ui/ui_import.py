@@ -133,11 +133,3 @@ def _get_beat_timeline_ui_for_import_from_csv(timeline_uis: TimelineUIs):
             "Choose timeline with measures to be used when importing",
             TlKind.BEAT_TIMELINE,
         )
-
-
-def _display_import_from_csv_errors(success: bool, errors: list[str]):
-    errors_str = "\n".join(errors)
-    if success:
-        tilia.errors.display(tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, errors_str)
-    else:
-        tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, errors_str)
