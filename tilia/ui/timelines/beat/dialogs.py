@@ -1,5 +1,9 @@
-from tilia.ui.windows.beat_pattern import AskBeatPattern
+from typing import Optional
+
 import tilia.errors
+from tilia.timelines.beat.timeline import BeatTimeline
+from tilia.ui.windows.beat_pattern import AskBeatPattern
+from tilia.ui.windows.fill_beat_timeline import FillBeatTimeline
 
 
 def ask_for_beat_pattern():
@@ -18,3 +22,9 @@ def ask_for_beat_pattern():
         return ask_for_beat_pattern()
     else:
         return True, list(map(int, result))
+
+
+def ask_beat_timeline_fill_method() -> (
+    tuple[bool, Optional[tuple[BeatTimeline, BeatTimeline.FillMethod, float]]]
+):
+    return FillBeatTimeline.select()
