@@ -220,11 +220,10 @@ class QtUI:
 
     @staticmethod
     def _setup_fonts():
-        fonts_dir = Path(__file__).parent / "fonts"
-        fonts = ["MusAnalysis.otf"]
-        for font in fonts:
-            font_path = str(Path(fonts_dir, font).resolve())
-            QFontDatabase.addApplicationFont(font_path)
+        fonts_dir = Path(__file__).resolve().parent / "fonts"
+        for font_path in fonts_dir.iterdir():
+            if font_path.is_file():
+                QFontDatabase.addApplicationFont(font_path.__str__())
 
     def _setup_dialog_manager(self):
         self.dialog_manager = DialogManager()
