@@ -1,4 +1,6 @@
+from typing import Optional
 from tilia.ui.windows.beat_pattern import AskBeatPattern
+from tilia.ui.windows.beat_import import GetScorePart
 from tilia.ui.windows.fill_beat_timeline import FillBeatTimeline, BeatTimeline
 import tilia.errors
 
@@ -25,3 +27,9 @@ def ask_beat_timeline_fill_method() -> (
     tuple[bool, None | tuple[BeatTimeline, BeatTimeline.FillMethod, float]]
 ):
     return FillBeatTimeline.select()
+
+
+def ask_beat_timeline_musicxml_part(
+    part_data: dict[str, tuple[str, list[str]]]
+) -> tuple[bool, Optional[tuple[str, str]]]:
+    return GetScorePart.select(part_data)
