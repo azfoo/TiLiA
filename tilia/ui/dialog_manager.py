@@ -27,6 +27,7 @@ from tilia.ui.dialogs.mode_params import (
 from tilia.ui.timelines.beat.dialogs import (
     ask_for_beat_pattern,
     ask_beat_timeline_fill_method,
+    ask_beat_timeline_musicxml_part,
 )
 
 
@@ -53,6 +54,10 @@ class DialogManager:
             (Get.FROM_USER_RETRY_PDF_PATH, ask_retry_pdf_file),
             (Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA, ask_add_timeline_without_media),
             (Get.FROM_USER_BEAT_TIMELINE_FILL_METHOD, ask_beat_timeline_fill_method),
+            (
+                Get.FROM_USER_BEAT_TIMELINE_MUSICXML_PART,
+                ask_beat_timeline_musicxml_part,
+            ),
         }
 
         for request, callback in SERVES:
