@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from functools import partial
 from pathlib import Path
 
 from typing import Optional
@@ -48,7 +47,7 @@ from .menus import (
 )
 from .options_toolbar import OptionsToolbar
 from .player import PlayerToolbar
-from .ui_import import on_import_from_csv
+from .ui_import import on_import_from_csv, on_import_from_musicxml
 from .windows.manage_timelines import ManageTimelines
 from .windows.metadata import MediaMetadataWindow
 from .windows.about import About
@@ -187,10 +186,7 @@ class QtUI:
             (Post.TIMELINE_KIND_INSTANCED, self.on_timeline_kind_change),
             (Post.TIMELINE_KIND_NOT_INSTANCED, self.on_timeline_kind_change),
             (Post.IMPORT_CSV, self.on_import_from_csv),
-            (
-                Post.IMPORT_MUSICXML,
-                partial(self.on_import_from_csv, TlKind.SCORE_TIMELINE),
-            ),
+            (Post.IMPORT_MUSICXML, self.on_import_from_musicxml),
             (Post.DISPLAY_ERROR, display_error),
             (Post.UI_EXIT, self.exit),
         }
@@ -407,9 +403,16 @@ class QtUI:
         QDesktopServices.openUrl(QUrl(f"{constants.WEBSITE_URL}/help"))
 
     def on_import_from_csv(self, tl_kind: TlKind):
-        prev_state = get(Get.APP_STATE)
-        status, errors = on_import_from_csv(self.timeline_uis, tl_kind)
+        self.__import_timeline(
+            get(Get.APP_STATE), *on_import_from_csv(self.timeline_uis, tl_kind)
+        )
 
+    def on_import_from_musicxml(self, tl_kind: TlKind):
+        self.__import_timeline(
+            get(Get.APP_STATE), *on_import_from_musicxml(self.timeline_uis, tl_kind)
+        )
+
+    def __import_timeline(self, prev_state, status, errors):
         if status == "failure":
             post(Post.APP_STATE_RESTORE, prev_state)
             if errors:
