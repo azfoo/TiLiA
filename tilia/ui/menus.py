@@ -170,7 +170,7 @@ class PdfMenu(TiliaMenu):
 
 class ScoreMenu(TiliaMenu):
     menu_title = "&Score"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_MUSICXML)]
+    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_MUSICXML_SCORE_TIMELINE)]
 
 
 class TimelinesMenu(TiliaMenu):

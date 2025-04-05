@@ -47,12 +47,12 @@ class TiliaAction(Enum):
     HIERARCHY_GROUP = auto()
     HIERARCHY_INCREASE_LEVEL = auto()
     HIERARCHY_MERGE = auto()
-    IMPORT_MUSICXML = auto()
     IMPORT_CSV_PDF_TIMELINE = auto()
     IMPORT_CSV_HARMONY_TIMELINE = auto()
     IMPORT_CSV_HIERARCHY_TIMELINE = auto()
     IMPORT_CSV_MARKER_TIMELINE = auto()
     IMPORT_CSV_BEAT_TIMELINE = auto()
+    IMPORT_MUSICXML_SCORE_TIMELINE = auto()
     TIMELINE_ELEMENT_PASTE_COMPLETE = auto()
     HIERARCHY_SPLIT = auto()
     MARKER_ADD = auto()
@@ -367,8 +367,12 @@ taction_to_params = {
     TiliaAction.IMPORT_CSV_BEAT_TIMELINE: ActionParams(
         Post.IMPORT_CSV, "&Import from CSV file", "", "", (TimelineKind.BEAT_TIMELINE,)
     ),
-    TiliaAction.IMPORT_MUSICXML: ActionParams(
-        Post.IMPORT_MUSICXML, "&Import from musicxml file", "", ""
+    TiliaAction.IMPORT_MUSICXML_SCORE_TIMELINE: ActionParams(
+        Post.IMPORT_MUSICXML,
+        "&Import from musicxml file",
+        "",
+        "",
+        (TimelineKind.SCORE_TIMELINE,),
     ),
     TiliaAction.SCORE_ANNOTATION_ADD: ActionParams(
         None, "Add Annotation (Return)", "annotation_add", ""
