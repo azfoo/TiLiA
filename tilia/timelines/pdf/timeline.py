@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import functools
 
+import httpx
 import pypdf
+from urllib import parse
 
+
+import tilia.dirs
+from tilia.errors import display, LOAD_FILE_ERROR
 from tilia.requests import get, Get
 from tilia.settings import settings
 from tilia.timelines.base.component.pointlike import scale_pointlike, crop_pointlike
@@ -53,11 +58,24 @@ class PdfTimeline(Timeline):
         self._path = value
         self.page_total = 0
         self.is_pdf_valid = False
-        if checked_path := get(Get.VERIFIED_PATH, value):
+        if parse.urlparse(value).scheme in ("http", "https"):
+            if not (response := httpx.get(value)).is_success:
+                display(LOAD_FILE_ERROR, value, response)
+                return
+            self.tmp_path = str(tilia.dirs.tmp_path / (value.split("/")[-1]))
+            with open(self.tmp_path, "+wb") as f:
+                f.write(response.content)
+            self.page_total = len(pypdf.PdfReader(self.tmp_path).pages)
+            self.is_pdf_valid = True
+            self._path = value
+            self.is_local = False
+
+        elif checked_path := get(Get.VERIFIED_PATH, value):
             try:
                 self.page_total = len(pypdf.PdfReader(checked_path).pages)
                 self.is_pdf_valid = True
                 self._path = checked_path
+                self.is_local = True
             except FileNotFoundError:
                 return
 

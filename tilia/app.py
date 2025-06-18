@@ -175,6 +175,7 @@ class App:
                 return
 
         post(Post.UI_EXIT, 0)
+        tilia.dirs.clear_tmp_path()
 
     def load_media(
         self,
