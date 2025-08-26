@@ -1,6 +1,9 @@
 from __future__ import annotations
 import functools
+import importlib
+import os
 from abc import ABC
+from pathlib import Path
 from typing import (
     Any,
     TYPE_CHECKING,
@@ -83,6 +86,22 @@ class TimelineUI(ABC):
 
     def __lt__(self, other):
         return self.get_data("ordinal") < other.get_data("ordinal")
+
+    @classmethod
+    def subclasses(cls):
+        cls.ensure_subclasses_are_available()
+        return cls.__subclasses__()
+
+    @classmethod
+    def ensure_subclasses_are_available(cls):
+        timelines_dir = Path(os.path.dirname(__file__)).parent
+        packages = [
+            "tilia.ui.timelines." + d.name
+            for d in timelines_dir.iterdir()
+            if d.is_dir() and d.name not in ["base", "__pycache__"]
+        ]
+        for pkg in packages:
+            importlib.import_module(pkg)
 
     @property
     def is_empty(self):

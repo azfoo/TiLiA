@@ -47,7 +47,9 @@ from tilia.ui.timelines.collection.requests.timeline import (
 )
 from tilia.ui.timelines.collection.requests.element import TlElmRequestSelector
 from .view import TimelineUIsView
+from ..base.element import TimelineUIElement
 from ..beat import BeatTimelineUI
+from ..hierarchy import HierarchyTimelineUI
 from ..selection_box import SelectionBoxQt
 from ..slider.timeline import SliderTimelineUI
 from ...actions import TiliaAction
@@ -396,27 +398,11 @@ class TimelineUIs:
 
     @staticmethod
     def get_timeline_ui_class(kind: TlKind) -> type[TimelineUI]:
-        from tilia.ui.timelines.hierarchy import HierarchyTimelineUI
-        from tilia.ui.timelines.slider.timeline import SliderTimelineUI
-        from tilia.ui.timelines.audiowave.timeline import AudioWaveTimelineUI
-        from tilia.ui.timelines.marker.timeline import MarkerTimelineUI
-        from tilia.ui.timelines.harmony.timeline import HarmonyTimelineUI
-        from tilia.ui.timelines.beat import BeatTimelineUI
-        from tilia.ui.timelines.pdf import PdfTimelineUI
-        from tilia.ui.timelines.score.timeline import ScoreTimelineUI
+        for cls in TimelineUI.subclasses():
+            if cls.TIMELINE_KIND == kind:
+                return cls
 
-        kind_to_class = {
-            TlKind.HIERARCHY_TIMELINE: HierarchyTimelineUI,
-            TlKind.SLIDER_TIMELINE: SliderTimelineUI,
-            TlKind.AUDIOWAVE_TIMELINE: AudioWaveTimelineUI,
-            TlKind.MARKER_TIMELINE: MarkerTimelineUI,
-            TlKind.BEAT_TIMELINE: BeatTimelineUI,
-            TlKind.HARMONY_TIMELINE: HarmonyTimelineUI,
-            TlKind.PDF_TIMELINE: PdfTimelineUI,
-            TlKind.SCORE_TIMELINE: ScoreTimelineUI,
-        }
-
-        return kind_to_class[kind]
+        raise ValueError(f"No TimelineUI class found for kind: {kind}")
 
     @staticmethod
     def create_timeline_scene(id: int, width: int, height: int):
