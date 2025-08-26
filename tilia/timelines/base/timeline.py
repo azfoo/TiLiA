@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import functools
 import bisect
+import importlib
+import os
 from abc import ABC
 from enum import Enum, auto
+from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING, TypeVar, Generic, Set
 
 from tilia.timelines import serialize
@@ -68,6 +71,8 @@ class Timeline(ABC, Generic[TC]):
         else:
             self.component_manager = None
 
+        self.ensure_subclasses_are_available()
+
     def __iter__(self):
         return iter(self.components)
 
@@ -109,6 +114,30 @@ class Timeline(ABC, Generic[TC]):
     @property
     def default_height(self):
         return None
+
+    @classmethod
+    def subclasses(cls):
+        cls.ensure_subclasses_are_available()
+        return cls.__subclasses__()
+
+    @classmethod
+    def ensure_subclasses_are_available(cls):
+        timelines_dir = Path(os.path.dirname(__file__)).parent
+        packages = [
+            "tilia.timelines." + d.name + ".timeline"
+            for d in timelines_dir.iterdir()
+            if d.is_dir() and d.name not in ["base", "__pycache__", "collection"]
+        ]
+        for pkg in packages:
+            print(pkg)
+            importlib.import_module(pkg)
+        print(Timeline.__subclasses__())
+
+    @classmethod
+    def get_kinds_by_flag(cls, flag: TimelineFlag | list[TimelineFlag]):
+        if isinstance(flag, TimelineFlag):
+            flag = [flag]
+        return [c.KIND for c in cls.__subclasses__() if any(f in c.FLAGS for f in flag)]
 
     def validate_set_data(self, attr, value):
         if not hasattr(self, attr):

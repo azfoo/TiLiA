@@ -33,22 +33,6 @@ def get_timeline_kind_from_string(string):
 
 
 def get_timeline_class_from_kind(kind: TimelineKind) -> type[Timeline]:
-    from tilia.timelines.marker.timeline import MarkerTimeline
-    from tilia.timelines.beat.timeline import BeatTimeline
-    from tilia.timelines.hierarchy.timeline import HierarchyTimeline
-    from tilia.timelines.pdf.timeline import PdfTimeline
-    from tilia.timelines.slider.timeline import SliderTimeline
-    from tilia.timelines.audiowave.timeline import AudioWaveTimeline
-    from tilia.timelines.harmony.timeline import HarmonyTimeline
-    from tilia.timelines.score.timeline import ScoreTimeline
-
-    return {
-        TimelineKind.MARKER_TIMELINE: MarkerTimeline,
-        TimelineKind.BEAT_TIMELINE: BeatTimeline,
-        TimelineKind.HIERARCHY_TIMELINE: HierarchyTimeline,
-        TimelineKind.PDF_TIMELINE: PdfTimeline,
-        TimelineKind.SLIDER_TIMELINE: SliderTimeline,
-        TimelineKind.AUDIOWAVE_TIMELINE: AudioWaveTimeline,
-        TimelineKind.HARMONY_TIMELINE: HarmonyTimeline,
-        TimelineKind.SCORE_TIMELINE: ScoreTimeline,
-    }[kind]
+    classes = Timeline.subclasses()
+    kind_to_class = {c.KIND: c for c in classes}
+    return kind_to_class[kind]
