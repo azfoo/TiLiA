@@ -12,7 +12,7 @@ from tilia.timelines.base.component.mixed import scale_mixed, crop_mixed
 from tilia.timelines.base.validators import validate_string, validate_pre_validated
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.timelines.base.timeline import Timeline, TimelineComponentManager
+from tilia.timelines.base.timeline import Timeline, TimelineComponentManager, TimelineFlag
 
 
 class ScoreTLComponentManager(TimelineComponentManager):
@@ -71,6 +71,11 @@ class ScoreTimeline(Timeline):
     ]
     NOT_EXPORTABLE_ATTRS = ["svg_data", "viewer_beat_x"]
     COMPONENT_MANAGER_CLASS = ScoreTLComponentManager
+    FLAGS = [
+        TimelineFlag.HAS_COMPONENTS,
+        TimelineFlag.COMPONENTS_NOT_DELETABLE,
+        TimelineFlag.COMPONENTS_IMPORTABLE,
+    ]
 
     def __init__(
         self,

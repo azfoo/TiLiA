@@ -9,7 +9,7 @@ from tilia.timelines.base.component.segmentlike import (
     scale_segmentlike,
     crop_segmentlike,
 )
-from ..base.timeline import Timeline, TimelineComponentManager
+from ..base.timeline import Timeline, TimelineComponentManager, TimelineFlag
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.requests import post, Post, get, Get
 from tilia.timelines.timeline_kinds import TimelineKind
@@ -422,6 +422,7 @@ class HierarchyTLComponentManager(TimelineComponentManager):
 class HierarchyTimeline(Timeline):
     KIND = TimelineKind.HIERARCHY_TIMELINE
     COMPONENT_MANAGER_CLASS = HierarchyTLComponentManager
+    FLAGS = Timeline.FLAGS + [TimelineFlag.COMPONENTS_COLORED]
 
     @property
     def default_height(self):

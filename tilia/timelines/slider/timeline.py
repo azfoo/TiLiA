@@ -16,6 +16,7 @@ class SliderTimeline(Timeline):
         TimelineFlag.NOT_CLEARABLE,
         TimelineFlag.NOT_DELETABLE,
         TimelineFlag.NOT_EXPORTABLE,
+        TimelineFlag.NOT_CLEARABLE,
     ]
 
     @property
