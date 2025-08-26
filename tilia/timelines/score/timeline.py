@@ -72,7 +72,7 @@ class ScoreTimeline(Timeline):
     def __init__(
         self,
         svg_data: str = "",
-        viewer_beat_x: dict[float, float] = {},
+        viewer_beat_x: dict[float, float] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -81,7 +81,7 @@ class ScoreTimeline(Timeline):
             "svg_data": validate_string,
             "viewer_beat_x": validate_pre_validated,
         }
-        self._viewer_beat_x = viewer_beat_x
+        self._viewer_beat_x = viewer_beat_x or {}
         self.svg_data = svg_data
 
     @property
