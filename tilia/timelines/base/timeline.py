@@ -36,11 +36,27 @@ TC = TypeVar("TC", bound="TimelineComponent")
 T = TypeVar("T", bound="Timeline")
 
 
+class TimelineFlag(Enum):
+    COMPONENTS_COLORED = auto()
+    COMPONENTS_IMPORTABLE = auto()
+    COMPONENTS_COPYABLE = auto()
+    HAS_COMPONENTS = auto()
+    COMPONENTS_NOT_DELETABLE = auto()
+    COMPONENTS_NOT_EDITABLE = auto()
+    NOT_CLEARABLE = auto()
+    NOT_DELETABLE = auto()
+    NOT_EXPORTABLE = auto()
+
+
 class Timeline(ABC, Generic[TC]):
     SERIALIZABLE = ["name", "height", "is_visible", "ordinal"]
     NOT_EXPORTABLE_ATTRS = []
     KIND: TimelineKind | None = None
-    FLAGS = []
+    FLAGS = [
+        TimelineFlag.HAS_COMPONENTS,
+        TimelineFlag.COMPONENTS_COPYABLE,
+        TimelineFlag.COMPONENTS_IMPORTABLE,
+    ]
     COMPONENT_MANAGER_CLASS = None
 
     validators = {
@@ -129,9 +145,7 @@ class Timeline(ABC, Generic[TC]):
             if d.is_dir() and d.name not in ["base", "__pycache__", "collection"]
         ]
         for pkg in packages:
-            print(pkg)
             importlib.import_module(pkg)
-        print(Timeline.__subclasses__())
 
     @classmethod
     def get_kinds_by_flag(cls, flag: TimelineFlag | list[TimelineFlag]):
@@ -532,9 +546,3 @@ class TimelineComponentManager(Generic[T, TC]):
 
     def scale(self, length: float) -> None:
         raise NotImplementedError
-
-
-class TimelineFlag(Enum):
-    NOT_CLEARABLE = auto()
-    NOT_DELETABLE = auto()
-    NOT_EXPORTABLE = auto()

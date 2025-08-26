@@ -8,7 +8,7 @@ from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.marker.components import Marker
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.timelines.base.component import TimelineComponent
-from tilia.timelines.base.timeline import Timeline, TimelineComponentManager
+from tilia.timelines.base.timeline import Timeline, TimelineComponentManager, TimelineFlag
 
 
 class MarkerTLComponentManager(TimelineComponentManager):
@@ -24,6 +24,7 @@ class MarkerTLComponentManager(TimelineComponentManager):
 class MarkerTimeline(Timeline):
     KIND = TimelineKind.MARKER_TIMELINE
     COMPONENT_MANAGER_CLASS = MarkerTLComponentManager
+    FLAGS = Timeline.FLAGS + [TimelineFlag.COMPONENTS_COLORED]
 
     @property
     def default_height(self):
