@@ -32,8 +32,7 @@ class QtPlayer(Player):
         super().on_media_duration_available(duration / 1000)
 
     def _engine_load_media(self, media_path: str) -> bool:
-        self.player.stop()
-        time.sleep(0.1)
+        self._engine_stop()  # Must be _engine_stop() instead of player.stop() to avoid freeze.
         self.player.setSource(QUrl.fromLocalFile(media_path))
         return True
 
@@ -54,13 +53,15 @@ class QtPlayer(Player):
 
     def _engine_stop(self):
         self.player.stop()
-        time.sleep(
-            0.1
-        )  # Avoids freeze if about to change to YT player. Reason unknown.
+        # Sleeping avoids freeze if about to change player URL. Not sure why the freeze happens.
+        # Waiting for self.player.mediaStatus() == MediaPlayer.MediaStatus.Stopped also does not work.
+        # I have tested different sleep times and 0.01 seems to prevent freezes reliably
+        # while still having no perceptible impact on test performance.
+        time.sleep(0.01)
 
     def _engine_unload_media(self):
-        self.player.deleteLater()
-        self._init_player()
+        self._engine_stop()  # Must be _engine_stop() instead of player.stop() to avoid freeze.
+        self.player.setSource(QUrl())
 
     def _engine_get_media_duration(self) -> float:
         return self.player.duration() / 1000
