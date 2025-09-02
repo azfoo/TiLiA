@@ -1,5 +1,8 @@
 import json
+from pathlib import WindowsPath, Path
 from unittest.mock import mock_open
+
+from tests.constants import EXAMPLE_MEDIA_PATH
 from tests.mock import PatchPost, Serve, patch_file_dialog, patch_yes_or_no_dialog
 from tilia.file.media_metadata import MediaMetadata
 
@@ -134,6 +137,20 @@ class TestFileManager:
             post(Post.REQUEST_IMPORT_MEDIA_METADATA_FROM_PATH, "nonexistent.json")
 
             post_mock.assert_called()
+
+    def test_is_saved_with_posix_paths(self, qtui, tilia, tmp_path, user_actions):
+        file_path = tmp_path / "test.tla"
+        with patch_file_dialog(True, [str(EXAMPLE_MEDIA_PATH)]):
+            post(Post.UI_MEDIA_LOAD_LOCAL)
+
+        with patch_file_dialog(True, [str(WindowsPath(file_path))]):
+            user_actions.trigger(TiliaAction.FILE_SAVE)
+
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        assert data["file_path"] == Path(file_path).as_posix()
+        assert data["media_path"] == Path(EXAMPLE_MEDIA_PATH).as_posix()
 
     def test_save_without_set_title_and_different_file_name(
         self, qtui, tilia, tmp_path, user_actions
