@@ -1,6 +1,7 @@
 from __future__ import annotations
 import itertools
 import json
+import os
 import re
 import traceback
 from pathlib import Path
@@ -342,7 +343,7 @@ class App:
         For relocating a path when moving pdf/media linked to the current tla file.
         Returns a path as str if found, else "".
         """
-        if not path or (old_path := Path(path)).exists():
+        if not path or Path(path).exists():
             return path
         if not (self.old_file_path and self.cur_file_path):
             return ""
@@ -354,37 +355,19 @@ class App:
         ):
             return ""
 
-        old_file_parts = self.old_file_path.parts
-        cur_file_parts = self.cur_file_path.parts
-
-        # get matching path parts from the BACK of the tla file path to get the current directory
-        pop_count = -1
-        for old, cur in zip(reversed(old_file_parts), reversed(cur_file_parts)):
-            if old == cur:
-                pop_count += 1
-                continue
-            break
-        if pop_count < 0 or pop_count >= len(list(self.cur_file_path.parents)):
+        try:
+            path_relative_to_old_file_path = os.path.relpath(path, self.old_file_path)
+        except ValueError:
+            # Raised on Windows when path is in a different drive
             return ""
-        start_path = list(self.cur_file_path.parents)[pop_count]
+        path_relative_to_new_file_path = self.cur_file_path.joinpath(
+            path_relative_to_old_file_path
+        ).resolve()
 
-        # get matching path parts from the FRONT of the input path and the old tla file path
-        to_append = []
-        for file_part, path_part in zip(
-            reversed(old_file_parts), reversed(old_path.parts)
-        ):
-            to_append.insert(0, path_part)
-            if file_part != path_part:
-                continue
-            break
-
-        # combine parts and check if guessed path exists
-        if (p := start_path.joinpath(*to_append)).exists():
-            return str(p)
-        if (p := start_path.joinpath(*to_append[1:])).exists():
-            return str(p)
-
-        return ""
+        if path_relative_to_new_file_path.exists():
+            return str(path_relative_to_new_file_path)
+        else:
+            return ""
 
     def on_clear(self) -> None:
         self.timelines.clear()
