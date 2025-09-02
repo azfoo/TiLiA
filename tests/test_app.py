@@ -608,8 +608,14 @@ class TestRelativePaths:
         "tla,media",
         [
             ("tilia.tla", "music.mp3"),
+            ("folderName/tilia.tla", "music.mp3"),
             ("folderName/tilia.tla", "folderName/music.mp3"),
+            ("folderName/tilia.tla", "folderName/media/music.mp3"),
+            ("folderName/files/tilia.tla", "music.mp3"),
+            ("folderName/files/tilia.tla", "folderName/music.mp3"),
             ("folderName/files/tilia.tla", "folderName/media/music.mp3"),
+            ("folderName/files/tilia.tla", "folderName/files/media/music.mp3"),
+            ("folderName/files/tilia.tla", "folderName/files/media/audio/music.mp3"),
         ],
     )
     def test_moving_files(self, tla, media, tilia, qtui, tmp_path, user_actions):
@@ -630,6 +636,8 @@ class TestRelativePaths:
         # save tla
         with patch_file_dialog(True, [str(old_tla.resolve())]):
             user_actions.trigger(TiliaAction.FILE_SAVE_AS)
+
+        tilia.on_clear()  # unload media
 
         # move tla and media to new folder
         new_folder = tmp_path / "the" / "new" / "one"

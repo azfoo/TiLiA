@@ -34,7 +34,7 @@ class QtPlayer(Player):
     def _engine_load_media(self, media_path: str) -> bool:
         self.player.stop()
         time.sleep(0.1)
-        self.player.setSource(QUrl(media_path))
+        self.player.setSource(QUrl.fromLocalFile(media_path))
         return True
 
     def _engine_get_current_time(self):
