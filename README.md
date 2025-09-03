@@ -79,7 +79,7 @@ cd tilia-desktop
 ```
 Note: We recommend using a [virtual environment](https://docs.python.org/3/library/venv.html) for the next steps.
 
-Install the dependencies using pip:
+Install dependencies:
 ```
 pip install -e .
 ```
@@ -87,7 +87,7 @@ Install `PyInstaller` with:
 ```
 pip install pyinstaller
 ```
-Run PyInstaller using the settings in `tilia.spec`:
+Run PyInstaller using the settings in `tilia.spec` to build:
 ```
 pyinstaller tilia.spec
 ```
@@ -98,6 +98,11 @@ The executable will be created in the 'dist' folder inside the project directory
 ### Clone repository and install dependencies
 You can follow the instructions in the previous sections to clone the repository and install dependencies.
 
+### Linux dependencies
+On Linux, some Qt dependencies are also required:
+```
+sudo apt install libnss3 libasound libxkbfile1 libpulse0
+```
 ### Run TiLiA
 Use this command to run TiLiA in CLI mode:
 ```
