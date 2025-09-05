@@ -41,11 +41,14 @@ class ScoreTLComponentManager(TimelineComponentManager):
                 start = kwargs["start"] if "start" in kwargs else args[0]
                 end = kwargs["end"] if "end" in kwargs else args[1]
                 return SegmentLikeTimelineComponent.validate_times(start, end)
-            case ComponentKind.CLEF | ComponentKind.BAR_LINE | ComponentKind.TIME_SIGNATURE | ComponentKind.KEY_SIGNATURE | ComponentKind.SCORE_ANNOTATION:
+            case ComponentKind.CLEF | ComponentKind.BAR_LINE | ComponentKind.TIME_SIGNATURE | ComponentKind.KEY_SIGNATURE:
                 time = kwargs["time"] if "time" in kwargs else args[0]
                 return PointLikeTimelineComponent.validate_time_is_inbounds(time)
-            case _:
+            case ComponentKind.SCORE_ANNOTATION | ComponentKind.STAFF:
+                # Score annotations do not have a time property.
                 return True, ""
+            case _:
+                return False, "Invalid component kind."
 
     def restore_state(self, prev_state: dict):
         super().restore_state(prev_state)
