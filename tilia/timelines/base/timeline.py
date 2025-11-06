@@ -469,14 +469,24 @@ class TimelineComponentManager(Generic[T, TC]):
         }
         cur_hashes = set(cur_hash_to_id.keys())
         prev_hashes = set(prev_hash_to_data.keys())
-
         hashes_to_delete = cur_hashes.difference(prev_hashes)
+        hashes_to_create = prev_hashes.difference(cur_hashes)
+
+        # States may have components that share hashes but have different ids
+        # (e.g. a beat was deleted and later created at the exact same timestamp).
+        # In those cases, we want to restore (i.e. recreate) the component
+        # so that its original id is used and references are not broken.
+        hashes_in_common = cur_hashes.intersection(prev_hashes)
+        for hash in hashes_in_common:
+            if cur_hash_to_id[hash] != prev_hash_to_data[hash]["id"]:
+                hashes_to_delete.add(hash)
+                hashes_to_create.add(hash)
+
         ids_to_delete = [cur_hash_to_id[id] for id in hashes_to_delete]
         self.timeline.delete_components(
             [self.timeline.get_component(id) for id in ids_to_delete]
         )
 
-        hashes_to_create = prev_hashes.difference(cur_hashes)
         components_to_create = [prev_hash_to_data[hash] for hash in hashes_to_create]
         for component_data in components_to_create:
             component_data = component_data.copy()
