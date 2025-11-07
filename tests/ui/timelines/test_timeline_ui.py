@@ -5,6 +5,7 @@ from tests.ui.timelines.interact import (
     click_timeline_ui_element_body,
     click_timeline_ui,
 )
+from tests.utils import undoable
 from tilia.requests import Post, post, Get
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
@@ -276,3 +277,15 @@ class TestSetTimelineName:
 
         assert tls[0].get_data("name") == ""
         assert tluis[0].displayed_name == ""
+
+
+def test_set_is_visible(tls, marker_tlui):
+    with undoable():
+        commands.execute("timeline.set_is_visible", marker_tlui, False)
+
+    assert marker_tlui.view.isVisible() is False
+
+    with undoable():
+        commands.execute("timeline.set_is_visible", marker_tlui, True)
+
+    assert marker_tlui.view.isVisible() is True
