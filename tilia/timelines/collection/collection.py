@@ -299,12 +299,20 @@ class Timelines:
         post(Post.TIMELINES_CROP_DONE)
 
     def get_beat_timeline_for_measure_calculation(self):
-        return sorted(self.get_timelines_by_attr("KIND", TimelineKind.BEAT_TIMELINE))[0]
+        beat_tls = sorted(
+            self.get_timelines_by_attr("KIND", TimelineKind.BEAT_TIMELINE)
+        )
+        if beat_tls:
+            return beat_tls[0]
+        else:
+            return None
 
     def get_metric_position(self, time: float) -> MetricPosition | None:
         if not self.get_timelines_by_attr("KIND", TimelineKind.BEAT_TIMELINE):
             return None
         tl = self.get_beat_timeline_for_measure_calculation()
+        if not tl:
+            return None
         beats = tl.components
         if not beats:
             return None

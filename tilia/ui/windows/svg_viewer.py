@@ -423,6 +423,10 @@ class SvgViewer(ViewDockWidget):
         beat_tl = get(
             Get.TIMELINE_COLLECTION
         ).get_beat_timeline_for_measure_calculation()
+
+        if not beat_tl:
+            return {}
+
         for key, beat in beat_pos.items():
             t = beat_tl.get_time_by_measure(*beat)
             if not t:
@@ -439,6 +443,8 @@ class SvgViewer(ViewDockWidget):
         beat_tl = get(
             Get.TIMELINE_COLLECTION
         ).get_beat_timeline_for_measure_calculation()
+        if not beat_tl:
+            return 0
         beat = beat_tl.get_metric_fraction_by_time(time)
         if x := self.beat_x_position.get(beat):
             return x
