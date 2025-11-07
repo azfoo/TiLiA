@@ -17,7 +17,7 @@ def validate_bool(value):
 
 
 def validate_color(value):
-    if value is None:
+    if value is None or value == "":
         return True
     return QColor(value).isValid()
 
