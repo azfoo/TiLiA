@@ -428,6 +428,25 @@ class HierarchyTimeline(Timeline):
     def default_height(self):
         return settings.get("hierarchy_timeline", "default_height")
 
+    @property
+    def is_empty(self):
+        if len(self) == 0:
+            return True
+        if len(self) == 1:
+            # Initial hierarchy shouldn't make the timeline not empty
+            hrc = self[0]
+            return all(
+                [
+                    hrc.start == 0,
+                    hrc.end == get(Get.MEDIA_DURATION),
+                    not hrc.label,
+                    not hrc.comments,
+                    not hrc.color,
+                    hrc.level == 1,
+                ]
+            )
+        return False
+
     def setup_blank_timeline(self):
         """Create unit of level 1 encompassing whole timeline"""
         self.create_component(

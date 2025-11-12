@@ -625,3 +625,33 @@ class TestCreateChild:
             commands.execute("timeline.hierarchy.create_child")
 
             assert len(tlui) == 2
+
+
+class TestClear:
+    def test_initial_hierarchy_doesnt_trigger_confirmation(self, tlui, tilia_state):
+        tlui.create_hierarchy(0, tilia_state.duration, 1)
+
+        commands.execute("timeline.clear", tlui)
+
+        assert tlui.is_empty
+
+    def test_initial_hierarchy_with_edited_label_triggers_confirmation(
+        self, tlui, tilia_state
+    ):
+        tlui.create_hierarchy(0, tilia_state.duration, 1, label="I WAS EDITED")
+
+        with patch_yes_or_no_dialog(False):
+            commands.execute("timeline.clear", tlui)
+
+        # we must test explictly for len, to ensure the component was not deleted
+        assert len(tlui) == 1
+
+    def test_not_empty(self, tlui):
+        tlui.create_hierarchy(0, 1, 1)
+        tlui.create_hierarchy(1, 2, 1)
+        tlui.create_hierarchy(2, 3, 1)
+
+        with patch_yes_or_no_dialog(True):
+            commands.execute("timeline.clear", tlui)
+
+        assert tlui.is_empty
