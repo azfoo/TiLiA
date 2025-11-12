@@ -116,8 +116,9 @@ class PdfTimelineUI(TimelineUI):
             icon="pdf_add",
         )
 
-    def on_add(self):
-        time = get(Get.SELECTED_TIME)
+    def on_add(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
 
         page_number = min(
             self.timeline.get_previous_page_number(time) + 1, self.timeline.page_total

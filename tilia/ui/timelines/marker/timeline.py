@@ -61,9 +61,11 @@ class MarkerTimelineUI(TimelineUI):
             icon="add_marker30",
         )
 
-    def on_add(self):
+    def on_add(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
         component, failure_reason = self.timeline.create_component(
-            ComponentKind.MARKER, get(Get.SELECTED_TIME)
+            ComponentKind.MARKER, time
         )
         return bool(component)
 

@@ -152,11 +152,12 @@ class BeatTimelineUI(TimelineUI):
             self.timeline.set_beat_amount_in_measure(i, amount)
         return True
 
-    def on_add(self, *_, **__):
+    def on_add(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
+
         self.timeline_ui: BeatTimelineUI
-        component, _ = self.timeline.create_component(
-            ComponentKind.BEAT, get(Get.SELECTED_TIME)
-        )
+        component, _ = self.timeline.create_component(ComponentKind.BEAT, time)
         self.timeline.recalculate_measures()
         return False if component is None else True
 
