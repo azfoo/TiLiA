@@ -126,7 +126,7 @@ class TimelineUI(ABC):
 
     @property
     def is_empty(self):
-        return len(self) == 0
+        return self.timeline.is_empty
 
     @property
     def timeline(self):

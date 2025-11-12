@@ -34,7 +34,7 @@ def _on_import_to_timeline(
         return "cancelled", ["User cancelled when choosing timeline."]
 
     timeline = get(Get.TIMELINE, timeline_ui.id)
-    if timeline.components and not _confirm_timeline_overwrite_on_import():
+    if not timeline.is_empty and not _confirm_timeline_overwrite_on_import():
         return "cancelled", ["User rejected components overwrite."]
 
     if tlkind == TlKind.SCORE_TIMELINE:

@@ -28,6 +28,10 @@ class SliderTimeline(Timeline):
     def components(self):
         return []
 
+    @property
+    def is_empty(self):
+        return True
+
     def _validate_delete_components(self, component: TimelineComponent):
         """Nothing to do. Must impement abstract method."""
 
