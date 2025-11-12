@@ -224,8 +224,10 @@ class HarmonyTimelineUI(TimelineUI):
                 **harmony_data["by_component_value"],
             )
 
-    def on_add_mode(self):
-        time = get(Get.SELECTED_TIME)
+    def on_add_mode(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
+
         valid, reason = self.timeline.component_manager._validate_component_creation(
             ComponentKind.MODE, time
         )
@@ -246,8 +248,10 @@ class HarmonyTimelineUI(TimelineUI):
         self.on_mode_add_done()
         return True
 
-    def on_add_harmony(self):
-        time = get(Get.SELECTED_TIME)
+    def on_add_harmony(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
+
         valid, reason = self.timeline.component_manager._validate_component_creation(
             ComponentKind.HARMONY, time
         )
