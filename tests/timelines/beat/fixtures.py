@@ -1,5 +1,6 @@
 import pytest
 
+from tilia.requests import Post, post
 from tilia.timelines.beat.timeline import BeatTimeline
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind as TlKind
@@ -7,6 +8,7 @@ from tilia.timelines.timeline_kinds import TimelineKind as TlKind
 
 @pytest.fixture
 def beat_tlui(beat_tl, tluis):
+    post(Post.APP_STATE_RECORD, "tlui fixture")
     ui = tluis.get_timeline_ui(beat_tl.id)
     ui.create_beat = beat_tl.create_beat
     ui.create_component = beat_tl.create_component

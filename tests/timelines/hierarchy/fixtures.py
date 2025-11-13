@@ -2,6 +2,7 @@ import functools
 
 import pytest
 
+from tilia.requests import post, Post
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.hierarchy.components import Hierarchy
 from tilia.timelines.hierarchy.timeline import HierarchyTimeline
@@ -18,6 +19,7 @@ class TestHierarchyTimelineUI(HierarchyTimelineUI):
 
 @pytest.fixture
 def hierarchy_tlui(hierarchy_tl, tluis) -> TestHierarchyTimelineUI:
+    post(Post.APP_STATE_RECORD, "tlui fixture")
     ui = tluis.get_timeline_ui(hierarchy_tl.id)
 
     ui.create_hierarchy = hierarchy_tl.create_hierarchy

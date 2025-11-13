@@ -2,6 +2,7 @@ import functools
 
 import pytest
 
+from tilia.requests import post, Post
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.marker.timeline import MarkerTimeline
 from tilia.timelines.timeline_kinds import TimelineKind as TlKind
@@ -9,6 +10,7 @@ from tilia.timelines.timeline_kinds import TimelineKind as TlKind
 
 @pytest.fixture
 def marker_tlui(marker_tl, tluis):
+    post(Post.APP_STATE_RECORD, "tlui fixture")
     ui = tluis.get_timeline_ui(marker_tl.id)
 
     ui.create_marker = marker_tl.create_marker

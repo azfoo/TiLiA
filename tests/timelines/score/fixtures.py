@@ -1,5 +1,6 @@
 import pytest
 
+from tilia.requests import post, Post
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.score.components import Clef
 from tilia.timelines.score.timeline import ScoreTimeline
@@ -8,6 +9,7 @@ from tilia.timelines.timeline_kinds import TimelineKind
 
 @pytest.fixture
 def score_tlui(score_tl, tluis):
+    post(Post.APP_STATE_RECORD, "tlui fixture")
     ui = tluis.get_timeline_ui(score_tl.id)
 
     ui.create_component = score_tl.create_component
