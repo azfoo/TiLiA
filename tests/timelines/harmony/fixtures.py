@@ -1,5 +1,6 @@
 import pytest
 
+from tilia.requests import post, Post
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.harmony.components import Harmony, Mode
 from tilia.timelines.harmony.timeline import HarmonyTimeline
@@ -21,6 +22,7 @@ class TestHarmonyTimelineUI(HarmonyTimelineUI):
 
 @pytest.fixture
 def harmony_tlui(harmony_tl, tluis) -> TestHarmonyTimelineUI:
+    post(Post.APP_STATE_RECORD, "tlui fixture")
 
     ui = tluis.get_timeline_ui(harmony_tl.id)
     ui.create_harmony = harmony_tl.create_harmony

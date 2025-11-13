@@ -3,7 +3,7 @@ import functools
 import pytest
 
 from tests.mock import Serve
-from tilia.requests import Get
+from tilia.requests import Get, post, Post
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.pdf.components import PdfMarker
 from tilia.timelines.pdf.timeline import PdfTimeline
@@ -21,6 +21,7 @@ class TestPdfTimelineUI(PdfTimelineUI):
 
 @pytest.fixture
 def pdf_tlui(pdf_tl, tluis):
+    post(Post.APP_STATE_RECORD, "tlui fixture")
 
     ui = tluis.get_timeline_ui(pdf_tl.id)
 

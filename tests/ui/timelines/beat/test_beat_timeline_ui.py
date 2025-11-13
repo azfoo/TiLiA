@@ -564,8 +564,6 @@ class TestFillWithBeats:
 
 class TestUndoRedo:
     def test_undo_redo_add_beat(self, beat_tlui, tluis, tilia_state, user_actions):
-        post(Post.APP_RECORD_STATE, "test state")
-
         tilia_state.current_time = 10
         user_actions.trigger(TiliaAction.BEAT_ADD)
 
@@ -598,8 +596,6 @@ class TestUndoRedo:
         # and forwards it to beat timeline
 
         beat_tlui.create_beat(0)
-
-        post(Post.APP_RECORD_STATE, "test state")
 
         beat_tlui.select_element(beat_tlui[0])
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
