@@ -48,9 +48,15 @@ def boot():
     ui = setup_ui(q_application, args.user_interface)
     logger.debug("INITIALISED")
     if os.environ.get("ENVIRONMENT") == "dev":
-        import icecream
+        try:
+            # icecream is a replacement for print()
+            # Not required, but very useful for debugging.
+            # Docs: https://github.com/gruns/icecream
+            import icecream
 
-        icecream.install()
+            icecream.install()
+        except ImportError:
+            pass
     # has to be done after ui has been created, so timelines will get displayed
     if file := get_initial_file(args.file):
         app.on_open(file)
