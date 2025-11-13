@@ -581,7 +581,7 @@ class TestUndoRedo:
         for beat_ui in beat_tlui:
             beat_tlui.select_element(beat_ui)
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
 
@@ -613,7 +613,7 @@ class TestUndoRedo:
         beat_tlui.create_beat(1)
         beat_tlui.create_beat(2)
 
-        post(Post.APP_RECORD_STATE, "test")
+        post(Post.APP_STATE_RECORD, "test")
 
         beat_tlui.select_element(beat_tlui[0])
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)

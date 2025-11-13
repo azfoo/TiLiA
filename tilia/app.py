@@ -62,8 +62,7 @@ class App:
             (Post.APP_STATE_RESTORE, self.on_restore_state),
             (Post.APP_STATE_RECOVER, self.recover_to_state),
             (Post.APP_SETUP_FILE, self.setup_file),
-            (Post.APP_RECORD_STATE, self.on_record_state),
-            (Post.FILE_OPEN, self.on_open),
+            (Post.APP_STATE_RECORD, self.on_record_state),
             (Post.FILE_EXPORT, self.on_export),
             (Post.PLAYER_DURATION_AVAILABLE, self.set_file_media_duration),
             # Listening on tilia.dirs would need to be top-level.
@@ -205,7 +204,7 @@ class App:
 
         if success and record:
             post(Post.PLAYER_CANCEL_LOOP)
-            post(Post.APP_RECORD_STATE, "media load")
+            post(Post.APP_STATE_RECORD, "media load")
 
         return success
 

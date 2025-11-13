@@ -190,7 +190,7 @@ class BeatUI(TimelineUIElement):
 
     def on_drag_end(self):
         if self.dragged:
-            post(Post.APP_RECORD_STATE, "beat drag")
+            post(Post.APP_STATE_RECORD, "beat drag")
             post(Post.ELEMENT_DRAG_END)
 
         self.dragged = False
