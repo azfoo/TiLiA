@@ -116,7 +116,7 @@ def on_drag_end(hierarchy_ui):
     if hierarchy_ui.dragged:
         drag_x = hierarchy_ui.get_data(hierarchy_ui.drag_extremity.value)
         post(
-            Post.APP_RECORD_STATE,
+            Post.APP_STATE_RECORD,
             f"hierarchy {hierarchy_ui.drag_extremity} drag",
             no_repeat=True,
             repeat_identifier=f"{hierarchy_ui.timeline_ui}_drag_to_{drag_x}",

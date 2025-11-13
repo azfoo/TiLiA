@@ -911,7 +911,7 @@ class TimelineUIs:
         self.validate_request_return_value(request, result)
 
         if any(result):
-            post(Post.APP_RECORD_STATE, f"timeline element request: {request.name}")
+            post(Post.APP_STATE_RECORD, f"timeline element request: {request.name}")
 
     def on_timeline_ui_request(
         self, request: Post, *args: tuple[Any], **kwargs: dict[str, Any]
@@ -940,7 +940,7 @@ class TimelineUIs:
         self.validate_request_return_value(request, success)
 
         if success:
-            post(Post.APP_RECORD_STATE, f"timeline element request: {request.name}")
+            post(Post.APP_STATE_RECORD, f"timeline element request: {request.name}")
 
     def on_timeline_request(
         self,
@@ -978,7 +978,7 @@ class TimelineUIs:
         self.validate_request_return_value(request, result)
 
         if request:
-            post(Post.APP_RECORD_STATE, f"timeline request: {request.name}")
+            post(Post.APP_STATE_RECORD, f"timeline request: {request.name}")
 
     def get_timelines_uis_for_request(
         self, kinds: list[TlKind], selector: TimelineSelector

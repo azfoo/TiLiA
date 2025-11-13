@@ -123,7 +123,7 @@ class PdfMarkerUI(TimelineUIElement):
 
     def on_drag_end(self):
         if self.dragged:
-            post(Post.APP_RECORD_STATE, "page marker drag")
+            post(Post.APP_STATE_RECORD, "page marker drag")
             post(Post.ELEMENT_DRAG_END)
 
         self.dragged = False

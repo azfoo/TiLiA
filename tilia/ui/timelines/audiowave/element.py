@@ -91,7 +91,7 @@ class AmplitudeBarUI(TimelineUIElement):
 
     def on_drag_end(self):
         if self.dragged:
-            post(Post.APP_RECORD_STATE, "AudioWave drag")
+            post(Post.APP_STATE_RECORD, "AudioWave drag")
             post(Post.ELEMENT_DRAG_END)
         self.dragged = False
 

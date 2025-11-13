@@ -456,7 +456,7 @@ class TimelineUI(ABC):
         element.set_data(attr, value)
 
         post(
-            Post.APP_RECORD_STATE,
+            Post.APP_STATE_RECORD,
             "attribute edit via inspect",
             no_repeat=True,
             repeat_identifier=f"{attr}_{element.id}_{inspector_id}",

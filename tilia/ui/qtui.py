@@ -419,7 +419,7 @@ class QtUI:
             tilia.errors.display(
                 tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, "\n".join(errors)
             )
-            post(Post.APP_RECORD_STATE, "Import from csv file")
+            post(Post.APP_STATE_RECORD, "Import from csv file")
 
     @staticmethod
     def show_crash_dialog(exception_info):

@@ -226,7 +226,7 @@ class SvgViewer(ViewDockWidget):
             for item in self.scene.selectedItems():
                 item.moveBy(d_pos.x(), d_pos.y())
                 self.save_tla_annotation(item)
-            post(Post.APP_RECORD_STATE, "score annotation")
+            post(Post.APP_STATE_RECORD, "score annotation")
 
         return {"press": _start_drag, "move": _while_drag, "release": _after_drag}
 
@@ -307,7 +307,7 @@ class SvgViewer(ViewDockWidget):
                 "annotation": new_annotation,
             }
             self.save_tla_annotation(new_annotation)
-        post(Post.APP_RECORD_STATE, "score annotation")
+        post(Post.APP_STATE_RECORD, "score annotation")
 
     def annotation_delete(self) -> None:
         self.filter_selection(SvgTlaAnnotation)
@@ -320,7 +320,7 @@ class SvgViewer(ViewDockWidget):
                 for item in to_delete
             ]
         )
-        post(Post.APP_RECORD_STATE, "score annotation")
+        post(Post.APP_STATE_RECORD, "score annotation")
 
     def annotation_edit(self) -> None:
         self.filter_selection(SvgTlaAnnotation)
@@ -345,13 +345,13 @@ class SvgViewer(ViewDockWidget):
                     self.timeline.delete_components(
                         [tl.get_component(self.tla_annotations[item.id]["component"])]
                     )
-                    post(Post.APP_RECORD_STATE, "score annotation")
+                    post(Post.APP_STATE_RECORD, "score annotation")
                 continue
 
             item.setText(annotation)
             item.setSelected(False)
             self.save_tla_annotation(item)
-            post(Post.APP_RECORD_STATE, "score annotation")
+            post(Post.APP_STATE_RECORD, "score annotation")
 
     def annotation_font_dec(self) -> None:
         self.filter_selection(SvgTlaAnnotation)
@@ -364,7 +364,7 @@ class SvgViewer(ViewDockWidget):
             font.setPointSize(font.pointSize() // 2)
             item.setFont(font)
             self.save_tla_annotation(item)
-        post(Post.APP_RECORD_STATE, "score annotation")
+        post(Post.APP_STATE_RECORD, "score annotation")
 
     def annotation_font_inc(self) -> None:
         self.filter_selection(SvgTlaAnnotation)
@@ -375,7 +375,7 @@ class SvgViewer(ViewDockWidget):
             font.setPointSize(font.pointSize() * 2)
             item.setFont(font)
             self.save_tla_annotation(item)
-        post(Post.APP_RECORD_STATE, "score annotation")
+        post(Post.APP_STATE_RECORD, "score annotation")
 
     def _get_time_from_scene_x(self, xs: dict[int, float]) -> dict[int, list[float]]:
         output = {}

@@ -250,7 +250,7 @@ class HarmonyUI(TimelineUIElement):
 
     def on_drag_end(self):
         if self.dragged:
-            post(Post.APP_RECORD_STATE, "harmony drag")
+            post(Post.APP_STATE_RECORD, "harmony drag")
             post(Post.ELEMENT_DRAG_END)
 
         self.dragged = False

@@ -383,7 +383,7 @@ class TestUndoRedo:
     def test_split(self, tlui, tluis, user_actions):
         tlui.create_hierarchy(0, 1, 1)
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         with PatchGet(
             "tilia.ui.timelines.hierarchy.request_handlers", Get.SELECTED_TIME, 0.5
@@ -403,7 +403,7 @@ class TestUndoRedo:
         tlui.select_element(tlui[0])
         tlui.select_element(tlui[1])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_MERGE)
 
@@ -417,7 +417,7 @@ class TestUndoRedo:
         tlui.create_hierarchy(0, 1, 1)
         tlui.select_element(tlui[0])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_INCREASE_LEVEL)
 
@@ -431,7 +431,7 @@ class TestUndoRedo:
         tlui.create_hierarchy(0, 1, 2)
         tlui.select_element(tlui[0])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_DECREASE_LEVEL)
 
@@ -448,7 +448,7 @@ class TestUndoRedo:
         tlui.select_element(tlui[0])
         tlui.select_element(tlui[1])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_GROUP)
 
@@ -463,7 +463,7 @@ class TestUndoRedo:
 
         tlui.select_element(tlui[0])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
 
@@ -480,7 +480,7 @@ class TestUndoRedo:
         tlui.select_element(tlui[0])
         tlui.select_element(tlui[1])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
 
@@ -495,7 +495,7 @@ class TestUndoRedo:
 
         tlui.select_element(tlui[0])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_CREATE_CHILD)
 
@@ -508,7 +508,7 @@ class TestUndoRedo:
     def test_paste(self, tlui, tluis, user_actions):
         tlui.create_hierarchy(0, 1, 1, label="paste test")
         tlui.create_hierarchy(0, 1, 2)
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         tlui.select_element(tlui[0])
         user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_COPY)
@@ -555,7 +555,7 @@ class TestCreateChild:
 
         tlui.select_element(tlui[0])
 
-        post(Post.APP_RECORD_STATE, "test state")
+        post(Post.APP_STATE_RECORD, "test state")
 
         user_actions.trigger(TiliaAction.HIERARCHY_CREATE_CHILD)
 
