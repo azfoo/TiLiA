@@ -5,8 +5,8 @@ from typing import Any, Optional
 from tilia.dirs import IMG_DIR
 from tilia.requests.post import post, Post
 
-from PyQt6.QtWidgets import QMainWindow
-from PyQt6.QtGui import QAction, QKeySequence, QIcon
+from PySide6.QtWidgets import QMainWindow
+from PySide6.QtGui import QAction, QKeySequence, QIcon
 
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.windows import WindowKind

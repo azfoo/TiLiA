@@ -4,8 +4,8 @@ import functools
 import traceback
 from typing import Any, Optional, Callable, cast
 
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtWidgets import (
+from PySide6.QtCore import Qt, QPoint
+from PySide6.QtWidgets import (
     QGraphicsView,
     QMainWindow,
     QGraphicsItem,

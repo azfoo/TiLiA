@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable
 
-from PyQt6.QtWidgets import QMenu
+from PySide6.QtWidgets import QMenu
 
 from tilia.requests import get, Get, Post, post
 from tilia.ui.actions import TiliaAction

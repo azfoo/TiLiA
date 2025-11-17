@@ -1,4 +1,4 @@
-from PyQt6.QtGui import QAction
+from PySide6.QtGui import QAction
 from tilia.ui.actions import TiliaAction
 from tilia.ui.menus import MenuItemKind, TiliaMenu
 from tilia.requests import get, Get, serve, post, Post

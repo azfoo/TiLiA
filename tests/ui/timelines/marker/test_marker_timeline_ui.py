@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QColorDialog, QInputDialog
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QColorDialog, QInputDialog
 
 from tests.mock import Serve
 from tests.ui.test_qtui import get_toolbars_of_class

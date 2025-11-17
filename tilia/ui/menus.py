@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TypeAlias
 from enum import Enum, auto
 
-from PyQt6.QtWidgets import QMenu
-from PyQt6.QtGui import QAction
+from PySide6.QtWidgets import QMenu
+from PySide6.QtGui import QAction
 
 from tilia.ui.actions import TiliaAction, get_qaction
 from tilia.settings import settings

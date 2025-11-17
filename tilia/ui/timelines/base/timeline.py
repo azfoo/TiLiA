@@ -8,8 +8,8 @@ from typing import (
     Optional,
 )
 
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtWidgets import QGraphicsItem
+from PySide6.QtCore import Qt, QPoint
+from PySide6.QtWidgets import QGraphicsItem
 
 from tilia.timelines.component_kinds import ComponentKind
 from .context_menus import TimelineUIContextMenu

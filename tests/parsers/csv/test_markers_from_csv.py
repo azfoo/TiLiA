@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal
 from unittest.mock import patch, mock_open
 
-from PyQt6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog
 
 from tests.parsers.csv.common import assert_in_errors
 from tilia.ui import actions
