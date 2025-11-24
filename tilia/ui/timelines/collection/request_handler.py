@@ -50,7 +50,7 @@ class TimelineUIsRequestHandler(RequestHandler):
                 "Set duration",
                 "Insert duration (s)",
                 value=60,
-                min=1,
+                minValue=1,
             )
             if not success:
                 return False

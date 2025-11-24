@@ -32,7 +32,7 @@ def _get_args_for_timeline_height_set(timeline_uis):
         "Change timeline height",
         "Insert new timeline height",
         value=timeline_ui.get_data("height"),
-        min=10,
+        minValue=10,
     )
     if not accepted:
         raise UserCancelledDialog
