@@ -37,7 +37,7 @@ def makedirs_mock_raise_permissionerror_if_sitedirs(dir_path: str) -> None:
     if dir_path == dirs._SITE_DATA_DIR:
         raise PermissionError
     else:
-        Path(dir_path).mkdir()
+        Path(dir_path).mkdir(exist_ok=True)
 
 
 @patch("tilia.dirs._USER_DATA_DIR", Path("user_dir"))
