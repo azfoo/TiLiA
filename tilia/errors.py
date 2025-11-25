@@ -102,10 +102,11 @@ OPEN_FILE_INVALID_TLA = Error(
 LOAD_FILE_ERROR = Error("Load file error", "File '{}' could not be loaded. \n{}")
 UNDO_FAILED = Error(
     "Undo failed",
-    "Undo failed. TiLiA encountered an error while undoing the last action.\n{}",
+    "Undo failed. TiLiA encountered an error while undoing the last command.\n{}",
 )
 COMMAND_FAILED = Error(
-    "Command failed", "Something went wrong when executing the last command. \n{}"
+    "Command failed",
+    "Something went wrong when executing the last command.\nCommand={}\n\n{}",
 )
 SCORE_SVG_CREATE_ERROR = Error("Error creating SVG", "{}")
 INVALID_MEASURE_FRACTION = Error(

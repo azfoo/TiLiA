@@ -1,10 +1,10 @@
 import pytest
 
-import tilia.ui.actions
+import tilia.ui.commands
 from tests.mock import Serve
 from tests.ui.timelines.harmony.interact import click_harmony_ui
 from tilia.requests import Get
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 
 FLAT_SIGN = "`b"
 SHARP_SIGN = "`#"
@@ -22,7 +22,7 @@ def add_harmony(**kwargs):
     }
     default_params.update(kwargs)
     with Serve(Get.FROM_USER_HARMONY_PARAMS, (True, default_params)):
-        tilia.ui.actions.trigger(TiliaAction.HARMONY_ADD)
+        tilia.ui.commands.execute("timeline.harmony.add_harmony")
 
 
 def add_mode(**kwargs):
@@ -34,7 +34,7 @@ def add_mode(**kwargs):
     }
     default_params.update(kwargs)
     with Serve(Get.FROM_USER_MODE_PARAMS, (True, default_params)):
-        tilia.ui.actions.trigger(TiliaAction.MODE_ADD)
+        tilia.ui.commands.execute("timeline.harmony.add_mode")
 
 
 class TestRomanNumeralDisplay:
@@ -127,7 +127,7 @@ class TestRomanNumeralDisplay:
 
 class TestCopyPaste:
     def test_paste_multiple_to_harmony_with_mode_as_first_copied(
-        self, tilia_state, harmony_tlui, user_actions
+        self, tilia_state, harmony_tlui
     ):
         add_harmony()
         add_mode()
@@ -136,9 +136,9 @@ class TestCopyPaste:
 
         click_harmony_ui(harmony_tlui.modes()[0])
         click_harmony_ui(harmony_tlui.harmonies()[1], modifier="ctrl")
-        user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_COPY)
+        commands.execute("timeline.component.copy")
 
         click_harmony_ui(harmony_tlui.harmonies()[1])
-        user_actions.trigger(TiliaAction.TIMELINE_ELEMENT_PASTE)
+        commands.execute("timeline.component.paste")
 
         assert len(harmony_tlui) == 5

@@ -4,10 +4,8 @@ from tilia.enums import Side
 from tilia.requests import Post, Get, get, listen
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.timelines.base.timeline import TimelineUI
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 
 from tilia.ui.timelines.audiowave.element import AmplitudeBarUI
-from tilia.ui.timelines.audiowave.request_handlers import AudioWaveUIRequestHandler
 
 from ...format import format_media_time
 
@@ -36,13 +34,6 @@ class AudioWaveTimelineUI(TimelineUI):
                 self.id, "height", self.timeline.default_height
             )
             self.timeline.refresh()
-
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return AudioWaveUIRequestHandler(self).on_request(
-            request, selector, *args, *kwargs
-        )
 
     def on_side_arrow_press(self, side: Side):
         if not self.has_selected_elements:

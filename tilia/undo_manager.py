@@ -16,14 +16,7 @@ class UndoManager:
         return get_tilia_class_string(self)
 
     def _setup_requests(self):
-        LISTENS = {
-            (Post.EDIT_UNDO, self.undo),
-            (Post.EDIT_REDO, self.redo),
-            (Post.UNDO_MANAGER_SET_IS_RECORDING, self.set_is_recording),
-        }
-
-        for post_, callback in LISTENS:
-            listen(self, post_, callback)
+        listen(self, Post.UNDO_MANAGER_SET_IS_RECORDING, self.set_is_recording)
 
     @property
     def is_cleared(self):
@@ -71,6 +64,8 @@ class UndoManager:
         post(Post.APP_STATE_RESTORE, last_state)
 
         self.current_state_index -= 1
+
+        post(Post.APP_STATE_UNDO_OR_REDO_DONE)
 
     def redo(self):
         if self.current_state_index == -1:

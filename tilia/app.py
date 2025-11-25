@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import functools
 import itertools
 import json
 import os
@@ -13,6 +15,7 @@ import tilia.dirs
 from tilia.exceptions import NoReplyToRequest
 from tilia.file.tilia_file import TiliaFile
 from tilia.media.loader import load_media
+from tilia.ui import commands
 from tilia.utils import get_tilia_class_string
 from tilia.requests import get, post, serve, listen, Get, Post
 from tilia.timelines.collection.collection import Timelines
@@ -47,6 +50,7 @@ class App:
         self._setup_timelines()
         self.file_manager.file.timelines_hash = self.get_timelines_state()[1]
         self._setup_requests()
+        self._setup_commands()
         self.old_file_path = None
         self.cur_file_path = None
 
@@ -56,18 +60,13 @@ class App:
     def _setup_requests(self):
         LISTENS = {
             (Post.APP_CLEAR, self.on_clear),
-            (Post.APP_CLOSE, self.on_close),
             (Post.APP_FILE_LOAD, self.on_file_load),
             (Post.APP_MEDIA_LOAD, self.load_media),
             (Post.APP_STATE_RESTORE, self.on_restore_state),
             (Post.APP_STATE_RECOVER, self.recover_to_state),
             (Post.APP_SETUP_FILE, self.setup_file),
             (Post.APP_STATE_RECORD, self.on_record_state),
-            (Post.FILE_EXPORT, self.on_export),
             (Post.PLAYER_DURATION_AVAILABLE, self.set_file_media_duration),
-            # Listening on tilia.dirs would need to be top-level.
-            # That sounds like a bad idea, so we're listening here.
-            (Post.AUTOSAVES_FOLDER_OPEN, tilia.dirs.open_autosaves_dir),
         }
 
         SERVES = {
@@ -86,6 +85,38 @@ class App:
 
     def _setup_timelines(self):
         self.timelines = Timelines(self)
+
+    def _setup_commands(self):
+        commands.register("file.open", self.on_open, text="&Open...", shortcut="Ctrl+O")
+        commands.register(
+            "tilia.close",
+            self.on_close,
+            text="Close TiLiA",
+        )
+        commands.register(
+            "edit.undo", self.undo_manager.undo, text="&Undo", shortcut="Ctrl+Z"
+        )
+        commands.register(
+            "edit.redo", self.undo_manager.redo, text="&Redo", shortcut="Ctrl+Shift+Z"
+        )
+
+        commands.register(
+            "open_autosaves_folder",
+            tilia.dirs.open_autosaves_dir,
+            "Open autosa&ves folder...",
+        ),
+
+        commands.register(
+            "file.export.img",
+            functools.partial(self.on_export, export_type="img"),
+            text="&Image",
+        )
+
+        commands.register(
+            "file.export.json",
+            functools.partial(self.on_export, export_type="json"),
+            text="&JSON",
+        )
 
     def set_file_media_duration(
         self,
@@ -110,7 +141,7 @@ class App:
                 return
 
             if should_save:
-                post(Post.FILE_SAVE)
+                commands.execute("file.save")
 
         if not path:
             success, path = get(Get.FROM_USER_TILIA_FILE_PATH)

@@ -15,7 +15,12 @@ from tilia.timelines.harmony.components import Mode, Harmony
 from tilia.timelines.harmony.validators import validate_level_count
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.timelines.base.component import TimelineComponent
-from tilia.timelines.base.timeline import Timeline, TimelineComponentManager, TC
+from tilia.timelines.base.timeline import (
+    Timeline,
+    TimelineComponentManager,
+    TC,
+    TimelineFlag,
+)
 
 
 class HarmonyTLComponentManager(TimelineComponentManager):
@@ -143,6 +148,7 @@ class HarmonyTimeline(Timeline):
     ]
     NOT_EXPORTABLE_ATTRS = ["level_count", "level_height"]
     COMPONENT_MANAGER_CLASS = HarmonyTLComponentManager
+    FLAGS = [TimelineFlag.COMPONENTS_COPYABLE, TimelineFlag.COMPONENTS_IMPORTABLE]
 
     def __init__(
         self,

@@ -19,12 +19,12 @@ from tilia.requests import (
     Get,
     get,
     listen,
-    serve,
     stop_listening_to_all,
     stop_serving_all,
 )
 from tilia.timelines.base.timeline import TimelineFlag
 from tilia.timelines.timeline_kinds import TimelineKind
+from tilia.ui import commands
 from tilia.ui.timelines.base.timeline import TimelineUI
 from tilia.ui.windows import WindowKind
 
@@ -35,7 +35,6 @@ class ManageTimelines(QDialog):
         self.setWindowTitle("Manage Timelines")
         self._setup_widgets()
         self._setup_checkbox()
-        self._setup_requests()
         self.show()
 
         post(Post.WINDOW_OPEN_DONE, WindowKind.MANAGE_TIMELINES)
@@ -73,21 +72,6 @@ class ManageTimelines(QDialog):
         right_layout.addWidget(self.delete_button)
 
         layout.addLayout(right_layout)
-
-    def _setup_requests(self):
-        SERVES = {
-            (
-                Get.WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_TO_PERMUTE,
-                self.get_timeline_uis_to_permute,
-            ),
-            (
-                Get.WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_CURRENT,
-                self.get_current_timeline_ui,
-            ),
-        }
-
-        for request, callback in SERVES:
-            serve(self, request, callback)
 
     def _setup_checkbox(self):
         self.on_list_current_item_changed(self.list_widget.currentItem())
@@ -150,7 +134,6 @@ class TimelinesListWidget(QListWidget):
         self._setup_items()
 
         self.setCurrentRow(0)
-        self.timeline_uis_to_permute = None
         self._setup_requests()
 
     def _setup_requests(self):
@@ -204,9 +187,9 @@ class TimelinesListWidget(QListWidget):
         index = self.selectedIndexes()[0].row()
         previous = self.item(index - 1)
         if previous:
-            self.timeline_uis_to_permute = (selected.timeline_ui, previous.timeline_ui)
-            post(Post.TIMELINE_ORDINAL_DECREASE_FROM_MANAGE_TIMELINES)
-            self.timeline_uis_to_permute = None
+            commands.execute(
+                "timelines.permute_ordinal", selected.timeline_ui, previous.timeline_ui
+            )
 
     def on_down_button(self):
         if not self.selectedIndexes():
@@ -215,14 +198,16 @@ class TimelinesListWidget(QListWidget):
         index = self.selectedIndexes()[0].row()
         next_item = self.item(index + 1)
         if next_item:
-            self.timeline_uis_to_permute = (selected.timeline_ui, next_item.timeline_ui)
-            post(Post.TIMELINE_ORDINAL_INCREASE_FROM_MANAGE_TIMELINES)
-            self.timeline_uis_to_permute = None
+            commands.execute(
+                "timelines.permute_ordinal", selected.timeline_ui, next_item.timeline_ui
+            )
 
-    @staticmethod
-    def on_delete_button():
-        post(Post.TIMELINE_DELETE_FROM_MANAGE_TIMELINES)
+    @property
+    def selected_timeline_ui(self):
+        return self.selectedItems()[0].timeline_ui
 
-    @staticmethod
-    def on_clear_button():
-        post(Post.TIMELINE_CLEAR_FROM_MANAGE_TIMELINES)
+    def on_delete_button(self):
+        commands.execute("timeline.delete", self.selected_timeline_ui)
+
+    def on_clear_button(self):
+        commands.execute("timeline.clear", self.selected_timeline_ui)

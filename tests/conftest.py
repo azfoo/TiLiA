@@ -14,7 +14,6 @@ import tilia.log as logging_module
 import tilia.settings as settings_module
 from tilia.dirs import PROJECT_ROOT
 from tilia.media.player.base import MediaTimeChangeReason
-from tilia.ui import actions as tilia_actions_module
 from tilia.app import App
 from tilia.boot import setup_logic
 from tilia.requests import (
@@ -25,7 +24,6 @@ from tilia.requests import (
     get,
     listen,
 )
-from tilia.ui.actions import TiliaAction, setup_actions
 from tilia.ui.qtui import QtUI, TiliaMainWindow
 from tilia.ui.cli.ui import CLI
 from tilia.ui.windows import WindowKind
@@ -227,8 +225,6 @@ def qtui(tilia, cleanup_requests, qapplication, use_test_settings, use_test_logg
 # noinspection PyProtectedMember
 @pytest.fixture(scope="module")
 def tilia(cleanup_requests):
-    mw = TiliaMainWindow()
-    setup_actions(mw)
     tilia_ = setup_logic(autosaver=False)
     tilia_.set_file_media_duration(100)
     tilia_.reset_undo_manager()
@@ -276,50 +272,6 @@ def tlui(
         "audiowave": audiowave_tlui,
         "score": score_tlui,
     }[request.param]
-
-
-class UserActionManager:
-    """
-    Class to simulate and mock user interaction with the GUI.
-    """
-
-    def __init__(self):
-        self.action_to_trigger_count = {}
-        for action in tilia_actions_module.TiliaAction:
-            qaction = tilia_actions_module.get_qaction(action)
-            qaction.triggered.connect(
-                functools.partial(self._increment_trigger_count, action)
-            )
-
-    def trigger(self, action: TiliaAction):
-        tilia_actions_module.trigger(action)
-        self._increment_trigger_count(action)
-
-    def _increment_trigger_count(self, action):
-        if action not in self.action_to_trigger_count:
-            self.action_to_trigger_count[action] = 1
-        else:
-            self.action_to_trigger_count[action] += 1
-
-    def assert_triggered(self, action):
-        assert action in self.action_to_trigger_count
-
-    def assert_not_triggered(self, action):
-        assert action not in self.action_to_trigger_count
-
-
-@pytest.fixture
-def user_actions():
-    """
-    Fixture to simulate and mock user interaction with the GUI.
-    This should be used with the <kind>_tlui fixtures
-    and NOT with <kind>_tl fixtures, as the latter do not
-    create corresponding TimelineUIS. Tests with <kind>_tl
-    may still pass if they use this fixture, provided they do
-    not require a TimelineUI.
-    """
-    action_manager = UserActionManager()
-    yield action_manager
 
 
 def parametrize_tl(func):

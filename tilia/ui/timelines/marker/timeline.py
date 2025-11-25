@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from typing import TYPE_CHECKING
 
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.requests import Get, get, listen, Post
@@ -10,15 +11,17 @@ from tilia.ui.timelines.base.element import TimelineUIElement
 from tilia.ui.timelines.base.timeline import (
     TimelineUI,
 )
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
+from tilia.ui.timelines.collection.collection import TimelineSelector
 from tilia.ui.timelines.marker.context_menu import MarkerTimelineUIContextMenu
 from tilia.ui.timelines.marker.element import MarkerUI
-from tilia.ui.timelines.marker.request_handlers import MarkerUIRequestHandler
 from tilia.ui.timelines.marker.toolbar import MarkerTimelineToolbar
 
 from tilia.ui.timelines.copy_paste import (
     paste_into_element,
 )
+
+if TYPE_CHECKING:
+    from tilia.ui.timelines.base.timeline import TimelineUIs
 
 
 class MarkerTimelineUI(TimelineUI):
@@ -46,12 +49,23 @@ class MarkerTimelineUI(TimelineUI):
                 marker_ui.update_time()
                 marker_ui.update_color()
 
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return MarkerUIRequestHandler(self).on_request(
-            request, selector, *args, **kwargs
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        cls.register_timeline_command(
+            collection,
+            "add",
+            cls.on_add,
+            TimelineSelector.FIRST,
+            text="Add marker at current position",
+            shortcut="m",
+            icon="add_marker30",
         )
+
+    def on_add(self):
+        component, failure_reason = self.timeline.create_component(
+            ComponentKind.MARKER, get(Get.SELECTED_TIME)
+        )
+        return bool(component)
 
     def _deselect_all_but_last(self):
         if len(self.selected_elements) > 1:

@@ -1,11 +1,11 @@
+import functools
 from unittest.mock import patch
 
 import pytest
 
 from tests.constants import EXAMPLE_MEDIA_PATH, EXAMPLE_MEDIA_DURATION
 from tests.ui.timelines.interact import click_timeline_ui, drag_mouse_in_timeline_view
-from tests.mock import Serve
-from tests.utils import get_method_patch_target
+from tests.mock import Serve, patch_yes_or_no_dialog
 from tilia.file.common import are_tilia_data_equal
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.requests import Post, post, get, Get
@@ -14,54 +14,49 @@ from tilia.timelines.timeline_kinds import (
     TimelineKind as TlKind,
     TimelineKind,
 )
-from tilia.ui import actions
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 from tilia.ui.enums import ScrollType
-from tilia.ui.timelines.base.request_handlers import TimelineRequestHandler
-from tilia.ui.timelines.base.timeline import TimelineUI
-from tilia.ui.timelines.collection.request_handler import TimelineUIsRequestHandler
-from tilia.ui.timelines.marker.request_handlers import MarkerUIRequestHandler
+from tilia.ui.timelines.collection.collection import TimelineSelector
 from tilia.ui.coords import time_x_converter
 from tilia.ui.dialogs.add_timeline_without_media import AddTimelineWithoutMedia
+from tilia.ui.timelines.marker import MarkerTimelineUI
 
 ADD_TIMELINE_ACTIONS = [
-    TiliaAction.TIMELINES_ADD_HIERARCHY_TIMELINE,
-    TiliaAction.TIMELINES_ADD_BEAT_TIMELINE,
-    TiliaAction.TIMELINES_ADD_HARMONY_TIMELINE,
-    TiliaAction.TIMELINES_ADD_MARKER_TIMELINE,
-    TiliaAction.TIMELINES_ADD_AUDIOWAVE_TIMELINE,
+    "timelines.add.hierarchy",
+    "timelines.add.beat",
+    "timelines.add.harmony",
+    "timelines.add.marker",
+    "timelines.add.audiowave",
 ]
 
 
 class TestTimelineUICreation:
-    @pytest.mark.parametrize("action", ADD_TIMELINE_ACTIONS)
-    def test_create(self, action, tluis, user_actions):
+    @pytest.mark.parametrize("command", ADD_TIMELINE_ACTIONS)
+    def test_create(self, command, tluis):
         with (
             Serve(Get.FROM_USER_BEAT_PATTERN, (True, [1])),
             Serve(Get.FROM_USER_STRING, (True, "")),
         ):
-            user_actions.trigger(action)
+            commands.execute(command)
         assert len(tluis) == 1
 
-    def test_create_multiple(self, tilia_state, tluis, user_actions):
+    def test_create_multiple(self, tilia_state, tluis):
         create_actions = [
-            TiliaAction.TIMELINES_ADD_HARMONY_TIMELINE,
-            TiliaAction.TIMELINES_ADD_MARKER_TIMELINE,
-            TiliaAction.TIMELINES_ADD_BEAT_TIMELINE,
-            TiliaAction.TIMELINES_ADD_HIERARCHY_TIMELINE,
-            TiliaAction.TIMELINES_ADD_AUDIOWAVE_TIMELINE,
+            "timelines.add.harmony",
+            "timelines.add.marker",
+            "timelines.add.beat",
+            "timelines.add.hierarchy",
+            "timelines.add.audiowave",
         ]
         with (
             Serve(Get.FROM_USER_BEAT_PATTERN, (True, [1])),
             Serve(Get.FROM_USER_STRING, (True, "")),
         ):
-            for action in create_actions:
-                user_actions.trigger(action)
+            for command in create_actions:
+                commands.execute(command)
         assert len(tluis) == len(create_actions)
 
-    def test_with_no_media_loaded_set_media_duration(
-        self, tluis, tilia_state, user_actions
-    ):
+    def test_with_no_media_loaded_set_media_duration(self, tluis, tilia_state):
         tilia_state.duration = 0
         with Serve(
             Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA,
@@ -69,13 +64,11 @@ class TestTimelineUICreation:
         ):
             with Serve(Get.FROM_USER_FLOAT, (True, 10)):
                 with Serve(Get.FROM_USER_STRING, (True, "")):
-                    user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+                    commands.execute("timelines.add.marker")
         assert tilia_state.duration == 10
         assert len(tluis) == 1
 
-    def test_with_no_media_loaded_load_media(
-        self, tluis, tilia_state, user_actions, resources
-    ):
+    def test_with_no_media_loaded_load_media(self, tluis, tilia_state, resources):
         tilia_state.duration = 0
         with Serve(
             Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA,
@@ -83,47 +76,43 @@ class TestTimelineUICreation:
         ):
             with Serve(Get.FROM_USER_MEDIA_PATH, (True, EXAMPLE_MEDIA_PATH)):
                 with Serve(Get.FROM_USER_STRING, (True, "")):
-                    user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+                    commands.execute("timelines.add.marker")
         assert tilia_state.duration == EXAMPLE_MEDIA_DURATION
         assert len(tluis) == 1
 
-    def test_with_no_media_loaded_cancel_set_media_duration(
-        self, tluis, tilia_state, user_actions
-    ):
+    def test_with_no_media_loaded_cancel_set_media_duration(self, tluis, tilia_state):
         tilia_state.duration = 0
         with Serve(
             Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA,
             (True, AddTimelineWithoutMedia.Result.SET_DURATION),
         ):
             with Serve(Get.FROM_USER_FLOAT, (False, 10)):
-                user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+                commands.execute("timelines.add.marker")
         assert tilia_state.duration == 0
         assert len(tluis) == 0
 
-    def test_with_no_media_loaded_cancelload_media(
-        self, tluis, tilia_state, user_actions, resources
-    ):
+    def test_with_no_media_loaded_cancelload_media(self, tluis, tilia_state, resources):
         tilia_state.duration = 0
         with Serve(
             Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA,
             (True, AddTimelineWithoutMedia.Result.LOAD_MEDIA),
         ):
             with Serve(Get.FROM_USER_MEDIA_PATH, (False, EXAMPLE_MEDIA_PATH)):
-                user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+                commands.execute("timelines.add.marker")
         assert tilia_state.duration == 0
         assert len(tluis) == 0
 
-    @pytest.mark.parametrize("action", ADD_TIMELINE_ACTIONS)
-    def test_user_cancels_creation(self, action, tilia_state, tluis, user_actions):
+    @pytest.mark.parametrize("command", ADD_TIMELINE_ACTIONS)
+    def test_user_cancels_creation(self, command, tilia_state, tluis):
         with Serve(Get.FROM_USER_STRING, (False, "")):
-            user_actions.trigger(action)
+            commands.execute(command)
         assert tluis.is_empty
 
-    def test_delete(self, tls, tluis, user_actions):
+    def test_delete(self, tls, tluis):
         with Serve(Get.FROM_USER_STRING, (True, "")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+            commands.execute("timelines.add.marker")
 
-        tls.delete_timeline(tls[0])  # this should be an user action
+        tls.delete_timeline(tls[0])  # this should be a command
         assert tls.is_empty
 
     def test_update_select_order(self, tls, tluis):
@@ -249,7 +238,7 @@ def test_set_timeline_height_updates_playback_line_height(tls, tluis):
 def test_zooming_updates_playback_line_position(tls, tluis):
     tls.create_timeline(TimelineKind.MARKER_TIMELINE)
     post(Post.PLAYER_SEEK, 50)
-    post(Post.VIEW_ZOOM_IN)
+    commands.execute("view.zoom.in")
     assert tluis[0].scene.playback_line.line().x1() == pytest.approx(
         time_x_converter.get_x_by_time(50)
     )
@@ -277,14 +266,14 @@ class TestSeek:
     @pytest.mark.parametrize(
         "tlui,request_to_serve, add_request",
         [
-            ("marker", None, TiliaAction.MARKER_ADD),
+            ("marker", None, "timeline.marker.add"),
             (
                 "harmony",
                 (
                     Get.FROM_USER_MODE_PARAMS,
                     (True, {"step": 0, "accidental": 0, "type": "major"}),
                 ),
-                TiliaAction.MODE_ADD,
+                "timeline.harmony.add_mode",
             ),
             (
                 "harmony",
@@ -292,9 +281,9 @@ class TestSeek:
                     Get.FROM_USER_HARMONY_PARAMS,
                     (True, {"step": 0, "accidental": 0, "quality": "major"}),
                 ),
-                TiliaAction.HARMONY_ADD,
+                "timeline.harmony.add_harmony",
             ),
-            ("beat", None, TiliaAction.BEAT_ADD),
+            ("beat", None, "timeline.beat.add"),
         ],
         indirect=["tlui"],
     )
@@ -305,16 +294,15 @@ class TestSeek:
         add_request,
         slider_tlui,
         tilia_state,
-        user_actions,
     ):
         y = slider_tlui.trough.pos().y()
         click_timeline_ui(slider_tlui, 0, y=y)
         drag_mouse_in_timeline_view(time_x_converter.get_x_by_time(50), y)
         if request_to_serve:
             with Serve(*request_to_serve):
-                user_actions.trigger(add_request)
+                commands.execute(add_request)
         else:
-            user_actions.trigger(add_request)
+            commands.execute(add_request)
         assert tlui[0].get_data("time") == pytest.approx(50)
 
 
@@ -361,7 +349,7 @@ class TestLoop:
         post(Post.PLAYER_TOGGLE_LOOP, True)
         assert get(Get.LOOP_TIME) == (10, 50)
 
-        actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
+        commands.execute("timeline.component.delete")
         assert get(Get.LOOP_TIME) == (0, 0)
 
     def test_loop_hierarchy_neighbouring_passes(self):
@@ -389,7 +377,7 @@ class TestLoop:
 
         self.tlui.deselect_all_elements()
         self.tlui.select_element(self.tlui[0])
-        actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
+        commands.execute("timeline.component.delete")
         assert get(Get.LOOP_TIME) == (50, 100)
 
     def test_loop_hierarchy_delete_middle_cancels(self):
@@ -402,7 +390,7 @@ class TestLoop:
 
         self.tlui.deselect_all_elements()
         self.tlui.select_element(self.tlui[1])
-        actions.trigger(TiliaAction.TIMELINE_ELEMENT_DELETE)
+        commands.execute("timeline.component.delete")
         assert get(Get.LOOP_TIME) == (0, 0)
 
     def test_loop_hierarchy_merge_split(self):
@@ -412,12 +400,12 @@ class TestLoop:
         assert get(Get.LOOP_TIME) == (10, 20)
 
         with Serve(Get.MEDIA_CURRENT_TIME, 15):
-            actions.trigger(TiliaAction.HIERARCHY_SPLIT)
+            commands.execute("timeline.hierarchy.split")
         assert get(Get.LOOP_TIME) == (10, 20)
 
         self.tlui.deselect_all_elements()
         self.tlui.select_all_elements()
-        actions.trigger(TiliaAction.HIERARCHY_MERGE)
+        commands.execute("timeline.hierarchy.merge")
         assert get(Get.LOOP_TIME) == (10, 20)
 
     def test_loop_undo_manager_cancels(self):
@@ -426,66 +414,82 @@ class TestLoop:
         post(Post.PLAYER_TOGGLE_LOOP, True)
         assert get(Get.LOOP_TIME) == (10, 20)
 
-        post(Post.EDIT_UNDO)
+        commands.execute("edit.undo")
         assert get(Get.LOOP_TIME) == (0, 0)
 
 
-class TestRequests:
-    def test_timeline_element_request_fails(
-        self, tilia, qtui, user_actions, marker_tlui, tilia_errors
-    ):
-        healthy_state = tilia.get_app_state()
-        original_marker_add_func = MarkerUIRequestHandler.on_add
+class TestClearAllTimelines:
+    def test_none(self, tilia, tluis):
+        commands.execute("timelines.clear_all")
+        assert tluis.is_empty
 
-        def on_add_patch(*args, **kwargs):
-            # It's important that we let the operation happen
-            # so a marker is actually created before the exception is raised.
-            # In this way, there is actually a change in a app state
-            # that will need to be reverted.
-            original_marker_add_func(*args, **kwargs)
-            raise Exception
+    def test_non_clearable_timeline(self, tilia, tls, tluis):
+        tls.create_timeline(TimelineKind.SLIDER_TIMELINE)
+        commands.execute("timelines.clear_all")
 
-        with patch(
-            get_method_patch_target(MarkerUIRequestHandler.on_add),
-            side_effect=on_add_patch,
-        ):
-            user_actions.trigger(TiliaAction.MARKER_ADD)
+    def test_timelines_are_empty(self, tilia, tls, tluis):
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timelines.add.harmony", name="")
+        commands.execute("timelines.clear_all")
 
-        assert are_tilia_data_equal(tilia.get_app_state(), healthy_state)
+    def test_not_clearable_and_empty_timeline(self, tilia, tls, tluis):
+        tls.create_timeline(TimelineKind.SLIDER_TIMELINE)
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timelines.clear_all")
 
-    def test_timeline_uis_request_fails(self, tilia, qtui, user_actions, tilia_errors):
-        healthy_state = tilia.get_app_state()
-        original_timeline_add_func = TimelineUIsRequestHandler.on_timeline_add
+    def test_user_cancels(self, tilia, tluis):
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timeline.marker.add")
+        assert not tluis[0].is_empty
+        with patch_yes_or_no_dialog(False):
+            commands.execute("timelines.clear_all")
 
-        def on_timeline_add_patch(*args, **kwargs):
-            # see comment in previous test
-            original_timeline_add_func(*args, **kwargs)
-            raise Exception
+        assert not tluis[0].is_empty
 
-        with patch(
-            get_method_patch_target(TimelineUIsRequestHandler.on_timeline_add),
-            side_effect=on_timeline_add_patch,
-        ):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+    def test_one(self, tilia, tluis):
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timeline.marker.add")
+        assert not tluis[0].is_empty
+        with patch_yes_or_no_dialog(True):
+            commands.execute("timelines.clear_all")
 
-        assert are_tilia_data_equal(tilia.get_app_state(), healthy_state)
+        assert tluis[0].is_empty
 
-    def test_timeline_ui_request_fails(
-        self, tilia, qtui, user_actions, tilia_errors, marker_tlui
-    ):
-        healthy_state = tilia.get_app_state()
-        original_timeline_add_func = TimelineRequestHandler.on_timeline_data_set
+    def test_multiple(self, tilia, tluis):
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timeline.marker.add")
 
-        def on_timeline_data_set_patch(*args, **kwargs):
-            # see comment in previous test
-            original_timeline_add_func(*args, **kwargs)
-            raise Exception
+        commands.execute("timelines.add.marker", name="")
+        commands.execute("timeline.marker.add")
 
-        with patch(
-            TimelineUI.__module__ + ".TimelineRequestHandler.on_timeline_data_set",
-            side_effect=on_timeline_data_set_patch,
-        ):
-            with Serve(Get.FROM_USER_STRING, ("new name", True)):
-                user_actions.trigger(TiliaAction.TIMELINE_NAME_SET)
+        with patch_yes_or_no_dialog(True):
+            commands.execute("timelines.clear_all")
 
-        assert are_tilia_data_equal(tilia.get_app_state(), healthy_state)
+        assert all(tl.is_empty for tl in tluis[0])
+
+
+def test_timeline_command_fails(tilia, qtui, tluis, marker_tlui, tilia_errors):
+    healthy_state = tilia.get_app_state()
+
+    def add_and_fail():
+        # It's important that we let the operation happen
+        # so a marker is actually created before the exception is raised.
+        # In this way, there is actually a change in a app state
+        # that will need to be reverted.
+        marker_tlui.on_add()
+        raise Exception
+
+    MarkerTimelineUI.add_and_fail = add_and_fail
+
+    callback = functools.partial(
+        tluis.on_timeline_command,
+        TimelineKind.MARKER_TIMELINE,
+        "add_and_fail",
+        TimelineSelector.ALL,
+    )
+    # register the add_and_fail as a callback for the timeline.marker.add command
+    commands.register("timeline.marker.add", callback)
+
+    commands.execute("timeline.marker.add")
+
+    assert are_tilia_data_equal(tilia.get_app_state(), healthy_state)

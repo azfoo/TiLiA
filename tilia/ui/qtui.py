@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import functools
 import re
-from functools import partial
 from pathlib import Path
 
 from typing import Optional
@@ -29,8 +29,7 @@ import tilia.parsers.csv.hierarchy
 import tilia.parsers.csv.beat
 import tilia.parsers.csv.marker
 import tilia.parsers.score.musicxml
-from . import actions
-from .actions import TiliaAction
+from tilia.ui import commands
 from .dialog_manager import DialogManager
 from .dialogs.basic import display_error
 from .dialogs.crash import CrashDialog
@@ -48,7 +47,6 @@ from .menus import (
 )
 from .options_toolbar import OptionsToolbar
 from .player import PlayerToolbar
-from .ui_import import on_import_to_timeline
 from .windows.manage_timelines import ManageTimelines
 from .windows.metadata import MediaMetadataWindow
 from .windows.about import About
@@ -87,37 +85,34 @@ class TiliaMainWindow(QMainWindow):
         key_comb_to_taction = [
             (
                 QKeyCombination(Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_C),
-                TiliaAction.TIMELINE_ELEMENT_COPY,
+                "timeline.component.copy",
             ),
             (
                 QKeyCombination(Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_V),
-                TiliaAction.TIMELINE_ELEMENT_PASTE,
+                "timeline.component.paste",
             ),
             (
                 QKeyCombination(Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Delete),
-                TiliaAction.TIMELINE_ELEMENT_DELETE,
+                "timeline.component.delete",
             ),
             (
                 QKeyCombination(Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Return),
-                TiliaAction.TIMELINE_ELEMENT_INSPECT,
+                "timeline.element.inspect",
             ),
             (
                 QKeyCombination(Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Enter),
-                TiliaAction.TIMELINE_ELEMENT_INSPECT,
+                "timeline.element.inspect",
             ),
         ]
 
         for comb, taction in key_comb_to_taction:
             if event.keyCombination() == comb:
-                actions.get_qaction(taction).trigger()
+                commands.get_qaction(taction).trigger()
         super().keyPressEvent(event)
 
     def closeEvent(self, event):
-        actions.trigger(TiliaAction.APP_CLOSE)
+        commands.execute("tilia.close")
         event.ignore()
-
-    def on_close(self):
-        super().closeEvent(None)
 
     def on_export(self, save_path: str):
         widget: QGraphicsScene = self.centralWidget().scene()
@@ -130,7 +125,7 @@ class TiliaMainWindow(QMainWindow):
         if result != widget.sceneRect().width():
             margins = 2 * get(Get.LEFT_MARGIN_X)
             zoom_level = (result - margins) / (widget.sceneRect().width() - margins)
-            post(Post.VIEW_ZOOM_IN, zoom_level)
+            commands.execute("view.zoom.in", zoom_level)
         else:
             zoom_level = 1.0
 
@@ -142,7 +137,7 @@ class TiliaMainWindow(QMainWindow):
         del image
 
         if zoom_level != 1.0:
-            post(Post.VIEW_ZOOM_OUT, zoom_level)
+            commands.execute("view.zoom.out", zoom_level)
 
 
 class QtUI:
@@ -153,7 +148,7 @@ class QtUI:
         self._setup_fonts()
         self._setup_sizes()
         self._setup_requests()
-        self._setup_actions()
+        self._setup_commands()
         self._setup_widgets()
         self._setup_dialog_manager()
         self._setup_menus()
@@ -176,21 +171,12 @@ class QtUI:
         LISTENS = {
             (Post.APP_FILE_LOAD, self.on_file_load),
             (Post.PLAYBACK_AREA_SET_WIDTH, self.on_timeline_set_width),
-            (Post.UI_MEDIA_LOAD_LOCAL, self.on_media_load_local),
-            (Post.UI_MEDIA_LOAD_YOUTUBE, self.on_media_load_youtube),
-            (Post.TIMELINE_ELEMENT_INSPECT, self.on_timeline_element_inspect),
-            (Post.WEBSITE_HELP_OPEN, self.on_website_help_open),
             (Post.WINDOW_OPEN, self.on_window_open),
             (Post.WINDOW_CLOSE, self.on_window_close),
             (Post.WINDOW_CLOSE_DONE, self.on_window_close_done),
             (Post.REQUEST_CLEAR_UI, self.on_clear_ui),
             (Post.TIMELINE_KIND_INSTANCED, self.on_timeline_kind_change),
             (Post.TIMELINE_KIND_NOT_INSTANCED, self.on_timeline_kind_change),
-            (Post.IMPORT_CSV, self.on_import_to_timeline),
-            (
-                Post.IMPORT_MUSICXML,
-                partial(self.on_import_to_timeline, TlKind.SCORE_TIMELINE),
-            ),
             (Post.DISPLAY_ERROR, display_error),
             (Post.UI_EXIT, self.exit),
         }
@@ -214,6 +200,40 @@ class QtUI:
 
         for request, callback in SERVES:
             serve(self, request, callback)
+
+    def _setup_commands(self):
+        window_commands = [
+            ("window.open.metadata", WindowKind.MEDIA_METADATA, "Metadata"),
+            ("window.open.settings", WindowKind.SETTINGS, "Settings"),
+            ("window.open.manage_timelines", WindowKind.MANAGE_TIMELINES, "Manage"),
+            ("window.open.about", WindowKind.ABOUT, "About"),
+        ]
+
+        for command, kind, text in window_commands:
+            commands.register(
+                command, functools.partial(self.on_window_open, kind), text
+            )
+
+        commands.register(
+            "media.load.local",
+            self.on_media_load_local,
+            text="&Local...",
+            shortcut="Ctrl+Shift+L",
+        )
+
+        commands.register(
+            "media.load.youtube",
+            self.on_media_load_youtube,
+            text="&YouTube...",
+        )
+
+        commands.register(
+            "timeline.element.inspect",
+            self.on_timeline_element_inspect,
+            text="Inspect",
+        )
+
+        commands.register("open_website_help", self.on_open_website_help, "&Help...")
 
     def _setup_main_window(self, mw: TiliaMainWindow):
         self.main_window = mw
@@ -317,9 +337,6 @@ class QtUI:
         self.main_window.addToolBar(self.player_toolbar)
         self.main_window.addToolBar(self.options_toolbar)
 
-    def _setup_actions(self):
-        actions.setup_actions(self.main_window)
-
     def on_window_open(self, kind: WindowKind):
         """Open a window of 'kind', if there is no window of that kind open.
         Otherwise, focus window of that kind."""
@@ -404,22 +421,9 @@ class QtUI:
                 window.close()
         self.main_window.setFocus()
 
-    def on_website_help_open(self):
+    @staticmethod
+    def on_open_website_help():
         QDesktopServices.openUrl(QUrl(f"{constants.WEBSITE_URL}/help"))
-
-    def on_import_to_timeline(self, tl_kind: TlKind):
-        prev_state = get(Get.APP_STATE)
-        status, errors = on_import_to_timeline(self.timeline_uis, tl_kind)
-
-        if status == "failure":
-            post(Post.APP_STATE_RESTORE, prev_state)
-            if errors:
-                tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, "\n".join(errors))
-        elif status == "success" and errors:
-            tilia.errors.display(
-                tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, "\n".join(errors)
-            )
-            post(Post.APP_STATE_RECORD, "Import from csv file")
 
     @staticmethod
     def show_crash_dialog(exception_info):

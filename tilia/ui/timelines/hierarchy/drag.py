@@ -4,11 +4,11 @@ import math
 from tilia.requests import get, Get, post, Post
 from tilia.ui.coords import time_x_converter
 from tilia.ui.timelines.drag import DragManager
+from tilia.ui.timelines.hierarchy import HierarchyUI
 from tilia.ui.timelines.hierarchy.handles import (
     HierarchyBodyHandle,
     HierarchyFrameHandle,
 )
-from tilia.ui.timelines.hierarchy.extremity import Extremity
 
 MIN_DRAG_GAP = 4
 DRAG_PROXIMITY_LIMIT = 4
@@ -33,9 +33,9 @@ def start_drag(
 
 
 def get_after_each_drag_func(hierarchy_ui, extremity):
-    if extremity in [Extremity.START, Extremity.END]:
+    if extremity in [HierarchyUI.Extremity.START, HierarchyUI.Extremity.END]:
         return functools.partial(after_each_body_handle_drag, hierarchy_ui, extremity)
-    elif extremity in [Extremity.PRE_START, Extremity.POST_END]:
+    elif extremity in [HierarchyUI.Extremity.PRE_START, HierarchyUI.Extremity.POST_END]:
         extremity_x = extremity.value + "_x"
         uis_that_share_handle = hierarchy_ui.timeline_ui.get_elements_by_attr(
             extremity_x, getattr(hierarchy_ui, extremity_x)
@@ -48,9 +48,9 @@ def get_after_each_drag_func(hierarchy_ui, extremity):
 
 
 def get_drag_limits(hierarchy_ui, extremity):
-    if extremity in [Extremity.START, Extremity.END]:
+    if extremity in [HierarchyUI.Extremity.START, HierarchyUI.Extremity.END]:
         return get_body_handle_drag_limits(hierarchy_ui, extremity)
-    elif extremity in [Extremity.PRE_START, Extremity.POST_END]:
+    elif extremity in [HierarchyUI.Extremity.PRE_START, HierarchyUI.Extremity.POST_END]:
         return get_frame_handles_drag_limits(hierarchy_ui, extremity)
     else:
         raise ValueError("Unrecognized extremity")
@@ -58,7 +58,7 @@ def get_drag_limits(hierarchy_ui, extremity):
 
 def get_body_handle_drag_limits(
     hierarchy_ui,
-    extremity: Extremity,
+    extremity: HierarchyUI.Extremity,
 ) -> tuple[int, int]:
     handle_x = hierarchy_ui.extremity_to_x(
         extremity, hierarchy_ui.start_x, hierarchy_ui.end_x
@@ -81,9 +81,9 @@ def get_body_handle_drag_limits(
 
 
 def get_frame_handles_drag_limits(hierarchy_ui, extremity):
-    if extremity == Extremity.PRE_START:
+    if extremity == HierarchyUI.Extremity.PRE_START:
         return get(Get.LEFT_MARGIN_X), hierarchy_ui.start_x
-    elif extremity == Extremity.POST_END:
+    elif extremity == HierarchyUI.Extremity.POST_END:
         return hierarchy_ui.end_x, get(Get.RIGHT_MARGIN_X)
 
 
@@ -100,8 +100,8 @@ def after_each_body_handle_drag(hierarchy_ui, extremity, x: int) -> None:
 
 def after_each_frame_handle_drag(extremity, uis, x: int):
     body_extremity = {
-        Extremity.PRE_START: Extremity.START,
-        Extremity.POST_END: Extremity.END,
+        HierarchyUI.Extremity.PRE_START: HierarchyUI.Extremity.START,
+        HierarchyUI.Extremity.POST_END: HierarchyUI.Extremity.END,
     }[extremity]
     if math.isclose(
         time := time_x_converter.get_time_by_x(x),

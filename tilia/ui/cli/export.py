@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tilia.requests import post, Post
+from tilia.ui import commands
 from tilia.ui.cli import io
 
 
@@ -22,4 +22,4 @@ def export(namespace):
         if not io.ask_yes_or_no(f"File {path} already exists. Overwrite?"):
             return
 
-    post(Post.FILE_EXPORT, str(path.resolve()))
+    commands.execute("file.export.json", str(path.resolve()))

@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     TypeVar,
     Optional,
+    Callable,
 )
 
 from PyQt6.QtCore import Qt, QPoint
@@ -26,17 +27,37 @@ from tilia.ui.timelines.scene import TimelineScene
 from tilia.ui.timelines.copy_paste import (
     CopyAttributes,
     get_copy_data_from_elements,
+    get_copy_data_from_element,
 )
-from .request_handlers import TimelineRequestHandler
-from ..collection.requests.enums import ElementSelector
+from tilia.ui import commands
 from ..view import TimelineView
 from ...coords import time_x_converter
 from ...windows import WindowKind
 
 if TYPE_CHECKING:
-    from tilia.ui.timelines.collection.collection import TimelineUIs
+    from tilia.ui.timelines.collection.collection import TimelineUIs, TimelineSelector
 
 T = TypeVar("T", bound="TimelineUIElement")
+
+
+def with_elements(func: Callable) -> Callable:
+    """Decorator to handle element selection for timeline commands.
+
+    If no elements are provided, uses the timeline's selected elements.
+    If no elements are selected, returns False.
+    """
+
+    @functools.wraps(func)
+    def wrapper(
+        self, elements: list[TimelineUIElement] | None = None, *args: Any, **kwargs: Any
+    ) -> Any:
+        if not elements:
+            if not self.selected_elements:
+                return False
+            elements = self.selected_elements
+        return func(self, elements, *args, **kwargs)
+
+    return wrapper
 
 
 class TimelineUI(ABC):
@@ -139,6 +160,38 @@ class TimelineUI(ABC):
     def displayed_name(self):
         return self.scene.text.toPlainText()
 
+    @classmethod
+    def register_timeline_command(
+        cls,
+        collection: TimelineUIs,
+        name: str,
+        callback: Callable,
+        selector: TimelineSelector,
+        *args,
+        **kwargs,
+    ):
+        """
+        Register a command named "timeline.{timeline_kind}.{name}" for this timeline kind
+        with TimelineUIs.on_timeline_command() as a wrapper for the callback.
+        """
+        kind_shortname = cls.TIMELINE_KIND.name.lower().replace("_timeline", "")
+
+        commands.register(
+            f"timeline.{kind_shortname}.{name}",
+            functools.partial(
+                collection.on_timeline_command, cls.TIMELINE_KIND, callback, selector
+            ),
+            *args,
+            **kwargs,
+        )
+
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        """
+        Override to register commands for this timeline kind.
+        This will be called by TimelineUIs.register_commands() on launch.
+        """
+
     def get_data(self, attr: str):
         return self.timeline.get_data(attr)
 
@@ -197,15 +250,6 @@ class TimelineUI(ABC):
     def get_elements_by_attr(self, attr: str, value: Any) -> list[T]:
         return [el for el in self.elements if getattr(el, attr) == value]
 
-    def get_elements_by_selector(self, selector: ElementSelector):
-        selector_to_elements = {
-            ElementSelector.ALL: self.elements.copy(),
-            ElementSelector.SELECTED: self.selected_elements.copy(),
-            ElementSelector.NONE: None,
-        }
-
-        return selector_to_elements[selector]
-
     @staticmethod
     def set_elements_attr(elements: list[T], attr: str, value: Any):
         for elm in elements:
@@ -219,9 +263,6 @@ class TimelineUI(ABC):
 
     def _setup_collection_requests(self):
         self.request_to_callback = {}
-
-    def on_timeline_request(self, request, *args, **kwargs):
-        return TimelineRequestHandler(self, {}).on_request(request, *args, **kwargs)
 
     def on_timeline_component_created(
         self, kind: ComponentKind, id: int, get_data, set_data
@@ -529,3 +570,44 @@ class TimelineUI(ABC):
 
     def update_element_order(self, element: T):
         self.element_manager.update_element_order(element)
+
+    @staticmethod
+    def elements_to_components(
+        elements: list[TimelineUIElement],
+    ) -> list[TimelineComponent]:
+        return [e.tl_component for e in elements]
+
+    @with_elements
+    def on_delete_component(self, elements: list[TimelineUIElement]) -> bool:
+        self.timeline.delete_components(self.elements_to_components(elements))
+        return True
+
+    @with_elements
+    def on_copy_element(self, elements: list[TimelineUIElement]) -> bool:
+        component_data = [
+            get_copy_data_from_element(e, e.DEFAULT_COPY_ATTRIBUTES) for e in elements
+        ]
+
+        if not component_data:
+            return False
+
+        post(
+            Post.TIMELINE_ELEMENT_COPY_DONE,
+            {"components": component_data, "timeline_kind": self.timeline.KIND},
+        )
+        return True
+
+    def on_paste_element(self, clipboard_contents: dict):
+        components = clipboard_contents["components"]
+        cardinality = "multiple" if len(components) > 1 else "single"
+
+        if self.has_selected_elements:
+            method_name = f"paste_{cardinality}_into_selected_elements"
+        else:
+            method_name = f"paste_{cardinality}_into_timeline"
+
+        if hasattr(self, method_name):
+            getattr(self, method_name)(components)
+            return True
+        else:
+            return False

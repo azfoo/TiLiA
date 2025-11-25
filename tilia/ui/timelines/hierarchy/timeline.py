@@ -1,22 +1,29 @@
-from __future__ import annotations
-
-from tilia.requests import get, Get, Post, listen
+from tilia.requests import get, Get, Post, listen, post
 from tilia.ui.timelines.base.timeline import (
     TimelineUI,
+    with_elements,
 )
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 from tilia.ui.timelines.hierarchy import HierarchyTimelineToolbar, HierarchyUI
 from tilia.ui.timelines.copy_paste import get_copy_data_from_element
 import tilia.ui.timelines.copy_paste
 from tilia.ui.timelines.copy_paste import paste_into_element
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
+from tilia.ui.timelines.hierarchy.copy_paste import (
+    _validate_copy_cardinality,
+    _display_copy_error,
+    _validate_paste_complete_cardinality,
+    _display_paste_complete_error,
+    _validate_paste_complete_level,
+)
 from tilia.ui.timelines.hierarchy.handles import HierarchyBodyHandle
 from tilia.ui.timelines.hierarchy.key_press_manager import (
     HierarchyTimelineUIKeyPressManager,
 )
-from tilia.ui.timelines.hierarchy.request_handlers import HierarchyUIRequestHandler
 from tilia.undo_manager import PauseUndoManager
+from tilia.settings import settings
+import tilia.ui.strings
+from tilia.ui.timelines.collection.collection import TimelineUIs, TimelineSelector
 
 
 class HierarchyTimelineUI(TimelineUI):
@@ -34,6 +41,59 @@ class HierarchyTimelineUI(TimelineUI):
             self.on_settings_updated,
         )
 
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        args = [
+            ("add_post_end", "Add post-end", "", ""),
+            ("add_pre_start", "Add pre-start", "", ""),
+            (
+                "create_child",
+                "Create child",
+                "",
+                "below30",
+            ),
+            (
+                "decrease_level",
+                "Move down a level",
+                "Ctrl+Down",
+                "lvldwn30",
+            ),
+            ("group", "Group", "g", "group30"),
+            (
+                "increase_level",
+                "Move up a level",
+                "Ctrl+Up",
+                "lvlup30",
+            ),
+            ("merge", "Merge", "e", "merge30"),
+            (
+                "split",
+                "Split at current position",
+                "s",
+                "split30",
+            ),
+            (
+                "export_audio",
+                "Export to audio",
+                "",
+                "",
+            ),
+        ]
+
+        for name, text, shortcut, icon in args:
+            selector = (
+                TimelineSelector.SELECTED if name != "split" else TimelineSelector.FIRST
+            )
+            cls.register_timeline_command(
+                collection,
+                name,
+                getattr(cls, "on_" + name),
+                selector,
+                text=text,
+                shortcut=shortcut,
+                icon=icon,
+            )
+
     def on_settings_updated(self, updated_settings):
         if "hierarchy_timeline" in updated_settings:
             get(Get.TIMELINE_COLLECTION).set_timeline_data(
@@ -42,13 +102,6 @@ class HierarchyTimelineUI(TimelineUI):
             for hierarchy_ui in self:
                 hierarchy_ui.update_position()
                 hierarchy_ui.update_color()
-
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return HierarchyUIRequestHandler(self).on_request(
-            request, selector, *args, **kwargs
-        )
 
     def get_handle_by_x(self, x: float):
         def starts_or_ends_at_time(ui: HierarchyUI) -> bool:
@@ -228,3 +281,150 @@ class HierarchyTimelineUI(TimelineUI):
         return HierarchyUI.base_height() + (
             HierarchyUI.x_increment_per_lvl() * max_level
         )
+
+    @with_elements
+    def on_copy_element(self, elements: list[HierarchyUI]) -> bool:
+        success, reason = _validate_copy_cardinality(elements)
+        if not success:
+            _display_copy_error(reason)
+
+        component_data = [self.get_copy_data_from_hierarchy_ui(e) for e in elements]
+
+        if not component_data:
+            return False
+
+        post(
+            Post.TIMELINE_ELEMENT_COPY_DONE,
+            {"components": component_data, "timeline_kind": self.timeline.KIND},
+        )
+
+        return True
+
+    def on_paste_element_complete(self, clipboard_contents: dict) -> bool:
+        copied_components = clipboard_contents["components"]
+        if not copied_components or not self.has_selected_elements:
+            return False
+
+        success, reason = _validate_paste_complete_cardinality(copied_components)
+        if not success:
+            _display_paste_complete_error(reason)
+            return False
+
+        data = copied_components[0]
+        for element in self.selected_elements:
+            success, reason = _validate_paste_complete_level(element, data)
+            if not success:
+                _display_paste_complete_error(reason)
+                return False
+
+            while children := element.get_data("children"):
+                self.timeline.delete_components(children)
+
+            self.paste_with_children_into_element(data, element)
+
+        return True
+
+    @with_elements
+    def on_increase_level(self, elements: list[HierarchyUI]) -> bool:
+        min_margin = 10
+        success = self.timeline.alter_levels(
+            self.elements_to_components(list(reversed(elements))), 1
+        )
+        if success:
+            max_height = self.get_max_hierarchy_height()
+            if max_height > self.get_data("height") + min_margin:
+                get(Get.TIMELINE_COLLECTION).set_timeline_data(
+                    self.id, "height", max_height + min_margin
+                )
+
+        return success
+
+    @with_elements
+    def on_decrease_level(self, elements: list[HierarchyUI]):
+        return self.timeline.alter_levels(self.elements_to_components(elements), -1)
+
+    @with_elements
+    def on_group(self, elements: list[HierarchyUI]):
+        return self.timeline.group(self.elements_to_components(elements))
+
+    def on_split(self, time: float | None = None):
+        if time is None:
+            time = get(Get.SELECTED_TIME)
+        return self.timeline.split(time)
+
+    @with_elements
+    def on_merge(self, elements: list[HierarchyUI]):
+        return self.timeline.merge(self.elements_to_components(elements))
+
+    @with_elements
+    def on_create_child(self, elements: list[HierarchyUI]):
+        def _should_prompt_create_level_below() -> bool:
+            return settings.get("hierarchy_timeline", "prompt_create_level_below")
+
+        def _prompt_create_level_below() -> bool:
+            return get(
+                Get.FROM_USER_YES_OR_NO,
+                tilia.ui.strings.PROMPT_CREATE_LEVEL_BELOW_TITLE,
+                tilia.ui.strings.PROMPT_CREATE_LEVEL_BELOW_MESSAGE,
+            )
+
+        if any([e.get_data("level") == 1 for e in elements]):
+            if not _should_prompt_create_level_below() or _prompt_create_level_below():
+                self.on_increase_level(self.elements)
+            else:
+                return False
+
+        return self.timeline.create_children(self.elements_to_components(elements))
+
+    @with_elements
+    def on_add_pre_start(self, elements: list[HierarchyUI]):
+        accept, value = get(Get.FROM_USER_FLOAT, "Add pre-start", "Pre-start length")
+        if not accept:
+            return False
+
+        self._on_add_frame(elements, value, HierarchyUI.Extremity.PRE_START)
+        return True
+
+    @with_elements
+    def on_add_post_end(self, elements: list[HierarchyUI]):
+        accept, value = get(Get.FROM_USER_FLOAT, "Add post-end", "Post-end length")
+        if not accept:
+            return False
+
+        self._on_add_frame(elements, value, HierarchyUI.Extremity.POST_END)
+        return True
+
+    def _on_add_frame(
+        self,
+        elements: list[HierarchyUI],
+        value: float,
+        extremity: HierarchyUI.Extremity,
+    ):
+        from tilia.ui.timelines.hierarchy.element import HierarchyUI
+
+        elements_to_set = []
+        x_attr = extremity.value + "_x"
+        for elm in elements:
+            elements_to_set += self.get_elements_by_attr(x_attr, getattr(elm, x_attr))
+
+        time_offset = (
+            value if extremity == HierarchyUI.Extremity.PRE_START else value * -1
+        )
+        time = (
+            elements_to_set[0].get_data(
+                HierarchyUI.frame_to_body_extremity(extremity).value
+            )
+            - time_offset
+        )
+        self.set_elements_attr(elements_to_set, extremity.value, time)
+
+    @with_elements
+    def on_export_audio(self, elements: list[HierarchyUI]) -> bool:
+        for elm in elements:
+            post(
+                Post.PLAYER_EXPORT_AUDIO,
+                segment_name=elm.full_name,
+                start_time=elm.get_data("start"),
+                end_time=elm.get_data("end"),
+            )
+        return False

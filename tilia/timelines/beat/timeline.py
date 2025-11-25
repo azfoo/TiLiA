@@ -15,7 +15,12 @@ from tilia.timelines.beat.validators import validate_integer_list
 from tilia.timelines.base.component.pointlike import scale_pointlike, crop_pointlike
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.timelines.base.timeline import Timeline, TimelineComponentManager, TC
+from tilia.timelines.base.timeline import (
+    Timeline,
+    TimelineComponentManager,
+    TC,
+    TimelineFlag,
+)
 from tilia.timelines.beat.components import Beat
 
 
@@ -184,6 +189,7 @@ class BeatTimeline(Timeline):
 
     KIND = TimelineKind.BEAT_TIMELINE
     COMPONENT_MANAGER_CLASS = BeatTLComponentManager
+    FLAGS = [TimelineFlag.COMPONENTS_COPYABLE, TimelineFlag.COMPONENTS_IMPORTABLE]
 
     def __init__(
         self,

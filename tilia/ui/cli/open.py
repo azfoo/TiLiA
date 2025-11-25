@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from tilia.requests import post, Post
+from tilia.ui import commands
 from tilia.ui.path import ensure_tla_extension
 
 
@@ -16,4 +16,4 @@ def open(namespace):
     path = Path(namespace.path)
     path = ensure_tla_extension(path)
 
-    post(Post.FILE_OPEN, str(path.resolve()))
+    commands.execute("file.open", str(path.resolve()))

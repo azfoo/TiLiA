@@ -6,19 +6,21 @@ from enum import Enum, auto
 from PyQt6.QtWidgets import QMenu
 from PyQt6.QtGui import QAction
 
-from tilia.ui.actions import TiliaAction, get_qaction
+from tilia.timelines.timeline_kinds import get_timeline_name, TimelineKind
+from tilia.ui import commands
+from tilia.ui.commands import get_qaction
 from tilia.settings import settings
 from tilia.requests.post import post, Post, listen
 from tilia.ui.enums import WindowState
 
 
 class MenuItemKind(Enum):
+    COMMAND = auto()
     SEPARATOR = auto()
-    ACTION = auto()
     SUBMENU = auto()
 
 
-TiliaMenuItem: TypeAlias = None | TiliaAction | type[QMenu]
+TiliaMenuItem: TypeAlias = None | type[QMenu]
 
 
 class TiliaMenu(QMenu):
@@ -51,8 +53,8 @@ class TiliaMenu(QMenu):
         self.class_to_submenu[cls] = submenu
         self.addMenu(submenu)
 
-    def add_action(self, t_action: TiliaAction):
-        self.addAction(get_qaction(t_action))
+    def add_action(self, name: str):
+        self.addAction(get_qaction(name))
 
     def get_submenu(self, cls: type[TiliaMenu]):
         return self.class_to_submenu[cls]
@@ -61,8 +63,8 @@ class TiliaMenu(QMenu):
 class LoadMediaMenu(TiliaMenu):
     menu_title = "&Load media"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.MEDIA_LOAD_LOCAL),
-        (MenuItemKind.ACTION, TiliaAction.MEDIA_LOAD_YOUTUBE),
+        (MenuItemKind.COMMAND, "media.load.local"),
+        (MenuItemKind.COMMAND, "media.load.youtube"),
     ]
 
 
@@ -80,7 +82,7 @@ class RecentFilesMenu(QMenu):
 
     def _get_action(self, file):
         qaction = QAction(str(file), self)
-        qaction.triggered.connect(lambda _: post(Post.FILE_OPEN, file))
+        qaction.triggered.connect(lambda _: commands.execute("file.open", file))
         return qaction
 
     def update_items(self):
@@ -91,94 +93,94 @@ class RecentFilesMenu(QMenu):
 class ExportMenu(TiliaMenu):
     menu_title = "&Export..."
     items = [
-        (MenuItemKind.ACTION, TiliaAction.FILE_EXPORT_JSON),
-        (MenuItemKind.ACTION, TiliaAction.FILE_EXPORT_IMG),
+        (MenuItemKind.COMMAND, "file.export.json"),
+        (MenuItemKind.COMMAND, "file.export.img"),
     ]
 
 
 class FileMenu(TiliaMenu):
     menu_title = "&File"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.FILE_NEW),
-        (MenuItemKind.ACTION, TiliaAction.FILE_OPEN),
+        (MenuItemKind.COMMAND, "file.new"),
+        (MenuItemKind.COMMAND, "file.open"),
         (MenuItemKind.SUBMENU, RecentFilesMenu),
-        (MenuItemKind.ACTION, TiliaAction.FILE_SAVE),
-        (MenuItemKind.ACTION, TiliaAction.FILE_SAVE_AS),
+        (MenuItemKind.COMMAND, "file.save"),
+        (MenuItemKind.COMMAND, "file.save_as"),
         (MenuItemKind.SUBMENU, ExportMenu),
         (MenuItemKind.SEPARATOR, None),
         (MenuItemKind.SUBMENU, LoadMediaMenu),
-        (MenuItemKind.ACTION, TiliaAction.METADATA_WINDOW_OPEN),
+        (MenuItemKind.COMMAND, "window.open.metadata"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.AUTOSAVES_FOLDER_OPEN),
+        (MenuItemKind.COMMAND, "open_autosaves_folder"),
     ]
 
 
 class EditMenu(TiliaMenu):
     menu_title = "&Edit"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.EDIT_UNDO),
-        (MenuItemKind.ACTION, TiliaAction.EDIT_REDO),
+        (MenuItemKind.COMMAND, "edit.undo"),
+        (MenuItemKind.COMMAND, "edit.redo"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE_COMPLETE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
+        (MenuItemKind.COMMAND, "timeline.component.paste_complete"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.SETTINGS_WINDOW_OPEN),
+        (MenuItemKind.COMMAND, "window.open.settings"),
     ]
 
 
 class AddTimelinesMenu(TiliaMenu):
     menu_title = "&Add"
-    items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_AUDIOWAVE_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_BEAT_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_HARMONY_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_HIERARCHY_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_MARKER_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_PDF_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_ADD_SCORE_TIMELINE),
-    ]
+
+    def __init__(self):
+        commands = [
+            f"timelines.add.{get_timeline_name(kind)}"
+            for kind in TimelineKind
+            if kind != TimelineKind.SLIDER_TIMELINE
+        ]
+        self.items = [(MenuItemKind.COMMAND, command) for command in commands]
+        super().__init__()
 
 
 class HierarchyMenu(TiliaMenu):
     menu_title = "&Hierarchy"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_CSV_HIERARCHY_TIMELINE)]
+    items = [(MenuItemKind.COMMAND, "timelines.import.hierarchy")]
 
 
 class MarkerMenu(TiliaMenu):
     menu_title = "&Marker"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_CSV_MARKER_TIMELINE)]
+    items = [(MenuItemKind.COMMAND, "timelines.import.marker")]
 
 
 class BeatMenu(TiliaMenu):
     menu_title = "&Beat"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.IMPORT_CSV_BEAT_TIMELINE),
-        (MenuItemKind.ACTION, TiliaAction.BEAT_TIMELINE_FILL),
+        (MenuItemKind.COMMAND, "timelines.import.beat"),
+        (MenuItemKind.COMMAND, "timeline.beat.fill"),
     ]
 
 
 class HarmonyMenu(TiliaMenu):
     menu_title = "Ha&rmony"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_CSV_HARMONY_TIMELINE)]
+    items = [(MenuItemKind.COMMAND, "timelines.import.harmony")]
 
 
 class PdfMenu(TiliaMenu):
     menu_title = "&PDF"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_CSV_PDF_TIMELINE)]
+    items = [(MenuItemKind.COMMAND, "timelines.import.pdf")]
 
 
 class ScoreMenu(TiliaMenu):
     menu_title = "&Score"
-    items = [(MenuItemKind.ACTION, TiliaAction.IMPORT_MUSICXML)]
+    items = [(MenuItemKind.COMMAND, "timelines.import.score")]
 
 
 class TimelinesMenu(TiliaMenu):
     menu_title = "&Timelines"
     items = [
         (MenuItemKind.SUBMENU, AddTimelinesMenu),
-        (MenuItemKind.ACTION, TiliaAction.WINDOW_MANAGE_TIMELINES_OPEN),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINES_CLEAR),
+        (MenuItemKind.COMMAND, "window.open.manage_timelines"),
+        (MenuItemKind.COMMAND, "timelines.clear_all"),
         (MenuItemKind.SUBMENU, HierarchyMenu),
         (MenuItemKind.SUBMENU, MarkerMenu),
         (MenuItemKind.SUBMENU, BeatMenu),
@@ -198,8 +200,8 @@ class ViewMenu(QMenu):
         listen(self, Post.WINDOW_UPDATE_STATE, self.update_items)
 
     def add_default_items(self):
-        self.addAction(get_qaction(TiliaAction.VIEW_ZOOM_IN))
-        self.addAction(get_qaction(TiliaAction.VIEW_ZOOM_OUT))
+        self.addAction(get_qaction("view.zoom.in"))
+        self.addAction(get_qaction("view.zoom.out"))
 
     def update_items(self, window_id: int, window_state: WindowState, window_title=""):
         if not self.windows:
@@ -237,6 +239,6 @@ class ViewMenu(QMenu):
 class HelpMenu(TiliaMenu):
     menu_title = "&Help"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.ABOUT_WINDOW_OPEN),
-        (MenuItemKind.ACTION, TiliaAction.WEBSITE_HELP_OPEN),
+        (MenuItemKind.COMMAND, "window.open.about"),
+        (MenuItemKind.COMMAND, "open_website_help"),
     ]

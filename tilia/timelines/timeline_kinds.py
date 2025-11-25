@@ -14,16 +14,6 @@ class TimelineKind(Enum):
     AUDIOWAVE_TIMELINE = "AUDIOWAVE_TIMELINE"
 
 
-COLORED_COMPONENTS = [
-    TimelineKind.MARKER_TIMELINE,
-    TimelineKind.HIERARCHY_TIMELINE,
-    TimelineKind.SCORE_TIMELINE,
-]
-
-NOT_SLIDER = [kind for kind in TimelineKind if kind != TimelineKind.SLIDER_TIMELINE]
-ALL = list(TimelineKind)
-
-
 def get_timeline_kind_from_string(string):
     string = string.upper()
     if not string.endswith("_TIMELINE"):
@@ -32,7 +22,27 @@ def get_timeline_kind_from_string(string):
     return TimelineKind(string)
 
 
+def get_timeline_name(kind: TimelineKind) -> str:
+    return kind.name.replace("_TIMELINE", "").lower()
+
+
+def get_timeline_frontend_name(kind: TimelineKind) -> str:
+    name = get_timeline_name(kind)
+    if kind == TimelineKind.PDF_TIMELINE:
+        name = name.upper()
+
+    return name
+
+
 def get_timeline_class_from_kind(kind: TimelineKind) -> type[Timeline]:
     classes = Timeline.subclasses()
     kind_to_class = {c.KIND: c for c in classes}
     return kind_to_class[kind]
+
+
+IMPORTABLE = [
+    kind
+    for kind in TimelineKind
+    if kind not in [TimelineKind.SLIDER_TIMELINE, TimelineKind.AUDIOWAVE_TIMELINE]
+]
+ALL = list(TimelineKind)

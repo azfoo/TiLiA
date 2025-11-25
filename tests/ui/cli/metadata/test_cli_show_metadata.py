@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from tests.mock import PatchGet
+from tests.mock import Serve
 from tilia.file.media_metadata import MediaMetadata
 from tilia.requests.get import Get
 
@@ -9,9 +9,7 @@ from tilia.ui.cli.metadata.show import show
 class TestShowMetadata:
     def test_show_metadata_empty_metadata(self):
         with patch("tilia.ui.cli.io.print") as print_mock:
-            with PatchGet(
-                "tilia.ui.cli.metadata.show", Get.MEDIA_METADATA, MediaMetadata()
-            ):
+            with Serve(Get.MEDIA_METADATA, MediaMetadata()):
                 show(None)
                 output = print_mock.call_args[0][0]
 
@@ -28,7 +26,7 @@ class TestShowMetadata:
         )
 
         with patch("tilia.ui.cli.io.print") as print_mock:
-            with PatchGet("tilia.ui.cli.metadata.show", Get.MEDIA_METADATA, metadata):
+            with Serve(Get.MEDIA_METADATA, metadata):
                 show(None)
                 output = print_mock.call_args[0][0]
 

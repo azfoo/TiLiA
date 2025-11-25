@@ -1,10 +1,6 @@
 from unittest.mock import patch
 
-from tests.mock import Serve
-
-from tilia.requests import Get
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.ui.actions import TiliaAction
 
 
 class TestTimelineList:
@@ -51,10 +47,8 @@ class TestTimelineRemove:
 
         assert not tls.is_empty
 
-    def test_by_name_one_timeline(self, cli, tls, user_actions):
-        with Serve(Get.FROM_USER_STRING, (True, "test")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_HIERARCHY_TIMELINE)
-
+    def test_by_name_one_timeline(self, cli, tls):
+        cli.parse_and_run("timeline add hierarchy --name test")
         cli.parse_and_run("timeline remove name test")
 
         assert tls.is_empty
@@ -71,9 +65,8 @@ class TestTimelineRemove:
 
         assert len(tls) == 1
 
-    def test_remove_by_name_not_found(self, cli, tls, user_actions):
-        with Serve(Get.FROM_USER_STRING, (True, "test")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_HIERARCHY_TIMELINE)
+    def test_remove_by_name_not_found(self, cli, tls):
+        cli.parse_and_run("timeline add hierarchy --name test")
 
         with patch("builtins.print") as mock_print:
             cli.parse_and_run("timeline remove name othername")

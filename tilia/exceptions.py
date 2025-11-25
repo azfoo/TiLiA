@@ -9,10 +9,6 @@ class TiliaExit(TiliaException):
     pass
 
 
-class UserCancelledDialog(TiliaException):
-    pass
-
-
 class InvalidComponentKindError(TiliaException):
     pass
 

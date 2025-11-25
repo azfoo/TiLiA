@@ -26,7 +26,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtSvg import QSvgRenderer
 
-from tilia.ui.actions import TiliaAction, get_qaction
+from tilia.ui import commands
+from tilia.ui.commands import get_qaction
 
 from tilia.ui.smooth_scroll import smooth, setup_smooth
 from tilia.ui.windows.view_window import ViewDockWidget
@@ -98,23 +99,50 @@ class SvgViewer(ViewDockWidget):
         self._update_scroll_margins()
 
     def _get_toolbar(self) -> QVBoxLayout:
-        def get_button(qaction, callback):
-            button = QToolButton()
-            qaction.triggered.connect(callback)
-            button.setDefaultAction(qaction)
-            return button
-
-        actions = [
-            (TiliaAction.SCORE_ANNOTATION_ADD, self.annotation_add),
-            (TiliaAction.SCORE_ANNOTATION_EDIT, self.annotation_edit),
-            (TiliaAction.SCORE_ANNOTATION_DELETE, self.annotation_delete),
-            (TiliaAction.SCORE_ANNOTATION_FONT_INC, self.annotation_font_inc),
-            (TiliaAction.SCORE_ANNOTATION_FONT_DEC, self.annotation_font_dec),
+        command_data = [
+            (
+                "timeline.score.add",
+                self.annotation_add,
+                "Add Annotation (Return)",
+                "",
+                "annotation_add",
+            ),
+            (
+                "timeline.score.delete",
+                self.annotation_delete,
+                "Delete Annotation (Delete)",
+                "",
+                "annotation_delete",
+            ),
+            (
+                "timeline.score.edit",
+                self.annotation_edit,
+                "Edit Annotation",
+                "Shift+Return",
+                "annotation_edit",
+            ),
+            (
+                "timeline.score.font_dec",
+                self.annotation_font_dec,
+                "Decrease Annotation Font",
+                "Shift+Down",
+                "annotation_font_dec",
+            ),
+            (
+                "timeline.score.font_inc",
+                self.annotation_font_inc,
+                "Increase Annotation Font",
+                "Shift+Up",
+                "annotation_font_inc",
+            ),
         ]
 
         v_toolbar = QVBoxLayout()
-        for taction, callback in actions:
-            button = get_button(get_qaction(taction), callback)
+
+        for name, callback, text, shortcut, icon in command_data:
+            commands.register(name, callback, text, shortcut, icon)
+            button = QToolButton()
+            button.setDefaultAction(get_qaction(name))
             v_toolbar.addWidget(button)
 
         return v_toolbar

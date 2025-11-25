@@ -13,6 +13,7 @@ class SliderTimeline(Timeline):
     SERIALIZABLE = ["is_visible", "ordinal", "height"]
     KIND = TimelineKind.SLIDER_TIMELINE
     FLAGS = [
+        TimelineFlag.COMPONENTS_NOT_EDITABLE,
         TimelineFlag.NOT_CLEARABLE,
         TimelineFlag.NOT_DELETABLE,
         TimelineFlag.NOT_EXPORTABLE,

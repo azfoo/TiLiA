@@ -1,4 +1,3 @@
-from tilia.ui.actions import TiliaAction
 from tilia.ui.menus import MenuItemKind
 from tilia.ui.timelines.base.context_menus import (
     TimelineUIElementContextMenu,
@@ -9,18 +8,18 @@ from tilia.ui.timelines.base.context_menus import (
 class MarkerContextMenu(TimelineUIElementContextMenu):
     name = "Marker"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_INSPECT),
+        (MenuItemKind.COMMAND, "timeline.element.inspect"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COLOR_SET),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COLOR_RESET),
+        (MenuItemKind.COMMAND, "timeline.component.set_color"),
+        (MenuItemKind.COMMAND, "timeline.component.reset_color"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_DELETE),
+        (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
 
 
 class MarkerTimelineUIContextMenu(TimelineUIContextMenu):
     name = "Marker timeline"
-    items = [(MenuItemKind.ACTION, TiliaAction.TIMELINE_NAME_SET)]
+    items = [(MenuItemKind.COMMAND, "timeline.set_name")]

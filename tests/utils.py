@@ -5,9 +5,9 @@ from typing import Callable
 
 from PyQt6.QtWidgets import QMenu
 
-from tilia.requests import get, Get, Post, post
-from tilia.ui.actions import TiliaAction
+from tilia.requests import get, Get
 from tests.mock import patch_file_dialog
+from tilia.ui import commands
 
 
 def get_blank_file_data():
@@ -81,29 +81,29 @@ def get_method_patch_target(method: Callable) -> str:
 def undoable():
     """
     Asserts whether state is handled correctly when undoing/redoing.
-    Use this as a context manager around a call of user_actions.trigger.
+    Use this as a context manager around a call of commands.execute.
     E.g.
     ```
     with undoable():
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
     ```
     """
     state_before = get(Get.APP_STATE)
     yield
     state_after = get(Get.APP_STATE)
-    post(Post.EDIT_UNDO)
+    commands.execute("edit.undo")
     assert get(Get.APP_STATE) == state_before
-    post(Post.EDIT_REDO)
+    commands.execute("edit.redo")
     assert get(Get.APP_STATE) == state_after
 
 
-def reloadable(save_path, user_actions):
+def reloadable(save_path):
     """
     Ensures the file loads similarly after saving and loading.
     Use this as a decorator for a function that checks for the correct values.
     E.g. (See tests.ui.timelines.score.test_score_timeline_ui.test_attribute_positions)
     ```
-    @reloadable(save_path, user_actions)
+    @reloadable(save_path)
     def check_values(): ...
     ```
     """
@@ -112,8 +112,8 @@ def reloadable(save_path, user_actions):
         checks()
 
         with patch_file_dialog(True, [save_path, save_path]):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.save")
+            commands.execute("file.open")
 
         checks()
 
