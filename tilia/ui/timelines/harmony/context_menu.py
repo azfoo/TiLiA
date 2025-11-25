@@ -1,5 +1,4 @@
-from tilia.ui import actions
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 from tilia.ui.menus import MenuItemKind
 from tilia.ui.timelines.base.context_menus import (
     TimelineUIContextMenu,
@@ -10,42 +9,42 @@ from tilia.ui.timelines.base.context_menus import (
 class ModeContextMenu(TimelineUIElementContextMenu):
     name = "Mode"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_EDIT),
+        (MenuItemKind.COMMAND, "timeline.element.inspect"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_DELETE),
+        (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
 
 
 class HarmonyContextMenu(TimelineUIElementContextMenu):
     name = "Harmony"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_EDIT),
+        (MenuItemKind.COMMAND, "timeline.element.inspect"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.HARMONY_DISPLAY_AS_ROMAN_NUMERAL),
-        (MenuItemKind.ACTION, TiliaAction.HARMONY_DISPLAY_AS_CHORD_SYMBOL),
+        (MenuItemKind.COMMAND, "timeline.harmony.component.display_as_roman"),
+        (MenuItemKind.COMMAND, "timeline.harmony.component.display_as_chord"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_DELETE),
+        (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
 
 
 class HarmonyTimelineUIContextMenu(TimelineUIContextMenu):
     name = "Harmony timeline"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_NAME_SET),
+        (MenuItemKind.COMMAND, "timeline.set_name"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.HARMONY_TIMELINE_SHOW_KEYS),
-        (MenuItemKind.ACTION, TiliaAction.HARMONY_TIMELINE_HIDE_KEYS),
+        (MenuItemKind.COMMAND, "timeline.harmony.show_keys"),
+        (MenuItemKind.COMMAND, "timeline.harmony.hide_keys"),
     ]
 
     def __init__(self, timeline_ui):
-        hide_keys_action = actions.get_qaction(TiliaAction.HARMONY_TIMELINE_HIDE_KEYS)
-        show_keys_action = actions.get_qaction(TiliaAction.HARMONY_TIMELINE_SHOW_KEYS)
+        hide_keys_action = commands.get_qaction("timeline.harmony.hide_keys")
+        show_keys_action = commands.get_qaction("timeline.harmony.show_keys")
         if timeline_ui.get_data("visible_level_count") == 1:
             hide_keys_action.setVisible(False)
             show_keys_action.setVisible(True)

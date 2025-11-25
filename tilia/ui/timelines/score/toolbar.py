@@ -4,4 +4,4 @@ from tilia.ui.timelines.toolbar import TimelineToolbar
 
 
 class ScoreTimelineToolbar(TimelineToolbar):
-    ACTIONS = []
+    COMMANDS = []

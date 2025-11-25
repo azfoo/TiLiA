@@ -20,7 +20,11 @@ class AudioWaveTLComponentManager(TimelineComponentManager):
 class AudioWaveTimeline(Timeline):
     KIND = TimelineKind.AUDIOWAVE_TIMELINE
     COMPONENT_MANAGER_CLASS = AudioWaveTLComponentManager
-    FLAGS = [TimelineFlag.NOT_CLEARABLE, TimelineFlag.NOT_EXPORTABLE]
+    FLAGS = [
+        TimelineFlag.NOT_CLEARABLE,
+        TimelineFlag.NOT_EXPORTABLE,
+        TimelineFlag.COMPONENTS_NOT_EDITABLE,
+    ]
 
     @property
     def default_height(self):

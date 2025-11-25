@@ -9,7 +9,7 @@ from tests.utils import undoable
 from tilia.requests import Post, post, Get
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 
 
 def get_time_shifted_args(args: dict[str, int], d_time) -> dict[str, int]:
@@ -239,41 +239,41 @@ class TestArrowSelection:
 
 
 class TestSetTimelineName:
-    def test_set(self, tls, tluis, user_actions):
+    def test_set(self, tls, tluis):
         tls.create_timeline(TimelineKind.MARKER_TIMELINE, name="change me")
         with Serve(Get.FROM_USER_STRING, (True, "this")):
-            user_actions.trigger(TiliaAction.TIMELINE_NAME_SET)
+            commands.execute("timeline.set_name", tluis[0])
 
         assert tls[0].get_data("name") == "this"
         assert tluis[0].displayed_name == "this"
 
-    def test_set_undo(self, tls, tluis, user_actions):
+    def test_set_undo(self, tls, tluis):
         with Serve(Get.FROM_USER_STRING, (True, "pure")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+            commands.execute("timelines.add.marker")
         with Serve(Get.FROM_USER_STRING, (True, "tainted")):
-            user_actions.trigger(TiliaAction.TIMELINE_NAME_SET)
+            commands.execute("timeline.set_name", tluis[0])
 
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
+        commands.execute("edit.undo")
 
         assert tls[0].get_data("name") == "pure"
         assert tluis[0].displayed_name == "pure"
 
-    def test_set_redo(self, tls, tluis, user_actions):
+    def test_set_redo(self, tls, tluis):
         with Serve(Get.FROM_USER_STRING, (True, "pure")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+            commands.execute("timelines.add.marker")
         with Serve(Get.FROM_USER_STRING, (True, "tainted")):
-            user_actions.trigger(TiliaAction.TIMELINE_NAME_SET)
+            commands.execute("timeline.set_name", tluis[0])
 
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
-        user_actions.trigger(TiliaAction.EDIT_REDO)
+        commands.execute("edit.undo")
+        commands.execute("edit.redo")
 
         assert tls[0].get_data("name") == "tainted"
         assert tluis[0].displayed_name == "tainted"
 
-    def test_set_empty_string(self, tls, tluis, user_actions):
+    def test_set_empty_string(self, tls, tluis):
         tls.create_timeline(TimelineKind.MARKER_TIMELINE, name="change me")
         with Serve(Get.FROM_USER_STRING, (True, "")):
-            user_actions.trigger(TiliaAction.TIMELINE_NAME_SET)
+            commands.execute("timeline.set_name", tluis[0])
 
         assert tls[0].get_data("name") == ""
         assert tluis[0].displayed_name == ""

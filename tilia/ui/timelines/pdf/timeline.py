@@ -17,19 +17,17 @@ from tilia.ui.timelines.base.element import TimelineUIElement
 from tilia.ui.timelines.base.timeline import (
     TimelineUI,
 )
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 
 from tilia.ui.timelines.copy_paste import (
     paste_into_element,
 )
 from tilia.ui.timelines.pdf.context_menu import PdfTimelineUIContextMenu
 from tilia.ui.timelines.pdf.element import PdfMarkerUI
-from tilia.ui.timelines.pdf.request_handlers import PdfMarkerUIRequestHandler
 from tilia.ui.timelines.pdf.toolbar import PdfTimelineToolbar
 from tilia.ui.windows.view_window import ViewWindow
+from tilia.ui.timelines.collection.collection import TimelineUIs, TimelineSelector
 
 if TYPE_CHECKING:
-    from tilia.ui.timelines.collection.collection import TimelineUIs
     from tilia.ui.timelines.base.element_manager import ElementManager
     from tilia.ui.timelines.scene import TimelineScene
     from tilia.ui.timelines.view import TimelineView
@@ -106,12 +104,32 @@ class PdfTimelineUI(TimelineUI):
             return 99999999
         return self.timeline.get_data("page_total")
 
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return PdfMarkerUIRequestHandler(self).on_request(
-            request, selector, *args, **kwargs
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        cls.register_timeline_command(
+            collection,
+            "add",
+            cls.on_add,
+            TimelineSelector.FIRST,
+            text="Add PDF marker",
+            shortcut="p",
+            icon="pdf_add",
         )
+
+    def on_add(self):
+        time = get(Get.SELECTED_TIME)
+
+        page_number = min(
+            self.timeline.get_previous_page_number(time) + 1, self.timeline.page_total
+        )
+
+        pdf_marker, reason = self.timeline.create_component(
+            ComponentKind.PDF_MARKER, get(Get.SELECTED_TIME), page_number
+        )
+        if not pdf_marker:
+            tilia.errors.display(tilia.errors.ADD_PDF_MARKER_FAILED, reason)
+            return False
+        return True
 
     def on_timeline_component_created(
         self, kind: ComponentKind, id: int, get_data, set_data

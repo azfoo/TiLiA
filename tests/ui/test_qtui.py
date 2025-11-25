@@ -6,12 +6,16 @@ from tests.mock import Serve
 from tests.utils import get_main_window_menu, get_actions_in_menu
 from tilia.requests import Post, post, Get
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.ui.actions import get_qaction, TiliaAction
+from tilia.ui.commands import get_qaction
 from tilia.ui.timelines.marker import MarkerTimelineUI
 from tilia.ui.windows import WindowKind
 
 
 class TestImport:
+    patch_target = (
+        "tilia.ui.timelines.collection.import_._get_by_time_or_by_measure_from_user"
+    )
+
     def test_timeline_gets_restored_if_import_fails(self, qtui, marker_tl):
         for i in range(100):
             marker_tl.create_marker(i)
@@ -19,7 +23,7 @@ class TestImport:
         prev_state = marker_tl.get_state()
 
         with patch(
-            "tilia.ui.ui_import._get_by_time_or_by_measure_from_user",
+            self.patch_target,
             return_value=(True, "time"),
         ):
             with patch("builtins.open", mock_open(read_data="nonsense")):
@@ -36,7 +40,7 @@ class TestImport:
     ):
         with (
             patch(
-                "tilia.ui.ui_import._get_by_time_or_by_measure_from_user",
+                self.patch_target,
                 return_value=(True, "time"),
             ),
             Serve(
@@ -158,12 +162,12 @@ class TestMenus:
         menu = get_main_window_menu(qtui, "Edit")
         actions = get_actions_in_menu(menu)
         expected = [
-            TiliaAction.EDIT_UNDO,
-            TiliaAction.EDIT_REDO,
-            TiliaAction.TIMELINE_ELEMENT_COPY,
-            TiliaAction.TIMELINE_ELEMENT_PASTE,
-            TiliaAction.TIMELINE_ELEMENT_PASTE_COMPLETE,
-            TiliaAction.SETTINGS_WINDOW_OPEN,
+            "edit.undo",
+            "edit.redo",
+            "timeline.component.copy",
+            "timeline.component.paste",
+            "timeline.component.paste_complete",
+            "window.open.settings",
         ]
         expected = [get_qaction(action) for action in expected]
         assert set(actions) == set(expected)

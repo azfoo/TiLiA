@@ -9,6 +9,7 @@ from PyQt6.QtCore import QTimer
 
 import tilia.errors
 from tilia.media import exporter
+from tilia.ui import commands
 from tilia.utils import get_tilia_class_string
 from tilia.requests import (
     listen,
@@ -37,6 +38,7 @@ class Player(ABC):
         super().__init__()
 
         self._setup_requests()
+        self._setup_commands()
         self.is_media_loaded = False
         self.duration = 0.0
         self.playback_start = 0.0
@@ -53,10 +55,12 @@ class Player(ABC):
     def __str__(self):
         return get_tilia_class_string(self)
 
+    def _setup_commands(self):
+        commands.register("media.stop", self.stop, text="Stop", icon="stop15")
+
     def _setup_requests(self):
         LISTENS = {
             (Post.PLAYER_TOGGLE_PLAY_PAUSE, self.toggle_play),
-            (Post.PLAYER_STOP, self.stop),
             (Post.PLAYER_VOLUME_CHANGE, self.on_volume_change),
             (Post.PLAYER_VOLUME_MUTE, self.on_volume_mute),
             (Post.PLAYER_PLAYBACK_RATE_TRY, self.on_playback_rate_try),
@@ -145,17 +149,14 @@ class Player(ABC):
             self._engine_play()
             self.is_playing = True
             self.start_play_loop()
-            post(Post.PLAYER_UNPAUSED)
 
         else:
             self._engine_pause()
             self.stop_play_loop()
             self.is_playing = False
-            post(Post.PLAYER_PAUSED)
 
     def stop(self):
         """Stops music playback and resets slider position"""
-        post(Post.PLAYER_STOPPING)
         if not self.is_playing and self.current_time == 0.0:
             return
 

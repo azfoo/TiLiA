@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Literal
 
 from PyQt6.QtCore import Qt, QRectF, QPointF
@@ -12,8 +13,6 @@ from PyQt6.QtWidgets import (
 
 from tilia.dirs import IMG_DIR
 from .context_menu import HierarchyContextMenu
-from .drag import start_drag
-from .extremity import Extremity
 from .handles import HierarchyBodyHandle, HierarchyFrameHandle
 from ..cursors import CursorMixIn
 from ...color import get_tinted_color, get_untinted_color
@@ -92,6 +91,12 @@ class HierarchyUI(TimelineUIElement):
     ]
     CONTEXT_MENU_CLASS = HierarchyContextMenu
     FONT_METRICS = QFontMetrics(QFont("Arial", 10))
+
+    class Extremity(Enum):
+        START = "start"
+        END = "end"
+        PRE_START = "pre_start"
+        POST_END = "post_end"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -266,23 +271,23 @@ class HierarchyUI(TimelineUIElement):
 
     def update_pre_start(self):
         self.update_frame_handle_position(
-            Extremity.PRE_START,
+            HierarchyUI.Extremity.PRE_START,
             self.get_data("level"),
             self.timeline_ui.get_data("height"),
             self.start_x,
         )
         if self.is_selected():
-            self.update_frame_handle_visibility(Extremity.PRE_START)
+            self.update_frame_handle_visibility(HierarchyUI.Extremity.PRE_START)
 
     def update_post_end(self):
         self.update_frame_handle_position(
-            Extremity.POST_END,
+            HierarchyUI.Extremity.POST_END,
             self.get_data("level"),
             self.timeline_ui.get_data("height"),
             self.end_x,
         )
         if self.is_selected():
-            self.update_frame_handle_visibility(Extremity.POST_END)
+            self.update_frame_handle_visibility(HierarchyUI.Extremity.POST_END)
 
     def update_position(self):
         start_x = self.start_x
@@ -320,7 +325,7 @@ class HierarchyUI(TimelineUIElement):
         )
 
     def update_body_handles_position(self, height, start_x, end_x):
-        for extremity in [Extremity.START, Extremity.END]:
+        for extremity in [HierarchyUI.Extremity.START, HierarchyUI.Extremity.END]:
             self.extremity_to_handle(extremity).set_position(
                 self.extremity_to_x(extremity, start_x, end_x),
                 self.HANDLE_WIDTH,
@@ -330,15 +335,21 @@ class HierarchyUI(TimelineUIElement):
             )
 
     def update_frame_handles_position(self, level, height, start_x, end_x):
-        self.update_frame_handle_position(Extremity.PRE_START, level, height, start_x)
-        self.update_frame_handle_position(Extremity.POST_END, level, height, end_x)
+        self.update_frame_handle_position(
+            HierarchyUI.Extremity.PRE_START, level, height, start_x
+        )
+        self.update_frame_handle_position(
+            HierarchyUI.Extremity.POST_END, level, height, end_x
+        )
 
-    def update_frame_handle_position(self, extremity: Extremity, level, height, body_x):
-        if extremity == Extremity.PRE_START:
+    def update_frame_handle_position(
+        self, extremity: HierarchyUI.Extremity, level, height, body_x
+    ):
+        if extremity == HierarchyUI.Extremity.PRE_START:
             self.pre_start_handle.set_position(
                 body_x, self.pre_start_x, self.frame_handle_y(level, height)
             )
-        elif extremity == Extremity.POST_END:
+        elif extremity == HierarchyUI.Extremity.POST_END:
             self.post_end_handle.set_position(
                 body_x, self.post_end_x, self.frame_handle_y(level, height)
             )
@@ -346,13 +357,16 @@ class HierarchyUI(TimelineUIElement):
             raise ValueError("Unrecognized extremity")
 
     def update_frame_handles_visibility(self):
-        self.update_frame_handle_visibility(Extremity.PRE_START)
-        self.update_frame_handle_visibility(Extremity.POST_END)
+        self.update_frame_handle_visibility(HierarchyUI.Extremity.PRE_START)
+        self.update_frame_handle_visibility(HierarchyUI.Extremity.POST_END)
 
-    def update_frame_handle_visibility(self, extremity: Extremity):
+    def update_frame_handle_visibility(self, extremity: HierarchyUI.Extremity):
         handle, exists = {
-            Extremity.PRE_START: (self.pre_start_handle, self.has_pre_start),
-            Extremity.POST_END: (self.post_end_handle, self.has_post_end),
+            HierarchyUI.Extremity.PRE_START: (
+                self.pre_start_handle,
+                self.has_pre_start,
+            ),
+            HierarchyUI.Extremity.POST_END: (self.post_end_handle, self.has_post_end),
         }[extremity]
 
         if not handle.isVisible() and exists:
@@ -400,12 +414,12 @@ class HierarchyUI(TimelineUIElement):
 
         self.start_handle = self.timeline_ui.get_handle_by_x(self.start_x)
         if not self.start_handle:
-            self.start_handle = self._setup_handle(Extremity.START)
+            self.start_handle = self._setup_handle(HierarchyUI.Extremity.START)
             self.scene.addItem(self.start_handle)
 
         self.end_handle = self.timeline_ui.get_handle_by_x(self.end_x)
         if not self.end_handle:
-            self.end_handle = self._setup_handle(Extremity.END)
+            self.end_handle = self._setup_handle(HierarchyUI.Extremity.END)
             self.scene.addItem(self.end_handle)
 
     def _setup_frame_handles(self):
@@ -419,26 +433,28 @@ class HierarchyUI(TimelineUIElement):
         self.scene.addItem(self.post_end_handle)
 
     def extremity_to_handle(
-        self, extremity: Extremity
+        self, extremity: HierarchyUI.Extremity
     ) -> HierarchyBodyHandle | HierarchyFrameHandle:
         try:
             return {
-                Extremity.START: self.start_handle,
-                Extremity.END: self.end_handle,
-                Extremity.PRE_START: self.pre_start_handle,
-                Extremity.POST_END: self.post_end_handle,
+                HierarchyUI.Extremity.START: self.start_handle,
+                HierarchyUI.Extremity.END: self.end_handle,
+                HierarchyUI.Extremity.PRE_START: self.pre_start_handle,
+                HierarchyUI.Extremity.POST_END: self.post_end_handle,
             }[extremity]
         except KeyError:
             raise ValueError("Unrecognized extremity")
 
     @staticmethod
     def frame_to_body_extremity(
-        extremity: Literal[Extremity.PRE_START, Extremity.POST_END]
+        extremity: Literal[
+            HierarchyUI.Extremity.PRE_START, HierarchyUI.Extremity.POST_END
+        ],
     ):
         try:
             return {
-                Extremity.PRE_START: Extremity.START,
-                Extremity.POST_END: Extremity.END,
+                HierarchyUI.Extremity.PRE_START: HierarchyUI.Extremity.START,
+                HierarchyUI.Extremity.POST_END: HierarchyUI.Extremity.END,
             }[extremity]
         except KeyError:
             raise ValueError("Unrecognized extremity")
@@ -446,24 +462,24 @@ class HierarchyUI(TimelineUIElement):
     def handle_to_extremity(self, handle: HierarchyBodyHandle | HierarchyFrameHandle):
         try:
             return {
-                self.start_handle: Extremity.START,
-                self.end_handle: Extremity.END,
-                self.pre_start_handle: Extremity.PRE_START,
-                self.post_end_handle: Extremity.POST_END,
+                self.start_handle: HierarchyUI.Extremity.START,
+                self.end_handle: HierarchyUI.Extremity.END,
+                self.pre_start_handle: HierarchyUI.Extremity.PRE_START,
+                self.post_end_handle: HierarchyUI.Extremity.POST_END,
             }[handle]
         except KeyError:
             raise ValueError(f"{handle} if not a handle of {self}")
 
     @staticmethod
-    def extremity_to_x(extremity: Extremity, start_x, end_x):
-        if extremity == Extremity.START:
+    def extremity_to_x(extremity: HierarchyUI.Extremity, start_x, end_x):
+        if extremity == HierarchyUI.Extremity.START:
             return start_x
-        elif extremity == Extremity.END:
+        elif extremity == HierarchyUI.Extremity.END:
             return end_x
         else:
             raise ValueError("Unrecognized extremity")
 
-    def _setup_handle(self, extremity: Extremity):
+    def _setup_handle(self, extremity: HierarchyUI.Extremity):
         return HierarchyBodyHandle(
             self.extremity_to_x(extremity, self.start_x, self.end_x),
             self.HANDLE_WIDTH,
@@ -488,6 +504,9 @@ class HierarchyUI(TimelineUIElement):
     def on_left_click(
         self, item: HierarchyBodyHandle | HierarchyFrameHandle.VLine
     ) -> None:
+        # Avoid circular import
+        from .drag import start_drag
+
         start_drag(self, item)
 
     def double_left_click_triggers(self):
@@ -506,8 +525,8 @@ class HierarchyUI(TimelineUIElement):
         self.body.on_select()
 
         if not self.selected_ascendants():
-            self.update_frame_handle_visibility(Extremity.PRE_START)
-            self.update_frame_handle_visibility(Extremity.POST_END)
+            self.update_frame_handle_visibility(HierarchyUI.Extremity.PRE_START)
+            self.update_frame_handle_visibility(HierarchyUI.Extremity.POST_END)
 
         if selected_descendants := self.selected_descendants():
             for ui in selected_descendants:

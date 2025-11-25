@@ -10,12 +10,12 @@ from tilia.requests import Get, get
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.score.components import Clef
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 
 
-def test_create(tluis, user_actions):
+def test_create(tluis):
     with Serve(Get.FROM_USER_STRING, (True, "")):
-        user_actions.trigger(TiliaAction.TIMELINES_ADD_SCORE_TIMELINE)
+        commands.execute("timelines.add.score")
 
     assert len(tluis) == 1
 
@@ -51,8 +51,8 @@ def test_create_key_signature(score_tlui, fifths):
     assert score_tlui[0]
 
 
-def _check_attrs(tmp_path, user_actions, items_per_attr):
-    @reloadable(tmp_path / "file.tla", user_actions)
+def _check_attrs(tmp_path, items_per_attr):
+    @reloadable(tmp_path / "file.tla")
     def check_attrs() -> None:
         score = get(
             Get.TIMELINE_UI_BY_ATTR, "TIMELINE_KIND", TimelineKind.SCORE_TIMELINE
@@ -77,7 +77,7 @@ def _check_attrs(tmp_path, user_actions, items_per_attr):
     return check_attrs
 
 
-def test_attribute_positions(qtui, score_tl, beat_tl, tmp_path, user_actions):
+def test_attribute_positions(qtui, score_tl, beat_tl, tmp_path):
     beat_tl.beat_pattern = [1]
     for i in range(0, 3):
         beat_tl.create_beat(i)
@@ -86,12 +86,10 @@ def test_attribute_positions(qtui, score_tl, beat_tl, tmp_path, user_actions):
 
     notes_from_musicXML(score_tl, beat_tl, EXAMPLE_MULTISTAFF_MUSICXML_PATH)
 
-    _check_attrs(tmp_path, user_actions, items_per_attr=3)
+    _check_attrs(tmp_path, items_per_attr=3)
 
 
-def test_attribute_positions_without_measure_zero(
-    qtui, score_tl, beat_tl, tmp_path, user_actions
-):
+def test_attribute_positions_without_measure_zero(qtui, score_tl, beat_tl, tmp_path):
     beat_tl.beat_pattern = [1]
     for i in range(1, 3):
         beat_tl.create_beat(i)
@@ -101,7 +99,7 @@ def test_attribute_positions_without_measure_zero(
     with patch_yes_or_no_dialog(False):
         notes_from_musicXML(score_tl, beat_tl, EXAMPLE_MULTISTAFF_MUSICXML_PATH)
 
-    _check_attrs(tmp_path, user_actions, items_per_attr=3)
+    _check_attrs(tmp_path, items_per_attr=3)
 
 
 def test_correct_clef_to_staff(qtui, score_tl, beat_tl):
@@ -121,9 +119,7 @@ def test_correct_clef_to_staff(qtui, score_tl, beat_tl):
     assert "bass" in staff_no_to_clef[2]
 
 
-def test_missing_staff_deletes_timeline(
-    qtui, tls, tilia_errors, tmp_path, user_actions
-):
+def test_missing_staff_deletes_timeline(qtui, tls, tilia_errors, tmp_path):
     file_data = get_blank_file_data()
     file_data["timelines"] = {
         0: {
@@ -169,15 +165,13 @@ def test_missing_staff_deletes_timeline(
     tmp_file.write_text(json.dumps(file_data), encoding="utf-8")
 
     with patch_file_dialog(True, [tmp_file]):
-        user_actions.trigger(TiliaAction.FILE_OPEN)
+        commands.execute("file.open")
 
     tilia_errors.assert_in_error_title(SCORE_STAFF_ID_ERROR.title)
     assert tls.get_timeline_by_attr("KIND", TimelineKind.SCORE_TIMELINE) is None
 
 
-def test_duplicate_staff_deletes_timeline(
-    qtui, tls, tilia_errors, tmp_path, user_actions
-):
+def test_duplicate_staff_deletes_timeline(qtui, tls, tilia_errors, tmp_path):
     file_data = get_blank_file_data()
     file_data["timelines"] = {
         0: {
@@ -201,13 +195,13 @@ def test_duplicate_staff_deletes_timeline(
     tmp_file.write_text(json.dumps(file_data), encoding="utf-8")
 
     with patch_file_dialog(True, [tmp_file]):
-        user_actions.trigger(TiliaAction.FILE_OPEN)
+        commands.execute("file.open")
 
     tilia_errors.assert_in_error_title(SCORE_STAFF_ID_ERROR.title)
     assert tls.get_timeline_by_attr("KIND", TimelineKind.SCORE_TIMELINE) is None
 
 
-def test_symbol_staff_collision(qtui, tmp_path, user_actions):
+def test_symbol_staff_collision(qtui, tmp_path):
     file_data_with_symbols = get_blank_file_data()
     file_data_with_symbols["timelines"] = {
         0: {
@@ -242,7 +236,7 @@ def test_symbol_staff_collision(qtui, tmp_path, user_actions):
     )
 
     with (patch_file_dialog(True, [tmp_file_with_symbols])):
-        user_actions.trigger(TiliaAction.FILE_OPEN)
+        commands.execute("file.open")
 
     score = get(Get.TIMELINE_UI_BY_ATTR, "TIMELINE_KIND", TimelineKind.SCORE_TIMELINE)
     clef = score.timeline.get_component_by_attr("KIND", ComponentKind.CLEF)
@@ -281,7 +275,7 @@ def test_symbol_staff_collision(qtui, tmp_path, user_actions):
         patch_file_dialog(True, [tmp_file_sans_symbols]),
         patch_yes_or_no_dialog(False),  # do not save changes
     ):
-        user_actions.trigger(TiliaAction.FILE_OPEN)
+        commands.execute("file.open")
 
     score = get(Get.TIMELINE_UI_BY_ATTR, "TIMELINE_KIND", TimelineKind.SCORE_TIMELINE)
     staff = score.timeline.get_component_by_attr("KIND", ComponentKind.STAFF)

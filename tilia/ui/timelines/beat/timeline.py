@@ -1,18 +1,25 @@
-from __future__ import annotations
 import copy
 
 from tilia.requests import get, Get, Post, listen
 from tilia.enums import Side
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
-from tilia.ui.timelines.base.timeline import TimelineUI
+from tilia.ui import commands
+from tilia.ui.strings import (
+    BEAT_TIMELINE_FILL_TITLE,
+    BEAT_TIMELINE_DELETE_EXISTING_BEATS_PROMPT,
+)
+from tilia.ui.timelines.base.timeline import TimelineUI, with_elements
 from tilia.ui.timelines.beat.context_menu import BeatTimelineUIContextMenu
 from tilia.ui.timelines.beat.element import BeatUI
-from tilia.ui.timelines.beat.request_handlers import BeatUIRequestHandler
 from tilia.ui.timelines.beat.toolbar import BeatTimelineToolbar
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 from tilia.ui.timelines.copy_paste import (
     get_copy_data_from_element,
+)
+from tilia.ui.timelines.collection.collection import (
+    TimelineUIs,
+    TimelineSelector,
+    command_callback,
 )
 
 
@@ -38,6 +45,144 @@ class BeatTimelineUI(TimelineUI):
             self.on_settings_updated,
         )
 
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        commands.register(
+            "timeline.beat.fill", cls.on_beat_timeline_fill, "&Fill with beats"
+        )
+
+        cls.register_timeline_command(
+            collection,
+            "add",
+            cls.on_add,
+            TimelineSelector.FIRST,
+            text="Add beat at current position",
+            shortcut="b",
+            icon="beat_add",
+        )
+
+        cls.register_timeline_command(
+            collection,
+            "set_measure_number",
+            cls.on_set_measure_number,
+            TimelineSelector.SELECTED,
+            text="Set measure number",
+            icon="beat_set_number",
+        )
+
+        cls.register_timeline_command(
+            collection,
+            "reset_measure_number",
+            cls.on_reset_measure_number,
+            TimelineSelector.SELECTED,
+            text="Reset measure number",
+            icon="beat_reset_number",
+        )
+
+        cls.register_timeline_command(
+            collection,
+            "distribute",
+            cls.on_distribute,
+            TimelineSelector.SELECTED,
+            text="Distribute",
+            icon="beat_distribute",
+        )
+
+        cls.register_timeline_command(
+            collection,
+            "set_amount_in_measure",
+            cls.on_set_amount_in_measure,
+            TimelineSelector.SELECTED,
+            text="Set amount in measure",
+        )
+
+    def _get_measure_indices(self, elements: list[BeatUI]):
+        measure_indices = set()
+        for e in elements:
+            beat_index = self.timeline.get_beat_index(self.timeline.get_component(e.id))
+            measure_index, _ = self.timeline.get_measure_index(beat_index)
+            measure_indices.add(measure_index)
+
+        return sorted(list(measure_indices))
+
+    def on_delete_component(self, elements: list[BeatUI] | None = None) -> bool:
+        success = super().on_delete_component(elements)
+        if success:
+            self.timeline.recalculate_measures()
+        return success
+
+    @with_elements
+    def on_set_measure_number(self, elements: list[BeatUI] | None = None):
+        accepted, number = get(
+            Get.FROM_USER_INT,
+            "Change measure number",
+            "Insert measure number",
+            min=0,
+        )
+        if not accepted:
+            return False
+
+        for i in reversed(self._get_measure_indices(elements)):
+            self.timeline.set_measure_number(i, number)
+        return True
+
+    @with_elements
+    def on_reset_measure_number(self, elements: list[BeatUI] | None = None):
+        for i in reversed(self._get_measure_indices(elements)):
+            self.timeline.reset_measure_number(i)
+        return True
+
+    @with_elements
+    def on_distribute(self, elements: list[BeatUI] | None = None):
+        for i in self._get_measure_indices(elements):
+            self.timeline.distribute_beats(i)
+        return True
+
+    @with_elements
+    def on_set_amount_in_measure(self, elements: list[BeatUI] | None = None):
+        accepted, amount = get(
+            Get.FROM_USER_INT,
+            "Change beats in measure",
+            "Insert amount of beats in measure",
+            min=1,
+        )
+        if not accepted:
+            return False
+        for i in reversed(self._get_measure_indices(elements)):
+            self.timeline.set_beat_amount_in_measure(i, amount)
+        return True
+
+    def on_add(self, *_, **__):
+        self.timeline_ui: BeatTimelineUI
+        component, _ = self.timeline.create_component(
+            ComponentKind.BEAT, get(Get.SELECTED_TIME)
+        )
+        self.timeline.recalculate_measures()
+        return False if component is None else True
+
+    @staticmethod
+    @command_callback
+    def on_beat_timeline_fill():
+        accepted, result = get(Get.FROM_USER_BEAT_TIMELINE_FILL_METHOD)
+        if not accepted:
+            return False
+
+        timeline, method, value = result
+
+        if not timeline.is_empty:
+            confirmed = get(
+                Get.FROM_USER_YES_OR_NO,
+                BEAT_TIMELINE_FILL_TITLE,
+                BEAT_TIMELINE_DELETE_EXISTING_BEATS_PROMPT,
+            )
+            if not confirmed:
+                return False
+            timeline.clear()
+
+        timeline.fill_with_beats(method, value)
+
+        return True
+
     def on_timeline_components_deserialized(self):
         for beat_ui in self:
             beat_ui.update_label()
@@ -51,11 +196,6 @@ class BeatTimelineUI(TimelineUI):
         if "beat_timeline" in updated_settings:
             for beat_ui in self:
                 beat_ui.update_label()
-
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return BeatUIRequestHandler(self).on_request(request, selector, *args, **kwargs)
 
     def _deselect_all_but_last(self):
         if len(self.selected_elements) > 1:

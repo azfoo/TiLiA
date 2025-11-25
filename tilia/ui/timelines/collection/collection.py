@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import traceback
+from enum import Enum, auto
 from typing import Any, Optional, Callable, cast
 
 from PyQt6.QtCore import Qt, QPoint
@@ -14,45 +15,47 @@ from PyQt6.QtWidgets import (
 
 import tilia
 import tilia.errors
-import tilia.ui.timelines.collection.request_handler
-import tilia.ui.timelines.collection.requests.timeline_uis
-import tilia.ui.timelines.collection.requests.args
-import tilia.ui.timelines.collection.requests.enums
-from tilia.ui import actions
+from tilia.ui.timelines.collection.import_ import _on_import_to_timeline
+from tilia.ui import commands
 from tilia.settings import settings
 from tilia.media.player.base import MediaTimeChangeReason
-from tilia.timelines import timeline_kinds
 from tilia.timelines.component_kinds import ComponentKind
 from .scene import TimelineUIsScene
-from .validators import validate
-from tilia.exceptions import UserCancelledDialog
 from tilia.log import logger
 from tilia.requests import get, Get, serve
 from tilia.requests import listen, Post, post
-from tilia.timelines.base.timeline import Timeline
-from tilia.timelines.timeline_kinds import TimelineKind as TlKind, TimelineKind
+from tilia.timelines.base.timeline import Timeline, TimelineFlag
+from tilia.timelines.timeline_kinds import (
+    TimelineKind as TlKind,
+    TimelineKind,
+    get_timeline_name,
+)
 from tilia.ui.coords import time_x_converter
 from tilia.ui.dialogs.choose import ChooseDialog
 from tilia.ui.enums import ScrollType
 from tilia.ui.player import PlayerToolbarElement
 from tilia.ui.smooth_scroll import setup_smooth, smooth
 from tilia.ui.timelines.base.element_manager import ElementManager
-from tilia.ui.timelines.base.timeline import TimelineUI
+from tilia.ui.timelines.base.timeline import TimelineUI, with_elements
 from tilia.ui.timelines.scene import TimelineScene
 from tilia.ui.timelines.toolbar import TimelineToolbar
 from tilia.ui.timelines.view import TimelineView
-from tilia.ui.timelines.collection.requests.timeline import (
-    TimelineSelector,
-    TlRequestSelector,
-)
-from tilia.ui.timelines.collection.requests.element import TlElmRequestSelector
 from .view import TimelineUIsView
 from ..base.element import TimelineUIElement
-from ..beat import BeatTimelineUI
-from ..hierarchy import HierarchyTimelineUI
 from ..selection_box import SelectionBoxQt
 from ..slider.timeline import SliderTimelineUI
-from ...actions import TiliaAction
+from ...dialogs.add_timeline_without_media import AddTimelineWithoutMedia
+
+
+def command_callback(func, *args, **kwargs):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        success = func(*args, **kwargs)
+
+        if success:
+            post(Post.APP_STATE_RECORD, f"timelines command: {func.__name__}")
+
+    return wrapper
 
 
 class TimelineUIs:
@@ -65,7 +68,9 @@ class TimelineUIs:
     ):
 
         self.main_window = main_window
-        self.kind_to_toolbar = {kind: None for kind in timeline_kinds.NOT_SLIDER}
+        self.kind_to_toolbar = {
+            kind: None for kind in TimelineKind if kind != TlKind.SLIDER_TIMELINE
+        }
 
         self._timeline_uis = set()
         self._select_order = []
@@ -74,6 +79,7 @@ class TimelineUIs:
 
         self._setup_widgets(main_window)
         self._setup_requests()
+        self._setup_commands()
 
         self._setup_selection_box()
         self._setup_drag_tracking_vars()
@@ -117,6 +123,274 @@ class TimelineUIs:
         self.view = TimelineUIsView()
         self.view.setScene(self.scene)
         main_window.setCentralWidget(self.view)
+
+    def _setup_commands(self):
+        for cls in TimelineUI.subclasses():
+            kind = cls.TIMELINE_KIND
+            name = get_timeline_name(kind)
+            if kind != TlKind.SLIDER_TIMELINE:
+                if kind == TlKind.HARMONY_TIMELINE:
+                    text = name[0].upper() + "&" + name[1:]
+                elif kind == TlKind.PDF_TIMELINE:
+                    text = "&" + name.upper()
+                else:
+                    text = "&" + name.capitalize()
+
+                commands.register(
+                    f"timelines.add.{name}",
+                    functools.partial(self.on_timeline_add, kind),
+                    text,
+                )
+
+            if kind in Timeline.get_kinds_by_flag(TimelineFlag.COMPONENTS_IMPORTABLE):
+                if kind == TimelineKind.SCORE_TIMELINE:
+                    text = "&Import from MusicXML"
+                else:
+                    text = "&Import from CSV file"
+
+                commands.register(
+                    f"timelines.import.{name}",
+                    functools.partial(self.on_import_to_timeline, kind),
+                    text,
+                )
+
+            if hasattr(cls, "register_commands"):
+                cls.register_commands(self)
+
+        # Commands for individual timelines
+        commands.register(
+            "timelines.permute_ordinal",
+            self.on_timeline_ordinal_permute,
+        )
+
+        commands.register("timeline.delete", self.on_timeline_delete, "Delete")
+
+        commands.register("timeline.clear", self.on_timeline_clear, "Clear")
+
+        commands.register(
+            "timeline.set_name",
+            self.on_timeline_set_name,
+            "Set name",
+        )
+
+        commands.register(
+            "timeline.set_height",
+            self.on_timeline_set_height,
+            "Set height",
+        )
+
+        commands.register(
+            "timeline.set_is_visible",
+            self.on_timeline_set_is_visible,
+        )
+
+        commands.register(
+            "timeline.component.copy",
+            self.on_timeline_copy_element,
+            text="&Copy",
+            shortcut="Ctrl+C",
+        )
+
+        commands.register(
+            "timeline.component.paste",
+            self.on_timeline_paste_element,
+            text="&Paste",
+            shortcut="Ctrl+V",
+        )
+
+        commands.register(
+            "timeline.component.paste_complete",
+            functools.partial(self.on_timeline_paste_element, type="complete"),
+            text="Pas&te complete",
+            shortcut="Ctrl+Shift+V",
+            icon="paste_with_data30",
+        )
+
+        commands.register(
+            "timeline.component.delete",
+            self.on_timeline_delete_element,
+            text="Delete",
+        )
+
+        commands.register(
+            "timeline.component.set_color",
+            self.on_timeline_set_component_color,
+            "Set color",
+            "",
+            "",
+        )
+        #
+        commands.register(
+            "timeline.component.reset_color",
+            self.on_timeline_reset_component_color,
+            "Reset color",
+            "",
+            "",
+        )
+
+        # Commands for all timelines
+        commands.register("timelines.clear_all", self.on_timelines_clear, "Clear all")
+
+        # Commands for timeline view
+        commands.register(
+            "view.zoom.in",
+            functools.partial(self.on_zoom, "in"),
+            "Zoom &In",
+            "Ctrl++",
+        )
+
+        commands.register(
+            "view.zoom.out",
+            functools.partial(self.on_zoom, "out"),
+            "Zoom &Out",
+            "Ctrl+-",
+        )
+
+    def on_timeline_command(
+        self,
+        kind: TimelineKind | list[TimelineKind],
+        callback: Callable | str,
+        selector: TimelineSelector,
+        *args,
+        **kwargs,
+    ):
+        """
+        To be used as a wrapper for a timeline command.
+        Displays errors to the user and attempts to recover from them.
+        Records state so the user can undo/redo the command.
+        """
+
+        if isinstance(kind, TimelineKind):
+            kind = [kind]
+
+        # Passing method names is allowed to enable calling methods overriden by TimelineUI subclasses,
+        # as we wouldn't be able to pass a different callback for each subclass.
+        method_name = callback if isinstance(callback, str) else None
+
+        timeline_uis = self.get_timelines_uis_for_request(kind, selector)
+        state_backup = get(Get.APP_STATE)
+        result = []
+
+        try:
+            for tlui in timeline_uis:
+                if method_name:
+                    # Use type(tlui) to get an unbound method, since we will pass tlui explicitly.
+                    callback = getattr(type(tlui), method_name)
+                result.append(callback(tlui, *args, **kwargs))
+        except Exception:
+            tilia.errors.display(
+                tilia.errors.COMMAND_FAILED,
+                f"Timeline command callback '{callback.__name__}'",
+                traceback.format_exc(),
+            )
+            post(Post.APP_STATE_RECOVER, state_backup)
+            return
+
+        success = self.validate_command_return_value(
+            method_name or callback.__name__, result
+        )
+
+        if success:
+            post(
+                Post.APP_STATE_RECORD,
+                f"timeline command: {method_name or callback.__name__}",
+            )
+
+    @command_callback
+    def on_timelines_clear(self):
+        timeline_collection = get(Get.TIMELINE_COLLECTION)
+
+        if timeline_collection.is_empty:
+            # There are no timelines.
+            return False
+
+        clear_needed = False
+        for tl in timeline_collection:
+            if (TimelineFlag.NOT_CLEARABLE not in tl.FLAGS) and not tl.is_empty:
+                # At least one clearable, non-empty timeline is required
+                # for clearing to make sense.
+                clear_needed = True
+                break
+
+        if not clear_needed:
+            return False
+
+        confirmed = get(
+            Get.FROM_USER_YES_OR_NO,
+            "Clear timelines",
+            "Are you sure you want to clear ALL timelines? This can be undone later.",
+        )
+
+        if confirmed:
+            get(Get.TIMELINE_COLLECTION).clear_timelines()
+            return True
+        return False
+
+    def on_timeline_add(self, kind: TimelineKind, name: str | None = None):
+        def _get_media_is_loaded():
+            if get(Get.MEDIA_DURATION) == 0:
+                return False
+            return True
+
+        def _get_timeline_name():
+            accepted, name = get(
+                Get.FROM_USER_STRING,
+                title="New timeline",
+                prompt="Choose name for new timeline",
+            )
+
+            return accepted, name
+
+        if not _get_media_is_loaded() and not self._handle_media_not_loaded():
+            return False
+
+        if name is None:
+            accepted, name = _get_timeline_name()
+            if not accepted:
+                return False
+
+        kwargs = dict()
+        cls = self.get_timeline_ui_class(kind)
+        if hasattr(cls, "get_additional_args_for_creation"):
+            success, additional_args = cls.get_additional_args_for_creation()
+            if not success:
+                return False
+            kwargs |= additional_args
+
+        get(Get.TIMELINE_COLLECTION).create_timeline(
+            kind=kind, components=None, name=name, **kwargs
+        )
+
+        post(Post.APP_STATE_RECORD, f"timelines command: timeline add {name}")
+
+    @staticmethod
+    def _handle_media_not_loaded() -> bool:
+        accept, action_to_take = get(Get.FROM_USER_ADD_TIMELINE_WITHOUT_MEDIA)
+        if not accept:
+            return False
+
+        if action_to_take == AddTimelineWithoutMedia.Result.SET_DURATION:
+            success, duration = get(
+                Get.FROM_USER_FLOAT,
+                "Set duration",
+                "Insert duration (s)",
+                value=60,
+                min=1,
+            )
+            if not success:
+                return False
+            post(Post.PLAYER_DURATION_AVAILABLE, duration)
+        elif action_to_take == AddTimelineWithoutMedia.Result.LOAD_MEDIA:
+            success, path = get(Get.FROM_USER_MEDIA_PATH)
+            if not success:
+                return False
+            post(Post.APP_MEDIA_LOAD, path)
+        else:
+            raise ValueError(
+                f"Unknown action to take '{action_to_take}' for timeline without media."
+            )
+
+        return True
 
     def _setup_requests(self):
         LISTENS = {
@@ -180,11 +454,15 @@ class TimelineUIs:
             (Post.LOOP_IGNORE_COMPONENT, self.on_loop_ignore_delete),
             (Post.PLAYER_CANCEL_LOOP, self.on_loop_cancel),
             (Post.PLAYER_TOGGLE_LOOP, self.on_loop_toggle),
-            (Post.EDIT_REDO, self.loop_cancel),
-            (Post.EDIT_UNDO, self.loop_cancel),
+            (Post.APP_STATE_UNDO_OR_REDO_DONE, self.on_loop_cancel),
             (
                 Post.BEAT_TIMELINE_COMPONENTS_DESERIALIZED,
                 self.on_beat_timeline_components_deserialized,
+            ),
+            (Post.IMPORT_CSV, self.on_import_to_timeline),
+            (
+                Post.IMPORT_MUSICXML,
+                functools.partial(self.on_import_to_timeline, TlKind.SCORE_TIMELINE),
             ),
         }
 
@@ -208,31 +486,6 @@ class TimelineUIs:
 
         for request, callback in SERVES:
             serve(self, request, callback)
-
-        for request in tilia.ui.timelines.collection.requests.timeline_uis.requests:
-            listen(
-                self, request, functools.partial(self.on_timeline_ui_request, request)
-            )
-
-        for (
-            request,
-            selector,
-        ) in tilia.ui.timelines.collection.requests.element.request_to_scope.items():
-            listen(
-                self,
-                request,
-                functools.partial(self.on_timeline_element_request, request, selector),
-            )
-
-        for (
-            request,
-            selector,
-        ) in tilia.ui.timelines.collection.requests.timeline.request_to_scope.items():
-            listen(
-                self,
-                request,
-                functools.partial(self.on_timeline_request, request, selector),
-            )
 
     def create_timeline_ui(self, kind: TlKind, id: int) -> TimelineUI:
         timeline_class = self.get_timeline_ui_class(kind)
@@ -633,14 +886,14 @@ class TimelineUIs:
                 tlui.on_vertical_arrow_press(arrow)
 
     def on_beat_timeline_measure_number_change_done(self, id: int, start_index: int):
+        from tilia.ui.timelines.beat import BeatTimelineUI
+
         timeline_ui = cast(BeatTimelineUI, self.get_timeline_ui(id))
         timeline_ui.on_measure_number_change_done(start_index)
 
     @staticmethod
     def on_hierarchy_selected():
-        actions.get_qaction(TiliaAction.TIMELINE_ELEMENT_PASTE_COMPLETE).setVisible(
-            True
-        )
+        commands.get_qaction("timeline.component.paste_complete").setVisible(True)
 
     def on_hierarchy_deselected(self):
         selected_hierarchies = []
@@ -648,9 +901,7 @@ class TimelineUIs:
             if tlui.TIMELINE_KIND == TlKind.HIERARCHY_TIMELINE:
                 selected_hierarchies += tlui.selected_elements
         if not selected_hierarchies:
-            actions.get_qaction(TiliaAction.TIMELINE_ELEMENT_PASTE_COMPLETE).setVisible(
-                False
-            )
+            commands.get_qaction("timeline.component.paste_complete").setVisible(False)
 
     def on_hierarchy_merge_split(self, new_units: list, old_units: list):
         if (
@@ -666,6 +917,8 @@ class TimelineUIs:
         self.get_timeline_ui(id).on_timeline_components_deserialized()  # noqa
 
     def on_beat_timeline_components_deserialized(self, id: int):
+        from tilia.ui.timelines.beat import BeatTimelineUI
+
         timeline_ui = cast(BeatTimelineUI, self.get_timeline_ui(id))
         timeline_ui.on_timeline_components_deserialized()
 
@@ -814,39 +1067,8 @@ class TimelineUIs:
         if not is_looping:
             self.loop_elements.clear()
 
-    def pre_process_timeline_request(
-        self,
-        request: Post,
-        kinds: list[TlKind],
-        selector: tilia.ui.timelines.collection.requests.timeline.TimelineSelector,
-    ):
-        timeline_uis = self.get_timelines_uis_for_request(kinds, selector)
-
-        try:
-            (
-                args,
-                kwargs,
-            ) = tilia.ui.timelines.collection.requests.args.get_args_for_request(
-                request, timeline_uis
-            )
-        except UserCancelledDialog:
-            return None, None, None, False
-
-        if not validate(request, timeline_uis, *args, **kwargs):
-            return None, None, None, False
-
-        return timeline_uis, args, kwargs, True
-
     @staticmethod
-    def pre_process_timeline_uis_request(request, *args, **kwargs):
-        args, kwargs = tilia.ui.timelines.collection.requests.args.get_args_for_request(
-            request, [], *args, **kwargs
-        )
-
-        return args, kwargs, True
-
-    @staticmethod
-    def validate_request_return_value(request: Post, success: Any):
+    def validate_command_return_value(request: Post, success: Any):
         if isinstance(success, list) and all(isinstance(s, bool) for s in success):
             valid = True
         else:
@@ -854,117 +1076,11 @@ class TimelineUIs:
 
         if not valid:
             logger.error(
-                f"Request {request} returned an invalid value: {success}.\n"
+                f"Command {request} returned an invalid value: {success}.\n"
                 f"Return value should be a bool or a list of bools."
             )
 
-    def on_timeline_element_request(
-        self,
-        request: Post,
-        selector: TlElmRequestSelector,
-        *args: tuple[Any],
-        **kwargs: dict[str, Any],
-    ) -> None:
-        (
-            timeline_uis,
-            more_args,
-            more_kwargs,
-            success,
-        ) = self.pre_process_timeline_request(
-            request, selector.tl_kind, selector.timeline
-        )
-
-        if not success:
-            return
-
-        args += more_args
-        kwargs |= more_kwargs
-
-        state_backup = get(Get.APP_STATE)
-        result = []
-        try:
-            for tlui in timeline_uis:
-                result.append(
-                    tlui.on_timeline_element_request(
-                        request, selector.element, *args, **kwargs
-                    )
-                )
-        except Exception:
-            post(Post.APP_STATE_RECOVER, state_backup)
-            tilia.errors.display(tilia.errors.COMMAND_FAILED, traceback.format_exc())
-            return
-
-        self.validate_request_return_value(request, result)
-
-        if any(result):
-            post(Post.APP_STATE_RECORD, f"timeline element request: {request.name}")
-
-    def on_timeline_ui_request(
-        self, request: Post, *args: tuple[Any], **kwargs: dict[str, Any]
-    ):
-        more_args, more_kwargs, success = self.pre_process_timeline_uis_request(
-            request, *args, **kwargs
-        )
-        args += more_args
-        kwargs |= more_kwargs
-
-        if not success:
-            return
-
-        state_backup = get(Get.APP_STATE)
-        try:
-            success = (
-                tilia.ui.timelines.collection.request_handler.TimelineUIsRequestHandler(
-                    self
-                ).on_request(request, *args, **kwargs)
-            )
-        except Exception:
-            post(Post.APP_STATE_RECOVER, state_backup)
-            tilia.errors.display(tilia.errors.COMMAND_FAILED, traceback.format_exc())
-            return
-
-        self.validate_request_return_value(request, success)
-
-        if success:
-            post(Post.APP_STATE_RECORD, f"timeline element request: {request.name}")
-
-    def on_timeline_request(
-        self,
-        request: Post,
-        selector: TlRequestSelector,
-        *args: tuple[Any],
-        **kwargs: dict[str, Any],
-    ):
-        (
-            timeline_uis,
-            more_args,
-            more_kwargs,
-            success,
-        ) = self.pre_process_timeline_request(
-            request,
-            selector.tl_kind,
-            selector.timeline,
-        )
-        args += more_args
-        kwargs |= more_kwargs
-
-        if not success:
-            return
-
-        state_backup = get(Get.APP_STATE)
-        result = []
-        try:
-            for tlui in timeline_uis:
-                result.append(tlui.on_timeline_request(request, *args, **kwargs))
-        except Exception:
-            post(Post.APP_STATE_RECOVER, state_backup)
-            tilia.errors.display(tilia.errors.COMMAND_FAILED, traceback.format_exc())
-            return
-
-        self.validate_request_return_value(request, result)
-
-        if request:
-            post(Post.APP_STATE_RECORD, f"timeline request: {request.name}")
+        return valid
 
     def get_timelines_uis_for_request(
         self, kinds: list[TlKind], selector: TimelineSelector
@@ -995,28 +1111,12 @@ class TimelineUIs:
             else:
                 return filter_if_first_on_select_order(timeline_uis)
 
-        def filter_if_from_manage_timelines_to_permute(_):
-            return get(Get.WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_TO_PERMUTE)
-
-        def filter_if_from_manage_timelines_current(_):
-            return [get(Get.WINDOW_MANAGE_TIMELINES_TIMELINE_UIS_CURRENT)]
-
-        def filter_if_from_context_menu(_):
-            return get(Get.CONTEXT_MENU_TIMELINE_UI)
-
-        def filter_if_from_context_menu_to_permute(_):
-            return get(Get.CONTEXT_MENU_TIMELINE_UIS_TO_PERMUTE)
-
         selector_to_func = {
             TimelineSelector.ALL: lambda x: x,
             TimelineSelector.FIRST: filter_if_first_on_select_order,
             TimelineSelector.SELECTED: filter_if_has_selected_elements,
             TimelineSelector.PASTE: filter_for_pasting,
-            TimelineSelector.FROM_MANAGE_TIMELINES_TO_PERMUTE: filter_if_from_manage_timelines_to_permute,
-            TimelineSelector.FROM_MANAGE_TIMELINES_CURRENT: filter_if_from_manage_timelines_current,
             TimelineSelector.ANY: filter_if_first_on_select_order,
-            TimelineSelector.FROM_CONTEXT_MENU: filter_if_from_context_menu,
-            TimelineSelector.FROM_CONTEXT_MENU_TO_PERMUTE: filter_if_from_context_menu_to_permute,
         }
 
         try:
@@ -1024,7 +1124,186 @@ class TimelineUIs:
         except KeyError:
             raise NotImplementedError(f"Can't select with {selector=}")
 
-    def on_zoom(self, is_zoom_in: bool, zoom_factor: float = ZOOM_FACTOR):
+    @command_callback
+    def on_timeline_ordinal_permute(self, tlui1: TimelineUI, tlui2: TimelineUI):
+        id_to_ordinal = {
+            tlui1.id: tlui2.get_data("ordinal"),
+            tlui2.id: tlui1.get_data("ordinal"),
+        }
+        for id, ordinal in id_to_ordinal.items():
+            get(Get.TIMELINE_COLLECTION).set_timeline_data(
+                id, attr="ordinal", value=ordinal
+            )
+
+        return True
+
+    @staticmethod
+    @command_callback
+    def on_timeline_delete(timeline_ui: TimelineUI):
+        confirmed = get(
+            Get.FROM_USER_YES_OR_NO,
+            "Delete timeline",
+            "Are you sure you want to delete the selected timeline? This can be undone later.",
+        )
+
+        if not confirmed:
+            return False
+
+        get(Get.TIMELINE_COLLECTION).delete_timeline(timeline_ui.timeline)
+
+        return True
+
+    @staticmethod
+    @command_callback
+    def on_timeline_clear(timeline_ui: TimelineUI):
+        if timeline_ui.is_empty:
+            return False
+
+        confirmed = get(
+            Get.FROM_USER_YES_OR_NO,
+            "Clear timeline",
+            "Are you sure you want to clear the selected timeline? This can be undone later.",
+        )
+        if not confirmed:
+            return False
+        get(Get.TIMELINE_COLLECTION).clear_timeline(timeline_ui.timeline)
+        return True
+
+    @staticmethod
+    def on_timeline_data_set(id: int, attr: str, value: Any) -> bool:
+        return get(Get.TIMELINE_COLLECTION).set_timeline_data(id, attr, value)
+
+    @command_callback
+    def on_timeline_set_is_visible(
+        self, timeline_ui: TimelineUI, is_visible: bool
+    ) -> bool:
+        return self.on_timeline_data_set(timeline_ui.id, "is_visible", is_visible)
+
+    @command_callback
+    def on_timeline_set_name(self, timeline_ui: TimelineUI, name: str | None = None):
+        if not name:
+            accepted, name = get(
+                Get.FROM_USER_STRING,
+                "Change timeline name",
+                "Choose new name",
+                text=get(Get.TIMELINE, timeline_ui.id).name,
+            )
+            if not accepted:
+                return False
+
+        return self.on_timeline_data_set(timeline_ui.id, "name", name)
+
+    @command_callback
+    def on_timeline_set_height(
+        self, timeline_ui: TimelineUI, height: int | None = None
+    ):
+        if not height:
+            accepted, height = get(
+                Get.FROM_USER_INT,
+                "Change timeline height",
+                "Insert new timeline height",
+                value=timeline_ui.get_data("height"),
+                min=10,
+            )
+            if not accepted:
+                return False
+
+        return self.on_timeline_data_set(timeline_ui.id, "height", height)
+
+    def on_timeline_set_component_color(self) -> None:
+        success, color = get(Get.FROM_USER_COLOR)
+        if not success or not color.isValid():
+            return
+
+        @with_elements
+        def set_components_color(
+            tlui: TimelineUI, elements: list[TimelineUIElement]
+        ) -> bool:
+            tlui.set_elements_attr(elements, "color", color.name())
+            # This is a command callback, so we need to return a bool indicating success.
+            return True
+
+        self.on_timeline_command(
+            Timeline.get_kinds_by_flag(TimelineFlag.COMPONENTS_COLORED),
+            set_components_color,
+            TimelineSelector.SELECTED,
+        )
+
+    def on_timeline_reset_component_color(self):
+        @with_elements
+        def reset_components_color(
+            tlui: TimelineUI, elements: list[TimelineUIElement]
+        ) -> bool:
+            tlui.set_elements_attr(elements, "color", None)
+            # This is a command callback, so we need to return a bool indicating success.
+            return True
+
+        self.on_timeline_command(
+            Timeline.get_kinds_by_flag(TimelineFlag.COMPONENTS_COLORED),
+            reset_components_color,
+            TimelineSelector.SELECTED,
+        )
+
+    def on_timeline_delete_element(self):
+        def components_are_deletable(flags: list[TimelineFlag]):
+            return (
+                TimelineFlag.COMPONENTS_NOT_DELETABLE not in flags
+                and TimelineFlag.COMPONENTS_NOT_EDITABLE not in flags
+            )
+
+        kinds = [
+            cls.KIND
+            for cls in Timeline.__subclasses__()
+            if components_are_deletable(cls.FLAGS)
+        ]
+
+        self.on_timeline_command(
+            kinds,
+            "on_delete_component",
+            TimelineSelector.SELECTED,
+        )
+
+    def on_timeline_copy_element(self):
+        kinds = Timeline.get_kinds_by_flag(TimelineFlag.COMPONENTS_COPYABLE)
+        timeline_uis = self.get_timelines_uis_for_request(
+            kinds, TimelineSelector.SELECTED
+        )
+
+        if len(timeline_uis) == 0:
+            # Can't copy: there are no selected elements.
+            return
+        elif len(timeline_uis) > 1:
+            tilia.errors.display(
+                tilia.errors.COMPONENTS_COPY_ERROR,
+                "Cannot copy components from more than one timeline.",
+            )
+            return
+
+        timeline_ui = timeline_uis[0]
+        timeline_ui.on_copy_element(timeline_ui.selected_elements)
+
+    def on_timeline_paste_element(self, type: str = ""):
+        if type == "complete":
+            from tilia.ui.timelines.hierarchy import HierarchyTimelineUI
+
+            self.on_timeline_command(
+                TlKind.HIERARCHY_TIMELINE,
+                HierarchyTimelineUI.on_paste_element_complete,
+                TimelineSelector.PASTE,
+                get(Get.CLIPBOARD_CONTENTS),
+            )
+        else:
+            self.on_timeline_command(
+                Timeline.get_kinds_by_flag(TimelineFlag.COMPONENTS_COPYABLE),
+                TimelineUI.on_paste_element,
+                TimelineSelector.PASTE,
+                get(Get.CLIPBOARD_CONTENTS),
+            )
+
+    def on_zoom(self, direction: str, zoom_factor: float = ZOOM_FACTOR):
+        if direction not in ["in", "out"]:
+            return
+
         prev_smooth_scroll = settings.get("general", "prioritise_performance")
         if not prev_smooth_scroll:
             settings.set("general", "prioritise_performance", True)
@@ -1033,13 +1312,31 @@ class TimelineUIs:
         post(
             Post.PLAYBACK_AREA_SET_WIDTH,
             get(Get.PLAYBACK_AREA_WIDTH)
-            * (zoom_factor if is_zoom_in else 1 / zoom_factor),
+            * (zoom_factor if direction == "in" else 1 / zoom_factor),
         )
         self.center_on_time(self.selected_time)
         self.view.setUpdatesEnabled(True)
 
         if not prev_smooth_scroll:
             settings.set("general", "prioritise_performance", False)
+
+    def on_import_to_timeline(self, tl_kind: TlKind):
+        # Refactor later: merge this with _on_import_to_timeline()
+        prev_state = get(Get.APP_STATE)
+        status, errors = _on_import_to_timeline(self, tl_kind)
+
+        if status == "failure":
+            post(Post.APP_STATE_RESTORE, prev_state)
+            if errors:
+                tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, "\n".join(errors))
+        elif status == "success" and errors:
+            tilia.errors.display(
+                tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, "\n".join(errors)
+            )
+            post(Post.APP_STATE_RECORD, "Import from csv file")
+
+        # Return for testing purposes.
+        return status, errors
 
     def _auto_scroll(self, media_time_change_reason, time) -> None:
         if any(
@@ -1225,3 +1522,12 @@ class TimelineUIs:
 
     def on_timeline_deleted(self, id: int):
         self.delete_timeline_ui(self.get_timeline_ui(id))
+
+
+class TimelineSelector(Enum):
+    ANY = auto()
+    EXPLICIT = auto()
+    SELECTED = auto()
+    ALL = auto()
+    FIRST = auto()
+    PASTE = auto()

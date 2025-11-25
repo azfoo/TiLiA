@@ -1,4 +1,3 @@
-from tilia.ui.actions import TiliaAction
 from tilia.ui.menus import MenuItemKind
 from tilia.ui.timelines.base.context_menus import (
     TimelineUIElementContextMenu,
@@ -9,20 +8,20 @@ from tilia.ui.timelines.base.context_menus import (
 class BeatContextMenu(TimelineUIElementContextMenu):
     name = "Beat"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_INSPECT),
+        (MenuItemKind.COMMAND, "timeline.element.inspect"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.BEAT_SET_MEASURE_NUMBER),
-        (MenuItemKind.ACTION, TiliaAction.BEAT_RESET_MEASURE_NUMBER),
-        (MenuItemKind.ACTION, TiliaAction.BEAT_DISTRIBUTE),
-        (MenuItemKind.ACTION, TiliaAction.BEAT_SET_AMOUNT_IN_MEASURE),
+        (MenuItemKind.COMMAND, "timeline.beat.set_measure_number"),
+        (MenuItemKind.COMMAND, "timeline.beat.reset_measure_number"),
+        (MenuItemKind.COMMAND, "timeline.beat.distribute"),
+        (MenuItemKind.COMMAND, "timeline.beat.set_amount_in_measure"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_DELETE),
+        (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
 
 
 class BeatTimelineUIContextMenu(TimelineUIContextMenu):
     name = "Beat timeline"
-    items = [(MenuItemKind, TiliaAction.TIMELINE_NAME_SET)]
+    items = [(MenuItemKind, "timeline.set_name")]

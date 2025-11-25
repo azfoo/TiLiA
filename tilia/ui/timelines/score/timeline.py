@@ -19,7 +19,6 @@ from tilia.ui.consts import TINT_FACTOR_ON_SELECTION
 from tilia.ui.coords import time_x_converter
 from tilia.ui.smooth_scroll import setup_smooth, smooth
 from tilia.ui.timelines.base.timeline import TimelineUI
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 from tilia.ui.timelines.cursors import CursorMixIn
 from tilia.ui.timelines.drag import DragManager
 from tilia.ui.timelines.score.context_menu import ScoreTimelineUIContextMenu
@@ -33,9 +32,6 @@ from tilia.ui.timelines.score.element import (
 )
 from tilia.ui.timelines.score.element.with_collision import (
     TimelineUIElementWithCollision,
-)
-from tilia.ui.timelines.score.request_handlers import (
-    ScoreTimelineUIElementRequestHandler,
 )
 from tilia.ui.timelines.score.toolbar import ScoreTimelineToolbar
 from tilia.ui.windows.svg_viewer import SvgViewer
@@ -112,13 +108,6 @@ class ScoreTimelineUI(TimelineUI):
     def on_settings_updated(self, updated_settings):
         if "score_timeline" in updated_settings:
             self.measure_tracker.update_color()
-
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return ScoreTimelineUIElementRequestHandler(self).on_request(
-            request, selector, *args, **kwargs
-        )
 
     def update_name(self):
         name = self.get_data("name")

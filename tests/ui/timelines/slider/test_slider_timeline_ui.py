@@ -1,14 +1,13 @@
-from tilia.requests import post, Post
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 
 
-def test_undo_redo(slider_tlui, marker_tlui, user_actions):
+def test_undo_redo(slider_tlui, marker_tlui):
 
     # using marker tl to trigger an actions that can be undone
-    user_actions.trigger(TiliaAction.MARKER_ADD)
+    commands.execute("timeline.marker.add")
 
-    post(Post.EDIT_UNDO)
+    commands.execute("edit.undo")
     assert len(marker_tlui) == 0
 
-    post(Post.EDIT_REDO)
+    commands.execute("edit.redo")
     assert len(marker_tlui) == 1

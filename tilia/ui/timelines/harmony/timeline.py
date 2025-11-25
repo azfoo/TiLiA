@@ -1,26 +1,24 @@
-from __future__ import annotations
-
 import music21
 
+from tilia import errors
+from tilia.timelines.component_kinds import ComponentKind
 from . import level_label
 from tilia.requests import Get, get
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.timelines.base.element import TimelineUIElement
 from tilia.ui.timelines.base.timeline import (
     TimelineUI,
+    with_elements,
 )
-from tilia.ui.timelines.collection.requests.enums import ElementSelector
 from tilia.ui.timelines.harmony.context_menu import HarmonyTimelineUIContextMenu
 from tilia.ui.timelines.harmony import HarmonyUI, ModeUI
-from tilia.ui.timelines.harmony.request_handlers import (
-    HarmonyUIRequestHandler,
-    HarmonyTimelineUIRequestHandler,
-)
 from tilia.ui.timelines.harmony.toolbar import HarmonyTimelineToolbar
 
 from tilia.ui.timelines.copy_paste import (
     paste_into_element,
+    get_copy_data_from_element,
 )
+from tilia.ui.timelines.collection.collection import TimelineUIs, TimelineSelector
 
 
 class HarmonyTimelineUI(TimelineUI):
@@ -37,6 +35,40 @@ class HarmonyTimelineUI(TimelineUI):
             "visible_level_count",
         ]
         self._setup_level_labels()
+
+    @classmethod
+    def register_commands(cls, collection: TimelineUIs):
+        args = [
+            ("add_harmony", "Add harmony", "h", "harmony_add", TimelineSelector.FIRST),
+            (
+                "component.display_as_chord",
+                "Display as chord symbol",
+                "",
+                "harmony_display_chord",
+                TimelineSelector.SELECTED,
+            ),
+            (
+                "component.display_as_roman",
+                "Display as roman numeral",
+                "",
+                "harmony_display_roman",
+                TimelineSelector.SELECTED,
+            ),
+            ("hide_keys", "Hide keys", "", "", TimelineSelector.FIRST),
+            ("show_keys", "Show keys", "", "", TimelineSelector.FIRST),
+            ("add_mode", "Add mode", "", "mode_add", TimelineSelector.FIRST),
+        ]
+
+        for name, text, shortcut, icon, selector in args:
+            cls.register_timeline_command(
+                collection,
+                name,
+                getattr(cls, f"on_{name.replace('.', '_')}"),
+                selector,
+                text=text,
+                shortcut=shortcut,
+                icon=icon,
+            )
 
     def _setup_level_labels(self):
         self.harmony_level_label = level_label.LevelLabel(
@@ -59,17 +91,19 @@ class HarmonyTimelineUI(TimelineUI):
             lambda elm: isinstance(elm, HarmonyUI)
         )
 
-    def on_timeline_element_request(
-        self, request, selector: ElementSelector, *args, **kwargs
-    ):
-        return HarmonyUIRequestHandler(self).on_request(
-            request, selector, *args, **kwargs
-        )
+    @with_elements
+    def on_delete_component(self, elements: list[TimelineUIElement], *_, **__):
+        if any((elm for elm in elements if elm.get_data("KIND") == ComponentKind.MODE)):
+            needs_recalculation = True
+        else:
+            needs_recalculation = False
 
-    def on_timeline_request(self, request, *args, **kwargs):
-        return HarmonyTimelineUIRequestHandler(self).on_request(
-            request, *args, **kwargs
-        )
+        success = self.timeline.delete_components(self.elements_to_components(elements))
+
+        if needs_recalculation:
+            self.on_mode_delete_done()
+
+        return success
 
     def on_mode_add_done(self):
         self.update_harmony_labels()
@@ -189,3 +223,85 @@ class HarmonyTimelineUI(TimelineUI):
                 target_time + (harmony_time - reference_time),
                 **harmony_data["by_component_value"],
             )
+
+    def on_add_mode(self):
+        time = get(Get.SELECTED_TIME)
+        valid, reason = self.timeline.component_manager._validate_component_creation(
+            ComponentKind.MODE, time
+        )
+
+        if not valid:
+            errors.display(errors.ADD_MODE_FAILED, reason)
+            return False
+
+        confirmed, kwargs = get(Get.FROM_USER_MODE_PARAMS)
+        if not confirmed:
+            return False
+        mode, reason = self.timeline.create_component(
+            ComponentKind.MODE, time, **kwargs
+        )
+        if not mode:
+            errors.display(errors.ADD_MODE_FAILED, reason)
+            return False
+        self.on_mode_add_done()
+        return True
+
+    def on_add_harmony(self):
+        time = get(Get.SELECTED_TIME)
+        valid, reason = self.timeline.component_manager._validate_component_creation(
+            ComponentKind.HARMONY, time
+        )
+
+        if not valid:
+            errors.display(errors.ADD_HARMONY_FAILED, reason)
+            return False
+
+        confirmed, kwargs = get(Get.FROM_USER_HARMONY_PARAMS)
+        if not confirmed:
+            return False
+
+        harmony, reason = self.timeline.create_component(
+            ComponentKind.HARMONY, time, **kwargs
+        )
+
+        if not harmony:
+            errors.display(errors.ADD_HARMONY_FAILED, reason)
+            return False
+        return True
+
+    @with_elements
+    def on_component_display_as_chord(self, elements: list[ModeUI | HarmonyUI]):
+        harmonies = [elm for elm in elements if isinstance(elm, HarmonyUI)]
+        self.set_elements_attr(harmonies, "display_mode", "chord")
+        return True
+
+    @with_elements
+    def on_component_display_as_roman(self, elements: list[ModeUI | HarmonyUI]):
+        harmonies = [elm for elm in elements if isinstance(elm, HarmonyUI)]
+        self.set_elements_attr(harmonies, "display_mode", "roman")
+        return True
+
+    @staticmethod
+    def _get_copy_data_from_element(element: HarmonyUI | ModeUI):
+        return {
+            "components": get_copy_data_from_element(
+                element, element.DEFAULT_COPY_ATTRIBUTES
+            ),
+            "timeline_kind": TimelineKind.HARMONY_TIMELINE,
+        }
+
+    def on_show_keys(self):
+        get(Get.TIMELINE_COLLECTION).set_timeline_data(
+            self.id,
+            "visible_level_count",
+            2,
+        )
+        return True
+
+    def on_hide_keys(self):
+        get(Get.TIMELINE_COLLECTION).set_timeline_data(
+            self.id,
+            "visible_level_count",
+            1,
+        )
+        return True

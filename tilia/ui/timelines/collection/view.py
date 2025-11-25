@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QGraphicsView, QAbstractSlider
-from tilia.requests import post, Post
+from tilia.ui import commands
 from tilia.ui.smooth_scroll import setup_smooth, smooth
 
 
@@ -52,9 +52,9 @@ class TimelineUIsView(QGraphicsView):
 
         if Qt.KeyboardModifier.ControlModifier in event.modifiers():
             if dy > 0:
-                post(Post.VIEW_ZOOM_IN)
+                commands.execute("view.zoom.in")
             else:
-                post(Post.VIEW_ZOOM_OUT)
+                commands.execute("view.zoom.out")
             return
 
         else:

@@ -1,4 +1,3 @@
-from tilia.ui.actions import TiliaAction
 from tilia.ui.menus import MenuItemKind
 from tilia.ui.timelines.base.context_menus import (
     TimelineUIElementContextMenu,
@@ -9,15 +8,15 @@ from tilia.ui.timelines.base.context_menus import (
 class PdfMarkerContextMenu(TimelineUIElementContextMenu):
     name = "PDF Marker"
     items = [
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_INSPECT),
+        (MenuItemKind.COMMAND, "timeline.element.inspect"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_COPY),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_PASTE),
+        (MenuItemKind.COMMAND, "timeline.component.copy"),
+        (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.ACTION, TiliaAction.TIMELINE_ELEMENT_DELETE),
+        (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
 
 
 class PdfTimelineUIContextMenu(TimelineUIContextMenu):
     name = "PDF timeline"
-    items = [(MenuItemKind, TiliaAction.TIMELINE_NAME_SET)]
+    items = [(MenuItemKind, "timeline.set_name")]

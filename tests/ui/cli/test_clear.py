@@ -15,14 +15,14 @@ class TestClear:
         assert len(tls) == 1
         assert tls[0].KIND == TimelineKind.SLIDER_TIMELINE
 
-    def test_clear(self, cli, tls, tilia_state, user_actions):
+    def test_clear(self, cli, tls, tilia_state):
         tilia_state.duration = 1
         cli.parse_and_run("timeline add hrc")
         cli.parse_and_run("clear --force")
 
         self.assert_cleared(tls)
 
-    def test_clear_twice(self, cli, tls, tilia_state, user_actions):
+    def test_clear_twice(self, cli, tls, tilia_state):
         tilia_state.duration = 1
         cli.parse_and_run("timeline add hrc")
         cli.parse_and_run("clear --force")
@@ -31,7 +31,7 @@ class TestClear:
         self.assert_cleared(tls)
 
     def test_clear_saved_does_not_prompt_for_confirmation(
-        self, cli, tls, tmp_path, tilia_state, user_actions
+        self, cli, tls, tmp_path, tilia_state
     ):
         tilia_state.duration = 1
         cli.parse_and_run("timeline add hrc")
@@ -41,7 +41,7 @@ class TestClear:
         self.assert_cleared(tls)
 
     def test_clear_unsaved_do_not_confirm(
-        self, cli, tls, tmp_path, tilia_state, user_actions, monkeypatch
+        self, cli, tls, tmp_path, tilia_state, monkeypatch
     ):
         tilia_state.duration = 1
         cli.parse_and_run("timeline add hrc")
@@ -50,9 +50,7 @@ class TestClear:
 
         assert len(tls) == 2
 
-    def test_clear_unsaved_confirm(
-        self, cli, tls, tmp_path, tilia_state, user_actions, monkeypatch
-    ):
+    def test_clear_unsaved_confirm(self, cli, tls, tmp_path, tilia_state, monkeypatch):
         tilia_state.duration = 1
         cli.parse_and_run("timeline add hrc")
         monkeypatch.setattr("sys.stdin", StringIO("yes\n"))

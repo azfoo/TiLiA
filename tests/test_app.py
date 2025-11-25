@@ -13,8 +13,8 @@ from tilia.media.player import YouTubePlayer, QtAudioPlayer
 from tilia.settings import settings
 
 from tilia.requests import Get, Post, post, get
-from tilia.ui.actions import TiliaAction
 from tilia.timelines.timeline_kinds import TimelineKind
+from tilia.ui import commands
 from tilia.ui.windows import WindowKind
 
 
@@ -35,20 +35,18 @@ class TestSaveFileOnClose:
             "file_path": "",
         }
 
-    def test_no_changes(self, user_actions):
+    def test_no_changes(self):
         with (
             Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, False)),
             patch("tilia.file.file_manager.FileManager.save") as save_mock,
             PatchPost("tilia.app", Post.UI_EXIT) as exit_mock,
         ):
-            user_actions.trigger(TiliaAction.APP_CLOSE)
+            commands.execute("tilia.close")
 
         exit_mock.assert_called()
         save_mock.assert_not_called()
 
-    def test_file_modified_and_user_chooses_to_save_changes(
-        self, user_actions, tmp_path
-    ):
+    def test_file_modified_and_user_chooses_to_save_changes(self, tmp_path):
         tmp_file = tmp_path / "test_file_modified_and_user_chooses_to_save_changes.tla"
         with (
             Serve(Get.APP_STATE, self._get_modified_file_state()),
@@ -56,32 +54,32 @@ class TestSaveFileOnClose:
             Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, tmp_file)),
             PatchPost("tilia.app", Post.UI_EXIT) as exit_mock,
         ):
-            user_actions.trigger(TiliaAction.APP_CLOSE)
+            commands.execute("tilia.close")
 
         exit_mock.assert_called()
         assert tmp_file.exists()
 
     def test_file_modified_and_user_chooses_to_save_changes_when_file_was_previously_saved(
-        self, user_actions, tmp_path
+        self, tmp_path
     ):
         tmp_file = tmp_path / "test_file_modified_and_user_chooses_to_save_changes.tla"
         with (
             Serve(Get.APP_STATE, self._get_modified_file_state()),
             Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, tmp_file)),
         ):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
+            commands.execute("file.save")
 
         with (
             Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, True)),
             PatchPost("tilia.app", Post.UI_EXIT) as exit_mock,
         ):
-            user_actions.trigger(TiliaAction.APP_CLOSE)
+            commands.execute("tilia.close")
 
         exit_mock.assert_called()
         assert tmp_file.exists()
 
     def test_file_is_modified_and_user_cancels_close_on_should_save_changes_dialog(
-        self, user_actions
+        self,
     ):
         with (
             Serve(Get.APP_STATE, self._get_modified_file_state()),
@@ -89,12 +87,12 @@ class TestSaveFileOnClose:
             patch("tilia.file.file_manager.FileManager.save") as save_mock,
             PatchPost("tilia.app", Post.UI_EXIT) as exit_mock,
         ):
-            user_actions.trigger(TiliaAction.APP_CLOSE)
+            commands.execute("tilia.close")
 
         exit_mock.assert_not_called()
         save_mock.assert_not_called()
 
-    def test_file_is_modified_and_user_cancels_file_save_dialog(self, user_actions):
+    def test_file_is_modified_and_user_cancels_file_save_dialog(self):
         with (
             Serve(Get.APP_STATE, self._get_modified_file_state()),
             Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, True)),
@@ -102,7 +100,7 @@ class TestSaveFileOnClose:
             patch("tilia.file.file_manager.FileManager.save") as save_mock,
             PatchPost("tilia.app", Post.UI_EXIT) as exit_mock,
         ):
-            user_actions.trigger(TiliaAction.APP_CLOSE)
+            commands.execute("tilia.close")
 
         exit_mock.assert_not_called()
         save_mock.assert_not_called()
@@ -110,33 +108,33 @@ class TestSaveFileOnClose:
 
 class TestFileLoad:
     def test_media_path_does_not_exist_and_media_length_available(
-        self, tilia_state, qtui, tmp_path, user_actions
+        self, tilia_state, qtui, tmp_path
     ):
         tilia_state.duration = 101
 
         # set media path to a non-existing file
         nonexisting_media = tmp_path / "nothere.mp3"
         with patch_file_dialog(True, [str(nonexisting_media)]):
-            user_actions.trigger(TiliaAction.MEDIA_LOAD_LOCAL)
+            commands.execute("media.load.local")
 
         # save tilia file
         tla_path = tmp_path / "test.tla"
         with patch_file_dialog(True, [str(tla_path)]):
-            user_actions.trigger(TiliaAction.FILE_SAVE_AS)
+            commands.execute("file.save_as")
 
         # open tilia file
         with (
             patch_file_dialog(True, [str(tla_path)]),
             patch_yes_or_no_dialog(False),
         ):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert tilia_state.is_undo_manager_cleared
         assert tilia_state.media_path == ""
         assert tilia_state.duration == 101
 
     def test_media_path_does_not_exist_and_media_length_not_available(
-        self, qtui, tilia_state, tmp_path, user_actions
+        self, qtui, tilia_state, tmp_path
     ):
         tilia_state.duration = 0
         file_data = tests.utils.get_blank_file_data()
@@ -147,29 +145,27 @@ class TestFileLoad:
             patch_file_dialog(True, [str(tmp_file)]),
             patch_yes_or_no_dialog(False),  # do no try to load another media
         ):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert tilia_state.is_undo_manager_cleared
         assert tilia_state.media_path == ""
         assert tilia_state.duration == 0
 
-    def test_media_path_exists(
-        self, tilia, qtui, tilia_state, tmp_path, tls, user_actions
-    ):
+    def test_media_path_exists(self, tilia, qtui, tilia_state, tmp_path, tls):
         tmp_file = tmp_path / "test_file_load.tla"
         with patch_file_dialog(True, [EXAMPLE_MEDIA_PATH]):
-            user_actions.trigger(TiliaAction.MEDIA_LOAD_LOCAL)
+            commands.execute("media.load.local")
 
         with patch_file_dialog(True, [str(tmp_file)]):
-            user_actions.trigger(TiliaAction.FILE_SAVE_AS)
+            commands.execute("file.save_as")
         with Serve(Get.FROM_USER_TILIA_FILE_PATH, (True, tmp_file)):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert tilia_state.is_undo_manager_cleared
         assert tilia_state.media_path == EXAMPLE_MEDIA_PATH
         assert tilia_state.duration == EXAMPLE_MEDIA_DURATION
 
-    def test_media_path_is_youtube_url(self, tilia_state, tmp_path, user_actions):
+    def test_media_path_is_youtube_url(self, tilia_state, tmp_path):
         file_data = tests.utils.get_blank_file_data()
         tmp_file = tmp_path / "test_file_load.tla"
         media_path = "https://www.youtube.com/watch?v=wBfVsucRe1w"
@@ -180,7 +176,7 @@ class TestFileLoad:
             Serve(Get.FROM_USER_TILIA_FILE_PATH, (True, tmp_file)),
             Serve(Get.PLAYER_CLASS, YouTubePlayer),
         ):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert tilia_state.is_undo_manager_cleared
         assert tilia_state.media_path == media_path
@@ -198,15 +194,15 @@ class TestMediaLoad:
         assert tilia_state.media_path == EXAMPLE_MEDIA_PATH
         assert tilia_state.duration == EXAMPLE_MEDIA_DURATION
 
-    def test_undo(self, tilia_state, user_actions):
+    def test_undo(self, tilia_state):
         self._load_media(EXAMPLE_MEDIA_PATH)
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
+        commands.execute("edit.undo")
         assert not tilia_state.media_path
 
-    def test_redo(self, tilia_state, user_actions):
+    def test_redo(self, tilia_state):
         self._load_media(EXAMPLE_MEDIA_PATH)
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
-        user_actions.trigger(TiliaAction.EDIT_REDO)
+        commands.execute("edit.undo")
+        commands.execute("edit.redo")
         assert tilia_state.media_path == EXAMPLE_MEDIA_PATH
 
     def test_load_invalid_extension(self, tilia_state, tilia_errors):
@@ -254,11 +250,11 @@ class TestScaleCropTimeline:
         ],
     )
     def test_set_duration_twice_without_cropping(
-        self, scale_timelines, scale_factor, tilia_state, marker_tlui, user_actions
+        self, scale_timelines, scale_factor, tilia_state, marker_tlui
     ):
         marker_time = 50
         tilia_state.current_time = marker_time
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         displacement_factor = 1
         for factor, should_scale in zip(scale_factor, scale_timelines, strict=True):
             tilia_state.set_duration(
@@ -268,31 +264,31 @@ class TestScaleCropTimeline:
                 displacement_factor *= factor
         assert marker_tlui[0].get_data("time") == marker_time * displacement_factor
 
-    def test_scale_then_crop(self, marker_tl, tilia_state, user_actions):
+    def test_scale_then_crop(self, marker_tl, tilia_state):
         tilia_state.current_time = 10
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.current_time = 50
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.set_duration(200, scale_timelines="yes")
         tilia_state.set_duration(50, scale_timelines="no")
         assert len(marker_tl) == 1
         assert marker_tl[0].get_data("time") == 20
 
-    def test_crop_then_scale(self, marker_tl, tilia_state, user_actions):
+    def test_crop_then_scale(self, marker_tl, tilia_state):
         tilia_state.current_time = 10
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.current_time = 50
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.set_duration(40, scale_timelines="no")
         tilia_state.set_duration(80, scale_timelines="yes")
         assert len(marker_tl) == 1
         assert marker_tl[0].get_data("time") == 20
 
-    def test_crop_twice(self, marker_tlui, tilia_state, user_actions):
+    def test_crop_twice(self, marker_tlui, tilia_state):
         tilia_state.current_time = 10
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.current_time = 50
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         tilia_state.set_duration(80, scale_timelines="no")
         tilia_state.set_duration(40, scale_timelines="no")
         assert len(marker_tlui) == 1
@@ -301,7 +297,7 @@ class TestScaleCropTimeline:
 
 class TestFileSetup:
     def test_slider_timeline_is_created_when_loaded_file_does_not_have_one(
-        self, tls, tmp_path, user_actions
+        self, tls, tmp_path
     ):
         file_data = tests.utils.get_blank_file_data()
         file_data["timelines"] = {
@@ -317,7 +313,7 @@ class TestFileSetup:
         tmp_file = tmp_path / "test_file_setup.tla"
         tmp_file.write_text(json.dumps(file_data))
         with Serve(Get.FROM_USER_TILIA_FILE_PATH, (True, tmp_file)):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert len(tls) == 2
         assert TimelineKind.SLIDER_TIMELINE in tls.timeline_kinds
@@ -330,7 +326,7 @@ def assert_open_failed(tilia, tilia_errors, opened_file_path, prev_file):
 
 
 class TestOpen:
-    def test_open_with_timeline(self, tilia, tls, tmp_path, user_actions):
+    def test_open_with_timeline(self, tilia, tls, tmp_path):
         tl_data = tests.utils.get_dummy_timeline_data()
         tl_id = list(tl_data.keys())[0]
 
@@ -353,7 +349,7 @@ class TestOpen:
         tmp_file = tmp_path / "test.tla"
         tmp_file.write_text(json.dumps(file_data, indent=2))
         with Serve(Get.FROM_USER_TILIA_FILE_PATH, (True, tmp_file)):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert Path(settings.get_recent_files()[0]) == tmp_file
         assert len(tls) == 2  # Slider timeline is also created by default
@@ -361,7 +357,7 @@ class TestOpen:
 
     def test_open_with_path(self, tilia, tls, tmp_path):
         tmp_file = tests.utils.get_tmp_file_with_dummy_timeline(tmp_path)
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert Path(settings.get_recent_files()[0]) == tmp_file
         assert len(tls) == 2  # Slider timeline is also created by default
@@ -369,7 +365,7 @@ class TestOpen:
     def test_open_file_does_not_exist(self, tilia, tmp_path, tilia_errors):
         prev_file = tilia.file_manager.file
         tmp_file = tmp_path / "test.tla"
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert_open_failed(tilia, tilia_errors, tmp_file, prev_file)
 
@@ -377,7 +373,7 @@ class TestOpen:
         prev_file = tilia.file_manager.file
         tmp_file = tmp_path / "test.tla"
         tmp_file.write_text("{")
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert_open_failed(tilia, tilia_errors, tmp_file, prev_file)
 
@@ -385,7 +381,7 @@ class TestOpen:
         prev_file = tilia.file_manager.file
         tmp_file = tmp_path / "test.tla"
         tmp_file.write_text('{"a": 1, "b": 2}')
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert_open_failed(tilia, tilia_errors, tmp_file, prev_file)
 
@@ -395,7 +391,7 @@ class TestOpen:
         file_data = tests.utils.get_blank_file_data()
         file_data["timelines"] = {"nonsense": 404}
         tmp_file.write_text(json.dumps(file_data))
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert_open_failed(tilia, tilia_errors, tmp_file, prev_file)
 
@@ -407,7 +403,7 @@ class TestOpen:
         file_path.write_text(json.dumps(file_data))
 
         tilia.on_clear()
-        post(Post.FILE_OPEN, file_path)
+        commands.execute("file.open", file_path)
         assert not tilia.file_manager.is_file_modified(tilia.file_manager.file.__dict__)
 
     def test_open_file_with_custom_metadata_fields(self, tilia, tmp_path):
@@ -435,7 +431,7 @@ class TestOpen:
 
         tmp_file = tmp_path / "test.tla"
         tmp_file.write_text(file_data, encoding="utf-8")
-        post(Post.FILE_OPEN, tmp_file)
+        commands.execute("file.open", tmp_file)
 
         assert list(tilia.file_manager.file.media_metadata.items()) == [
             ("test_field1", "a"),
@@ -443,21 +439,21 @@ class TestOpen:
             ("test_field3", "c"),
         ]
 
-    def test_open_saving_changes(self, tilia, tls, marker_tlui, user_actions, tmp_path):
+    def test_open_saving_changes(self, tilia, tls, marker_tlui, tmp_path):
         previous_path = tmp_path / "previous.tla"
         with Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, previous_path)):
-            post(Post.FILE_SAVE)
+            commands.execute("file.save")
 
         # make change
 
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
         prev_tl_id = marker_tlui.id
         prev_marker_id = marker_tlui[0].id
 
         tmp_file = tests.utils.get_tmp_file_with_dummy_timeline(tmp_path)
 
         with Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, True)):
-            post(Post.FILE_OPEN, tmp_file)
+            commands.execute("file.open", tmp_file)
 
         with open(previous_path, "r", encoding="utf-8") as f:
             contents = json.load(f)  # read contents
@@ -473,7 +469,7 @@ class TestOpen:
     def test_open_without_saving_changes(self, tilia, tls, marker_tlui, tmp_path):
         previous_path = tmp_path / "previous.tla"
         with Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, previous_path)):
-            post(Post.FILE_SAVE)
+            commands.execute("file.save")
 
         # make change
         marker_tlui.create_marker(10)
@@ -482,7 +478,7 @@ class TestOpen:
         tmp_file = tests.utils.get_tmp_file_with_dummy_timeline(tmp_path)
 
         with Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, False)):
-            post(Post.FILE_OPEN, tmp_file)
+            commands.execute("file.open", tmp_file)
 
         with open(previous_path, "r", encoding="utf-8") as f:
             contents = json.load(f)  # read contents
@@ -495,7 +491,7 @@ class TestOpen:
     ):
         previous_path = tmp_path / "previous.tla"
         with Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, previous_path)):
-            post(Post.FILE_SAVE)
+            commands.execute("file.save")
 
         # make change
         marker_tlui.create_marker(10)
@@ -505,86 +501,81 @@ class TestOpen:
         tmp_file = tests.utils.get_tmp_file_with_dummy_timeline(tmp_path)
 
         with Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (False, True)):
-            post(Post.FILE_OPEN, tmp_file)
+            commands.execute("file.open", tmp_file)
 
         assert len(tls) == 1  # assert file wasn't opened
         assert tilia.get_app_state() == prev_state
 
     def test_open_then_save(self, tmp_path, tilia_errors):
         tmp_file = tests.utils.get_tmp_file_with_dummy_timeline(tmp_path)
-        post(Post.FILE_OPEN, tmp_file)
-        post(Post.FILE_SAVE)
+        commands.execute("file.open", tmp_file)
+        commands.execute("file.save")
         tilia_errors.assert_no_error()
 
 
 class TestUndoRedo:
-    def test_undo_fails(
-        self, tilia, qtui, user_actions, tluis, tilia_state, tilia_errors
-    ):
+    def test_undo_fails(self, tilia, qtui, tluis, tilia_state, tilia_errors):
         with Serve(Get.FROM_USER_STRING, (True, "test")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+            commands.execute("timelines.add.marker")
 
         # this will record an invalid state that will raise an exception when
         # we try to restore it
         with patch.object(tilia, "get_app_state", return_value={}):
-            user_actions.trigger(TiliaAction.MARKER_ADD)
+            commands.execute("timeline.marker.add")
 
-        # doing another action so the following redo
+        # executing another command so the following redo
         # will try to restore the previous, faulty state
         # Note: this could be improved by providing a state that is actually
         # similar to a healthy state
         tilia_state.current_time = 10
-        user_actions.trigger(TiliaAction.MARKER_ADD)
+        commands.execute("timeline.marker.add")
 
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
+        commands.execute("edit.undo")
 
         # as the undo failed, the current state (with both markers)
         # should be recovered
         assert len(tluis[0]) == 2
         tilia_errors.assert_error()
 
-    def test_redo_fails(
-        self, tilia, qtui, user_actions, tluis, tilia_state, tilia_errors
-    ):
+    def test_redo_fails(self, tilia, qtui, tluis, tilia_state, tilia_errors):
         with Serve(Get.FROM_USER_STRING, (True, "test")):
-            user_actions.trigger(TiliaAction.TIMELINES_ADD_MARKER_TIMELINE)
+            commands.execute("timelines.add.marker")
 
         # this will record an invalid state that will raise an exception when
         # we try to restore it
         # Note: this could be improved by providing a state that is actually
         # similar to a healthy state
         with patch.object(tilia, "get_app_state", return_value={}):
-            user_actions.trigger(TiliaAction.MARKER_ADD)
+            commands.execute("timeline.marker.add")
 
         # going back to previous state
-        user_actions.trigger(TiliaAction.EDIT_UNDO)
+        commands.execute("edit.undo")
 
         # restoring state (this will fail)
-        user_actions.trigger(TiliaAction.EDIT_REDO)
+        commands.execute("edit.redo")
 
-        # as the redo failed, the current state (with no markers)
-        # should be recovered
+        # as the redo failed, the current state (with no markers) should be recovered
         assert tluis[0].is_empty
         tilia_errors.assert_error()
 
 
 class TestFileNew:
-    def test_media_is_unloaded(self, tilia, qtui, user_actions):
+    def test_media_is_unloaded(self, tilia, qtui):
         with Serve(Get.FROM_USER_MEDIA_PATH, (True, EXAMPLE_MEDIA_PATH)):
-            user_actions.trigger(TiliaAction.MEDIA_LOAD_LOCAL)
+            commands.execute("media.load.local")
 
         with Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, False)):
-            user_actions.trigger(TiliaAction.FILE_NEW)
+            commands.execute("file.new")
 
         assert get(Get.MEDIA_DURATION) == 0
         assert not tilia.player.media_path
 
-    def test_all_windows_are_closed(self, tilia, qtui, user_actions):
+    def test_all_windows_are_closed(self, tilia, qtui):
         for kind in WindowKind:
             post(Post.WINDOW_OPEN, kind)
 
         with Serve(Get.FROM_USER_SHOULD_SAVE_CHANGES, (True, False)):
-            user_actions.trigger(TiliaAction.FILE_NEW)
+            commands.execute("file.new")
 
         # this doesn't actaully check if windows are closed
         # it checks if app._windows[kind] is None.
@@ -618,7 +609,7 @@ class TestRelativePaths:
             ("folderName/files/tilia.tla", "folderName/files/media/audio/music.mp3"),
         ],
     )
-    def test_moving_files(self, tla, media, tilia, qtui, tmp_path, user_actions):
+    def test_moving_files(self, tla, media, tilia, qtui, tmp_path):
         # create tla and media in old folder
         old_folder = tmp_path / "old" / "folder"
         old_tla = old_folder / tla
@@ -631,11 +622,11 @@ class TestRelativePaths:
 
         # load media
         with patch_file_dialog(True, [str(old_media.resolve())]):
-            user_actions.trigger(TiliaAction.MEDIA_LOAD_LOCAL)
+            commands.execute("media.load.local")
 
         # save tla
         with patch_file_dialog(True, [str(old_tla.resolve())]):
-            user_actions.trigger(TiliaAction.FILE_SAVE_AS)
+            commands.execute("file.save_as")
 
         tilia.on_clear()  # unload media
 
@@ -648,6 +639,6 @@ class TestRelativePaths:
 
         # open file at new folder
         with (patch_file_dialog(True, [str(new_tla)])):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
 
         assert tilia.player.media_path == str(new_media)

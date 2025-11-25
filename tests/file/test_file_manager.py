@@ -14,7 +14,7 @@ from tilia.file.tilia_file import TiliaFile
 from tilia.file.file_manager import FileManager
 from unittest.mock import patch
 
-from tilia.ui.actions import TiliaAction
+from tilia.ui import commands
 
 
 def get_empty_save_params():
@@ -25,23 +25,23 @@ def get_empty_save_params():
     } | {"timelines_hash": ""}
 
 
-class TestUserActions:
-    def test_save(self, tls, marker_tlui, tmp_path, user_actions):
+class Tests:
+    def test_save(self, tls, marker_tlui, tmp_path):
         marker_tlui.create_marker(0)
         tmp_file_path = (tmp_path / "test_save.tla").resolve().__str__()
         with patch_file_dialog(True, [tmp_file_path]):
-            user_actions.trigger(TiliaAction.FILE_SAVE_AS)
+            commands.execute("file.save_as")
         marker_tlui.create_marker(1)
-        user_actions.trigger(TiliaAction.FILE_SAVE)
+        commands.execute("file.save")
 
         with patch_yes_or_no_dialog(True):
-            user_actions.trigger(TiliaAction.TIMELINES_CLEAR)
+            commands.execute("timelines.clear_all")
         assert marker_tlui.is_empty
         with (
             patch_file_dialog(True, [tmp_file_path]),
             patch_yes_or_no_dialog(False),  # do not save changes
         ):
-            user_actions.trigger(TiliaAction.FILE_OPEN)
+            commands.execute("file.open")
         assert len(tls[0]) == 2
 
 
@@ -93,8 +93,8 @@ class TestFileManager:
         self, tilia, marker_tlui, tmp_path
     ):
         with Serve(Get.FROM_USER_SAVE_PATH_TILIA, (True, tmp_path / "temp.tla")):
-            post(Post.FILE_SAVE)
-        post(Post.MARKER_ADD)
+            commands.execute("file.save")
+        commands.execute("timeline.marker.add")
         assert tilia.file_manager.is_file_modified(get(Get.APP_STATE))
 
     def test_is_file_modified_modified_tile(self, tilia):
@@ -144,13 +144,13 @@ class TestFileManager:
     @pytest.mark.skipif(
         not sys.platform.startswith("win"), reason="Windows specific test"
     )
-    def test_is_saved_with_posix_paths(self, qtui, tilia, tmp_path, user_actions):
+    def test_is_saved_with_posix_paths(self, qtui, tilia, tmp_path):
         file_path = tmp_path / "test.tla"
         with patch_file_dialog(True, [str(EXAMPLE_MEDIA_PATH)]):
-            post(Post.UI_MEDIA_LOAD_LOCAL)
+            commands.execute("media.load.local")
 
         with patch_file_dialog(True, [str(WindowsPath(file_path))]):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
+            commands.execute("file.save")
 
         with open(file_path, "r") as f:
             data = json.load(f)
@@ -159,30 +159,26 @@ class TestFileManager:
         assert data["media_path"] == Path(EXAMPLE_MEDIA_PATH).as_posix()
 
     def test_save_without_set_title_and_different_file_name(
-        self, qtui, tilia, tmp_path, user_actions
+        self, qtui, tilia, tmp_path
     ):
         tla_path = tmp_path / "Some Title.tla"
         with patch_file_dialog(True, [str(tla_path)]):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
+            commands.execute("file.save")
 
         assert tilia.file_manager.file.media_metadata["title"] == "Some Title"
 
-    def test_save_with_title_set_and_different_file_name(
-        self, qtui, tilia, tmp_path, user_actions
-    ):
+    def test_save_with_title_set_and_different_file_name(self, qtui, tilia, tmp_path):
         tilia.file_manager.file.media_metadata["title"] = "Title Already Set"
         tla_path = tmp_path / "Some Title.tla"
         with patch_file_dialog(True, [str(tla_path)]):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
+            commands.execute("file.save")
 
         assert tilia.file_manager.file.media_metadata["title"] == "Title Already Set"
 
-    def test_save_fail_reverts_to_original_name(
-        self, qtui, tilia, tmp_path, user_actions
-    ):
+    def test_save_fail_reverts_to_original_name(self, qtui, tilia, tmp_path):
         tla_path = tmp_path / "Non-existent Path" / "Some Other Title.tla"
         with patch_file_dialog(True, [str(tla_path)]):
-            user_actions.trigger(TiliaAction.FILE_SAVE)
+            commands.execute("file.save")
 
         assert tilia.file_manager.file.media_metadata[
             "title"

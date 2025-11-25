@@ -10,6 +10,7 @@ from tilia.file.tilia_file import TiliaFile, validate_tla_data
 from tilia.file.media_metadata import MediaMetadata
 import tilia.errors
 from tilia.settings import settings
+from tilia.ui import commands
 
 
 def open_tla(file_path: str | Path) -> tuple[bool, TiliaFile | None, Path | None]:
@@ -50,16 +51,14 @@ class FileManager:
 
     def __init__(self):
         self._setup_requests()
+        self._setup_commands()
         self._setup_file()
 
     def _setup_requests(self):
         LISTENS = {
             (Post.PLAYER_URL_CHANGED, self.on_player_url_changed),
             (Post.FILE_MEDIA_DURATION_CHANGED, self.on_player_duration_changed),
-            (Post.FILE_SAVE, self.on_save_request),
-            (Post.FILE_SAVE_AS, self.on_save_as_request),
             (Post.REQUEST_SAVE_TO_PATH, self.on_save_to_path_request),
-            (Post.REQUEST_FILE_NEW, self.on_request_new_file),
             (
                 Post.REQUEST_IMPORT_MEDIA_METADATA_FROM_PATH,
                 self.on_import_media_metadata_request,
@@ -83,6 +82,29 @@ class FileManager:
 
         for request, callback in SERVES:
             serve(self, request, callback)
+
+    def _setup_commands(self):
+
+        commands.register(
+            "file.new",
+            self.on_request_new_file,
+            "&New...",
+            "Ctrl+N",
+        )
+
+        commands.register(
+            "file.save",
+            self.on_save_request,
+            "&Save",
+            "Ctrl+S",
+        )
+
+        commands.register(
+            "file.save_as",
+            self.on_save_as_request,
+            "Save &As...",
+            "Ctrl+Shift+S",
+        )
 
     def _setup_file(self):
         self.file = TiliaFile()
