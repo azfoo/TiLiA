@@ -95,6 +95,10 @@ def undoable():
     assert get(Get.APP_STATE) == state_before
     commands.execute("edit.redo")
     assert get(Get.APP_STATE) == state_after
+    # Debug tip: use the deepdiff library to compare states
+    # import deepdiff
+    # from pprint import pprint
+    # pprint(deepdiff.DeepDiff(get(Get.APP_STATE), state_before))
 
 
 def reloadable(save_path):
