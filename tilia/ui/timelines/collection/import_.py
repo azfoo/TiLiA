@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import tilia.errors
 import tilia.parsers
@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 
 def _on_import_to_timeline(
     timeline_uis: TimelineUIs, tlkind: TlKind
-) -> tuple[Literal["success", "failure", "cancelled"], list[str]]:
+) -> tuple[bool, list[str]]:
     if not _validate_timeline_kind_on_import(timeline_uis, tlkind):
-        return "failure", [f"No timeline of kind {tlkind} found."]
+        return False, [f"No timeline of kind {tlkind} found."]
 
     tls_of_kind = timeline_uis.get_timeline_uis_by_attr("TIMELINE_KIND", tlkind)
     if len(tls_of_kind) == 1:
@@ -31,19 +31,17 @@ def _on_import_to_timeline(
         )
 
     if not timeline_ui:
-        return "cancelled", ["User cancelled when choosing timeline."]
+        return False, ["User cancelled when choosing timeline."]
 
     timeline = get(Get.TIMELINE, timeline_ui.id)
     if not timeline.is_empty and not _confirm_timeline_overwrite_on_import():
-        return "cancelled", ["User rejected components overwrite."]
+        return False, ["User rejected components overwrite."]
 
     if tlkind == TlKind.SCORE_TIMELINE:
         time_or_measure = "measure"
         beat_tlui = _get_beat_timeline_ui_for_import_from_csv(timeline_uis)
         if not beat_tlui:
-            return "failure", [
-                "A beat timeline is required to import a score timeline."
-            ]
+            return False, ["A beat timeline is required to import a score timeline."]
 
         beat_tl = get(Get.TIMELINE, beat_tlui.id)
         success, path = get(
@@ -58,14 +56,12 @@ def _on_import_to_timeline(
         else:
             success, time_or_measure = _get_by_time_or_by_measure_from_user()
             if not success:
-                return "cancelled", [
-                    "User cancelled when choosing by time or by measure."
-                ]
+                return False, ["User cancelled when choosing by time or by measure."]
 
         if time_or_measure == "measure":
             beat_tlui = _get_beat_timeline_ui_for_import_from_csv(timeline_uis)
             if not beat_tlui:
-                return "failure", ["A beat timeline is required to import by measure."]
+                return False, ["A beat timeline is required to import by measure."]
 
             beat_tl = get(Get.TIMELINE, beat_tlui.id)
         else:
@@ -76,7 +72,7 @@ def _on_import_to_timeline(
         )
 
     if not success:
-        return "cancelled", ["User cancelled when choosing file to import."]
+        return False, ["User cancelled when choosing file to import."]
 
     timeline.clear()
 
@@ -92,9 +88,9 @@ def _on_import_to_timeline(
         success, errors = func(*args)
     except UnicodeDecodeError:
         file_type = "musicXML" if tlkind == TlKind.SCORE_TIMELINE else "CSV"
-        return "failure", [UTF8_DECODE_FAILED.format(path, file_type)]
+        return False, [UTF8_DECODE_FAILED.format(path, file_type)]
 
-    return ("success" if success else "failure"), errors
+    return success, errors
 
 
 def _get_by_time_or_by_measure_from_user():

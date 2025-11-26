@@ -55,6 +55,8 @@ def command_callback(func, *args, **kwargs):
         if success:
             post(Post.APP_STATE_RECORD, f"timelines command: {func.__name__}")
 
+        return success
+
     return wrapper
 
 
@@ -1320,23 +1322,22 @@ class TimelineUIs:
         if not prev_smooth_scroll:
             settings.set("general", "prioritise_performance", False)
 
+    @command_callback
     def on_import_to_timeline(self, tl_kind: TlKind):
         # Refactor later: merge this with _on_import_to_timeline()
         prev_state = get(Get.APP_STATE)
-        status, errors = _on_import_to_timeline(self, tl_kind)
+        success, errors = _on_import_to_timeline(self, tl_kind)
 
-        if status == "failure":
+        if not success:
             post(Post.APP_STATE_RESTORE, prev_state)
             if errors:
                 tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, "\n".join(errors))
-        elif status == "success" and errors:
+        elif success and errors:
             tilia.errors.display(
                 tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, "\n".join(errors)
             )
-            post(Post.APP_STATE_RECORD, "Import from csv file")
 
-        # Return for testing purposes.
-        return status, errors
+        return success
 
     def _auto_scroll(self, media_time_change_reason, time) -> None:
         if any(
