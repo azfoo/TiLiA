@@ -65,7 +65,7 @@ def _on_import_to_timeline(
         if time_or_measure == "measure":
             beat_tlui = _get_beat_timeline_ui_for_import_from_csv(timeline_uis)
             if not beat_tlui:
-                return "failure", ["No beat timeline found for importing by measure."]
+                return "failure", ["A beat timeline is required to import by measure."]
 
             beat_tl = get(Get.TIMELINE, beat_tlui.id)
         else:
