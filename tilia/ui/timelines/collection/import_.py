@@ -41,7 +41,9 @@ def _on_import_to_timeline(
         time_or_measure = "measure"
         beat_tlui = _get_beat_timeline_ui_for_import_from_csv(timeline_uis)
         if not beat_tlui:
-            return "failure", ["No beat timeline found for importing score timeline."]
+            return "failure", [
+                "A beat timeline is required to import a score timeline."
+            ]
 
         beat_tl = get(Get.TIMELINE, beat_tlui.id)
         success, path = get(
@@ -123,10 +125,6 @@ def _get_beat_timeline_ui_for_import_from_csv(timeline_uis: TimelineUIs):
         "TIMELINE_KIND", TlKind.BEAT_TIMELINE
     )
     if not beat_tls:
-        tilia.errors.display(
-            tilia.errors.CSV_IMPORT_FAILED,
-            "No beat timelines found. Must have a beat timeline if importing by measure.",
-        )
         return
     elif len(beat_tls) == 1:
         return beat_tls[0]
