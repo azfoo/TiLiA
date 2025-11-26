@@ -38,11 +38,3 @@ def get_timeline_class_from_kind(kind: TimelineKind) -> type[Timeline]:
     classes = Timeline.subclasses()
     kind_to_class = {c.KIND: c for c in classes}
     return kind_to_class[kind]
-
-
-IMPORTABLE = [
-    kind
-    for kind in TimelineKind
-    if kind not in [TimelineKind.SLIDER_TIMELINE, TimelineKind.AUDIOWAVE_TIMELINE]
-]
-ALL = list(TimelineKind)
