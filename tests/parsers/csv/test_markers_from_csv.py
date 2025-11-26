@@ -5,14 +5,16 @@ from unittest.mock import patch, mock_open
 
 from PyQt6.QtWidgets import QFileDialog
 
-from tests.parsers.csv.common import assert_in_errors
+from tests.utils import undoable
+from tilia.requests import Post, post
 from tilia.ui import commands
 from tilia.ui.format import format_media_time
 
 
 def patch_import(by: Literal["time", "measure"], tl, data) -> tuple[str, list[str]]:
-    status = ""
-    errors = []
+    # Tests are using low-level functions to create beats
+    # so we need to trigger an app state record manually.
+    post(Post.APP_STATE_RECORD, "test state")
 
     with (
         patch(
@@ -22,9 +24,10 @@ def patch_import(by: Literal["time", "measure"], tl, data) -> tuple[str, list[st
         patch.object(QFileDialog, "exec", return_value=True),
         patch.object(QFileDialog, "selectedFiles", return_value=[Path()]),
         patch("builtins.open", mock_open(read_data=data)),
+        undoable(),
     ):
-        status, errors = commands.execute("timelines.import.marker")
-    return status, errors
+        success = commands.execute("timelines.import.marker")
+    return success
 
 
 def test_markers_by_measure_from_csv(beat_tlui, marker_tlui):
@@ -110,39 +113,41 @@ def test_markers_by_time_from_csv_fails_if_no_time_column(marker_tlui):
     assert marker_tlui.is_empty
 
 
-def test_markers_by_time_from_csv_outputs_error_if_bad_time_value(marker_tlui):
+def test_markers_by_time_from_csv_outputs_error_if_bad_time_value(
+    marker_tlui, tilia_errors
+):
     data = "time\nnonsense"
 
-    status, errors = patch_import("time", marker_tlui.timeline, data)
+    success = patch_import("time", marker_tlui.timeline, data)
 
-    assert status == "success"
-    assert_in_errors("nonsense", errors)
+    assert success is True
+    tilia_errors.assert_in_error_message("nonsense")
 
 
 def test_markers_by_time_from_csv_outputs_error_if_time_out_of_bound(
-    marker_tlui, tilia_state
+    marker_tlui, tilia_state, tilia_errors
 ):
     tilia_state.duration = 100
     data = "time\n999"
 
-    status, errors = patch_import("time", marker_tlui.timeline, data)
+    success = patch_import("time", marker_tlui.timeline, data)
 
-    assert status == "success"
-    assert format_media_time(999) in errors[0]
+    assert success is True
+    tilia_errors.assert_in_error_message(format_media_time(999))
 
 
 def test_markers_by_measure_from_csv_outputs_error_if_bad_measure_value(
-    marker_tlui, beat_tlui
+    marker_tlui, beat_tlui, tilia_errors
 ):
     data = "measure\nnonsense"
-    status, errors = patch_import("measure", marker_tlui.timeline, data)
+    success = patch_import("measure", marker_tlui.timeline, data)
 
-    assert status == "success"
-    assert_in_errors("nonsense", errors)
+    assert success is True
+    tilia_errors.assert_in_error_message("nonsense")
 
 
 def test_markers_by_measure_from_csv_outputs_error_if_bad_fraction_value(
-    marker_tlui, beat_tlui
+    marker_tlui, beat_tlui, tilia_errors
 ):
     beat_tl = beat_tlui.timeline
     marker_tl = marker_tlui.timeline
@@ -151,21 +156,21 @@ def test_markers_by_measure_from_csv_outputs_error_if_bad_fraction_value(
     beat_tlui.create_beat(time=2)
 
     data = "measure,fraction\n1,nonsense"
-    status, errors = patch_import("measure", marker_tl, data)
+    success = patch_import("measure", marker_tl, data)
 
-    assert status == "success"
-    assert_in_errors("nonsense", errors)
+    assert success is True
+    tilia_errors.assert_in_error_message("nonsense")
 
     assert marker_tl[0].time == 1
 
 
 def test_component_creation_fail_reason_gets_into_errors(
-    marker_tl, beat_tlui, tilia_state
+    marker_tl, beat_tlui, tilia_state, tilia_errors
 ):
 
     tilia_state.duration = 100
     data = "time\n101"
 
-    status, errors = patch_import("time", marker_tl, data)
+    patch_import("time", marker_tl, data)
 
-    assert_in_errors(format_media_time(101), errors)
+    tilia_errors.assert_in_error_message(format_media_time(101))
