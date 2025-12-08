@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from typing import Literal
 
-import dotenv
 import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
@@ -12,7 +11,6 @@ from colorama import Fore, Style
 import tilia.constants as constants_module
 import tilia.log as logging_module
 import tilia.settings as settings_module
-from tilia.dirs import PROJECT_ROOT
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.ui import actions as tilia_actions_module
 from tilia.app import App
@@ -31,6 +29,7 @@ from tilia.ui.cli.ui import CLI
 from tilia.ui.windows import WindowKind
 from tilia.requests.get import reset as reset_get
 from tilia.requests.post import reset as reset_post
+from tilia.utils import load_dotenv
 
 try:
     # icecream is a replacement for print()
@@ -53,10 +52,7 @@ pytest_plugins = [
     "tests.timelines.score.fixtures",
 ]
 
-dotenv_path = PROJECT_ROOT / ".env"
-success = dotenv.load_dotenv(dotenv_path)
-if not success:
-    raise FileNotFoundError(f"No .env file found at {dotenv_path.resolve()}")
+load_dotenv()
 
 
 class TiliaErrors:
