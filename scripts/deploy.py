@@ -237,6 +237,9 @@ def build():
         _build_sdist()
         _build_exe()
         os.chdir(old_dir)
+        if "mac" in build_os:
+            global outdir
+            outdir = outdir / "tilia.app" / "Contents" / "MacOS"
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"out-filename={(outdir / out_filename).as_posix()}\n")
     except Exception as e:
