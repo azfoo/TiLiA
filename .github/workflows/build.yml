@@ -16,6 +16,8 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, macos-15-intel, ubuntu-latest, windows-latest]
+    env:
+      DISPAY: ":99.0"
 
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +32,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfontconfig1-dev libfreetype-dev libgtk-3-dev libx11-dev libx11-xcb-dev '^libxcb.*-dev' libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev libxrender-dev libpulse-dev
+          sudo apt-get install -y libfontconfig1-dev libfreetype-dev libgtk-3-dev libx11-dev libx11-xcb-dev '^libxcb.*-dev' libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev libxrender-dev libpulse-dev libxcb-cursor0
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
 
       - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
         if: runner.os == 'macOS' && runner.arch != 'ARM64'
@@ -49,7 +52,7 @@ jobs:
         run: |
           echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
 
-      - name: Test executable
+      - name: Test executable [mac]
         if: runner.os == 'macOS'
         shell: bash
         run: |
@@ -58,14 +61,14 @@ jobs:
           echo "Checking dependencies"
           echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
 
-      - name: Test executable
+      - name: Test executable [Linux, Windows]
         id: test-exe
         if: runner.os != 'macOS'
         shell: bash
         run: |
           export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
-          echo "timeout 10 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
           echo "ldd ${{ steps.build-exe.outputs.out-filename }}" | bash
 
       - id: set-path
@@ -76,7 +79,7 @@ jobs:
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: exe-${{ matrix.os }}
+          name: tilia-${{ matrix.os }}
           path: build
           retention-days: 1
 
@@ -91,16 +94,18 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: build
-          pattern: exe-*
+          pattern: tilia-*
           merge-multiple: true
 
       - name: Test Linux still works in a clean environment
         run: |
           if ((${#${{ needs.build.outputs.linux-build }}[@]})); then
-          if echo "timeout 10 ${{ needs.build.outputs.linux-build }}" | bash;
-          then echo -e '\033[1;92mLinux works in a clean environment!\033[0m';
-          else echo -e '\033[1;91mLinux didn't work...\n\tCheck libraries with previous step?\033[0m' && echo "ldd ${{ steps.build-exe.outputs.out-filename }}" | bash;
-          fi;
+            if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
+              then echo -e '\033[1;92mLinux works in a clean environment!\033[0m';
+            else
+              echo -e '\033[1;91mLinux didn't work...\n\tCheck libraries with previous step?\033[0m' &&
+              echo "ldd ${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
+            fi;
           fi
 
       - name: Upload
