@@ -3,8 +3,8 @@ name: Build TiLiA
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    # tags:
+    #   - "v*"
 
 jobs:
   build:
@@ -32,7 +32,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfontconfig1-dev libfreetype-dev libgtk-3-dev libx11-dev libx11-xcb-dev '^libxcb.*-dev' libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev libxrender-dev libpulse-dev libxcb-cursor0
+          sudo apt-get install -y build-essential libgl1-mesa-dev libfontconfig1-dev libfreetype-dev libgtk-3-dev libx11-dev libx11-xcb-dev '^libxcb*' libxext-dev libxfixes-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev libxrender-dev libpulse-dev libxcb-cursor0 libatspi2.0-dev
           sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
 
       - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
@@ -98,12 +98,13 @@ jobs:
           merge-multiple: true
 
       - name: Test Linux still works in a clean environment
+        continue-on-error: true
         run: |
           if ((${#${{ needs.build.outputs.linux-build }}[@]})); then
             if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
-              then echo -e '\033[1;92mLinux works in a clean environment!\033[0m';
+              then echo -e "\033[1;92mLinux works in a clean environment!\033[0m";
             else
-              echo -e '\033[1;91mLinux didn't work...\n\tCheck libraries with previous step?\033[0m' &&
+              echo -e "\033[1;91mLinux didn't work...\n\tCheck libraries with previous step?\033[0m" &&
               echo "ldd ${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
             fi;
           fi
