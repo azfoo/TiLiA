@@ -1,3 +1,4 @@
+import argparse
 from colorama import Fore
 import dotenv
 from enum import Enum
@@ -26,12 +27,15 @@ def _print(text: list[Any], p_type: P | None = None):
 
 
 class Build:
-    def __init__(self, ref_name: str, build_os: str):
-        self.ref_name = ref_name
-        self.build_os = build_os
+    def __init__(self, args: argparse.Namespace):
+        ref_name = args.tag_name
+        self.build_os = "-".join(
+            [x for x in args.build_os.split("-") if not x.isdigit() and x != "latest"]
+        )
+        self.is_git = args.from_git
         self.buildlib = Path(__file__).parents[1] / "build"
         self.pkg_cfg = "tilia.nuitka-package.config.yml"
-        self.outdir = self.buildlib / build_os
+        self.outdir = self.buildlib / self.build_os
 
         toml_file = Path(__file__).parents[1] / "pyproject.toml"
         if not toml_file.exists():
@@ -52,7 +56,7 @@ class Build:
             self.out_filename = f"{self.name}-v{self.version}-{self.build_os}"
         else:
             self.out_filename = (
-                f"{self.name}-v{self.version}[{self.ref_name}]-{self.build_os}"
+                f"{self.name}-v{self.version}[{ref_name}]-{self.build_os}"
             )
 
         self.old_env_var = dotenv.dotenv_values(".tilia.env").get("ENVIRONMENT", "")
@@ -233,7 +237,7 @@ class Build:
             output[key] = True if len(value) == 0 else value[0]
         output["script-name"] = self._get_main_file().as_posix()
 
-        if os.getenv("GITHUB_ENV"):
+        if self.is_git:
             if "mac" in self.build_os:
                 self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -245,19 +249,19 @@ class Build:
             _print(["exe command:", output], P.CMD)
 
 
-def _handle_inputs() -> tuple[str, str]:
-    assert (
-        len(sys.argv) == 3
-    ), "Incorrect number of inputs. Requires ref_name/version and build_os."
-    ref_name = sys.argv[1]
-    build_os = "-".join(
-        [x for x in sys.argv[2].split("-") if not x.isdigit() and x != "latest"]
+def setup_parser():
+    parser = argparse.ArgumentParser(exit_on_error=True)
+    parser.add_argument("--tag-name", required=True)
+    parser.add_argument("--build-os", required=True)
+    parser.add_argument(
+        "--from-git", action=argparse.BooleanOptionalAction, default=False
     )
-    return ref_name, build_os
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    if os.getenv("GITHUB_ENV"):
-        Build(*_handle_inputs()).output_action_dict()
+    args = setup_parser()
+    if args.from_git:
+        Build(args).output_action_dict()
     else:
-        Build(*_handle_inputs()).run()
+        Build(args).run()
