@@ -233,9 +233,7 @@ class Build:
             output[key] = True if len(value) == 0 else value[0]
         output["script-name"] = self._get_main_file().as_posix()
 
-        if not os.environ.get("GITHUB_OUTPUT"):
-            _print(["exe command:", output], P.CMD)
-        else:
+        if os.environ.get("GITHUB_OUTPUT"):
             if "mac" in self.build_os:
                 self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -243,6 +241,8 @@ class Build:
                 f.write(
                     f"out-filename={(self.outdir / self.out_filename).as_posix()}\n"
                 )
+        else:
+            _print(["exe command:", output], P.CMD)
 
 
 def _handle_inputs() -> tuple[str, str]:
@@ -257,4 +257,7 @@ def _handle_inputs() -> tuple[str, str]:
 
 
 if __name__ == "__main__":
-    Build(*_handle_inputs()).run()
+    if os.environ.get("GITHUB_OUTPUT"):
+        Build(*_handle_inputs()).output_action_dict()
+    else:
+        Build(*_handle_inputs()).run()
