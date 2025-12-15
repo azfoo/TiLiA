@@ -213,6 +213,7 @@ class Build:
             f"--linux-icon={icon_path}",
             f"--macos-app-icon={icon_path}",
             "--macos-app-mode=gui",
+            f"--macos-app-name={self.name}",
             f"--macos-app-version={self.version}",
             "--windows-console-mode=attach",
             f"--windows-icon-from-ico={icon_path}",

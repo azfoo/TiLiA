@@ -70,8 +70,7 @@ source = ["tilia"]
 omit = ["tilia/dev/*"]
 
 [tool.nuitka]
-enable-plugin = ["pyside6"]
-show-anti-bloat-changes = true
+enable-plugins = ["pyside6"]
 user-package-configuration-file = "tilia.nuitka-package.config.yml"
 noinclude-qt-translations = true
 include-qt-plugins = ["multimedia"]
