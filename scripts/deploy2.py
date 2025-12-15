@@ -233,14 +233,15 @@ class Build:
         exe_cmd = "exe-cmd={"
         for item in self._get_exe_args():
             v = item.lstrip("--").split("=")
-            exe_cmd += f"""\"{v[0]}\":{'true' if len(v) == 1 else f"\"{v[1]}\""},"""
-        exe_cmd += f"""\"script-name\":\"{self._get_main_file().as_posix()}\"""" + "}"
+            exe_cmd += f""""{v[0]}":{'true' if len(v) == 1 else f'"{v[1]}"'},"""
+        exe_cmd += f'''"script-name":"{self._get_main_file().as_posix()}"''' + "}"
 
         if "mac" in self.build_os:
             self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"{exe_cmd}\n")
             f.write(f"out-filename={(self.outdir / self.out_filename).as_posix()}\n")
+            f.write(f"release-name={' '.join(self.out_filename.split('-')[:2])}")
 
 
 def setup_parser():
