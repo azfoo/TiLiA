@@ -1,10 +1,6 @@
-name: Build TiLiA
+name: Nuitka Action Deploy
 
-on:
-  workflow_dispatch:
-  push:
-    # tags:
-    #   - "v*"
+on: push
 
 jobs:
   build:
@@ -20,37 +16,30 @@ jobs:
       DISPAY: ":99.0"
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check-out repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
-          cache: "pip"
+          python-version: '3.11' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          cache: 'pip'
 
-      - name: Setup additional Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          chmod +x ./scripts/linux-setup.sh
-          ./scripts/linux-setup.sh
-          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
-
-      - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
-        if: runner.os == 'macOS' && runner.arch != 'ARM64'
-        run: |
-          brew remove --force --ignore-dependencies openssl@3
-          brew cleanup openssl@3
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e . --group build
 
-      - name: Build executable
-        id: build-exe
-        shell: bash
+      - name: Build sdist
+        id: get-nuitka-args
+        shell: python
         run: |
-          echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
+          from scripts.deploy2 import Build
+          Build(${{github.ref_name}}, ${{matrix.os}}).output_action_dict()
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with: ${{ fromJson(steps.get-nuitka-args.outputs.exe-cmd) }}
 
       - name: Test executable [mac]
         if: runner.os == 'macOS'
@@ -59,7 +48,7 @@ jobs:
           brew install coreutils
           export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
-          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
+          echo "gtimeout 10 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
           ls build -R
 
       - name: Test executable [Linux, Windows]
@@ -69,15 +58,15 @@ jobs:
         run: |
           export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
-          echo "timeout 30 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
-          echo "ldd ${{ steps.build-exe.outputs.out-filename }}" | bash
-          ls build - R
+          echo "timeout 30 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
+          echo "ldd ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash
+          ls build -R
 
       - name: Set Linux exe path
         id: set-path
         if: runner.os == 'Linux'
         shell: bash
-        run: echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
+        run: echo "path=${{ steps.get-nuitka-args.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
@@ -85,13 +74,15 @@ jobs:
           name: tilia-${{ matrix.os }}
           path: build
           retention-days: 1
+          include-hidden-files: true
 
   deploy:
     name: Create release
     needs: build
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
+      - name: Check-out repository
+        uses: actions/checkout@v4
 
       - name: Download executable
         uses: actions/download-artifact@v4
