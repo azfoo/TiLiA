@@ -27,12 +27,11 @@ def _print(text: list[Any], p_type: P | None = None):
 
 
 class Build:
-    def __init__(self, args: argparse.Namespace):
-        ref_name = args.tag_name
+    def __init__(self, ref_name, build_os):
+        ref_name = ref_name
         self.build_os = "-".join(
-            [x for x in args.build_os.split("-") if not x.isdigit() and x != "latest"]
+            [x for x in build_os.split("-") if not x.isdigit() and x != "latest"]
         )
-        self.is_git = args.from_git
         self.buildlib = Path(__file__).parents[1] / "build"
         self.pkg_cfg = "tilia.nuitka-package.config.yml"
         self.outdir = self.buildlib / self.build_os
@@ -231,22 +230,17 @@ class Build:
 
     def output_action_dict(self):
         self._build_sdist()
-        output = {}
+        exe_cmd = "exe-cmd={"
         for item in self._get_exe_args():
-            key, *value = item.lstrip("--").split("=")
-            output[key] = True if len(value) == 0 else value[0]
-        output["script-name"] = self._get_main_file().as_posix()
+            v = item.lstrip("--").split("=")
+            exe_cmd += f"""\"{v[0]}\":{'true' if len(v) == 1 else f"\"{v[1]}\""},"""
+        exe_cmd += f"""\"script-name\":\"{self._get_main_file().as_posix()}\"""" + "}"
 
-        if self.is_git:
-            if "mac" in self.build_os:
-                self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
-            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                f.write(f"exe-cmd={output}\n")
-                f.write(
-                    f"out-filename={(self.outdir / self.out_filename).as_posix()}\n"
-                )
-        else:
-            _print(["exe command:", output], P.CMD)
+        if "mac" in self.build_os:
+            self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
+        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+            f.write(f"{exe_cmd}\n")
+            f.write(f"out-filename={(self.outdir / self.out_filename).as_posix()}\n")
 
 
 def setup_parser():
@@ -262,6 +256,6 @@ def setup_parser():
 if __name__ == "__main__":
     args = setup_parser()
     if args.from_git:
-        Build(args).output_action_dict()
+        Build(args.tag_name, args.build_os).output_action_dict()
     else:
-        Build(args).run()
+        Build(args.tag_name, args.build_os).run()
