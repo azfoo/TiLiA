@@ -34,7 +34,7 @@ jobs:
         id: get-nuitka-args
         shell: bash
         run: |
-          echo "python scripts/deploy.py --tag-name=${{github.ref_name}} --build-os=${{matrix.os}} --from-git" | bash
+          echo "python scripts/deploy2.py --tag-name=${{github.ref_name}} --build-os=${{matrix.os}} --from-git" | bash
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
