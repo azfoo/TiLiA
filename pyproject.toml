@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "Nuitka<2.8",
-     "setuptools",
+    "Nuitka",
+    "setuptools",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -46,7 +46,7 @@ Repository = "https://github.com/TimeLineAnnotator/desktop"
 build = [
     "build",
     "ImageIO; sys_platform == 'darwin'",
-    "Nuitka<2.8",
+    "Nuitka",
     "pyyaml",
     "wheel"
 ]
@@ -99,7 +99,7 @@ exclude = [
 
 [tool.setuptools.package-data]
 tilia = [
-    "../tilia.env",
+    "../.tilia.env",
     "../tilia.nuitka-package.config.yml", # because we build from sdist
     "../LICENSE",
     "ui/img/*",

@@ -70,6 +70,7 @@ jobs:
           echo "Checking dependencies"
           echo "timeout 30 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
           echo "ldd ${{ steps.build-exe.outputs.out-filename }}" | bash
+          ls
 
       - id: set-path
         if: runner.os == 'Linux'
@@ -100,6 +101,7 @@ jobs:
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
+          ls
           if ((${#${{ needs.build.outputs.linux-build }}[@]})); then
             if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
               then echo -e "\033[1;92mLinux works in a clean environment!\033[0m";
