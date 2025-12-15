@@ -15,6 +15,7 @@ jobs:
         os: [macos-latest, macos-15-intel, ubuntu-latest, windows-latest]
     env:
       DISPAY: ":99.0"
+      QT_DEBUG_PLUGINS: 1
 
     steps:
       - name: Check-out repository
@@ -25,6 +26,19 @@ jobs:
         with:
           python-version: '3.12' # Version range or exact version of a Python version to use, using SemVer's version range syntax
           cache: 'pip'
+
+      - name: Setup additional Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x ./scripts/linux-setup.sh
+          ./scripts/linux-setup.sh
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+
+      - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
+        if: runner.os == 'macOS' && runner.arch != 'ARM64'
+        run: |
+          brew remove --force --ignore-dependencies openssl@3
+          brew cleanup openssl@3
 
       - name: Install Dependencies
         run: |
@@ -46,7 +60,6 @@ jobs:
         shell: bash
         run: |
           brew install coreutils
-          export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
           echo "gtimeout 10 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
@@ -56,7 +69,6 @@ jobs:
         if: runner.os != 'macOS'
         shell: bash
         run: |
-          export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
           echo "timeout 30 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
           echo "ldd ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash
@@ -82,6 +94,9 @@ jobs:
     runs-on: "ubuntu-latest"
     permissions:
       contents: write
+    env:
+      DISPAY: ":99.0"
+      QT_DEBUG_PLUGINS: 1
     steps:
       # - name: Check-out repository
       #   uses: actions/checkout@v4
@@ -96,7 +111,7 @@ jobs:
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
-          if ((${#${{ needs.build.outputs.linux-build }}[@]})); then
+          if [ -d "${{ needs.build.outputs.linux-build }}" ]; then
             if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
               then echo -e "\033[1;92mLinux works in a clean environment!\033[0m";
             else
