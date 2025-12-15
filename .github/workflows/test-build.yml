@@ -32,10 +32,9 @@ jobs:
 
       - name: Build sdist
         id: get-nuitka-args
-        shell: python
+        shell: bash
         run: |
-          from scripts.deploy2 import Build
-          Build(${{github.ref_name}}, ${{matrix.os}}).output_action_dict()
+          echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
