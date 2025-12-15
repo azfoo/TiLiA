@@ -233,7 +233,7 @@ class Build:
             output[key] = True if len(value) == 0 else value[0]
         output["script-name"] = self._get_main_file().as_posix()
 
-        if os.environ.get("GITHUB_OUTPUT"):
+        if os.getenv("GITHUB_ENV"):
             if "mac" in self.build_os:
                 self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -257,7 +257,7 @@ def _handle_inputs() -> tuple[str, str]:
 
 
 if __name__ == "__main__":
-    if os.environ.get("GITHUB_OUTPUT"):
+    if os.getenv("GITHUB_ENV"):
         Build(*_handle_inputs()).output_action_dict()
     else:
         Build(*_handle_inputs()).run()
