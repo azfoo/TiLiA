@@ -34,7 +34,7 @@ jobs:
         id: get-nuitka-args
         shell: bash
         run: |
-          echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
+          echo "python scripts/deploy.py --tag-name=${{github.ref_name}} --build-os=${{matrix.os}} --from-git" | bash
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
@@ -48,7 +48,7 @@ jobs:
           export QT_DEBUG_PLUGINS=1
           echo "Checking dependencies"
           echo "gtimeout 10 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
-          ls build -R
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Test executable [Linux, Windows]
         id: test-exe
@@ -59,7 +59,7 @@ jobs:
           echo "Checking dependencies"
           echo "timeout 30 ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash || true
           echo "ldd ${{ steps.get-nuitka-args.outputs.out-filename }}" | bash
-          ls build -R
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Set Linux exe path
         id: set-path
@@ -79,6 +79,8 @@ jobs:
     name: Create release
     needs: build
     runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
     steps:
       - name: Check-out repository
         uses: actions/checkout@v4
@@ -93,7 +95,7 @@ jobs:
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
-          ls -R
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
           if ((${#${{ needs.build.outputs.linux-build }}[@]})); then
             if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
               then echo -e "\033[1;92mLinux works in a clean environment!\033[0m";
@@ -110,4 +112,4 @@ jobs:
           make_latest: ${{github.event_name == 'push'}}
           generate_release_notes: true
           files: |
-            tilia-*
+            */tilia-*
