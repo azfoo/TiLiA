@@ -76,6 +76,7 @@ noinclude-qt-translations = true
 include-qt-plugins = ["multimedia"]
 nofollow-import-to = ["*.tests", "*.test"]
 assume-yes-for-downloads = true
+remove-output = true
 # deployment = true
 
 [tool.pytest.ini_options]

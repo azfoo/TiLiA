@@ -233,7 +233,7 @@ def build():
         _print([traceback.format_exc()])
         os.chdir(old_dir)
         dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)
-        raise SystemExit(1)
+        raise SystemExit(1) from e
 
 
 if __name__ == "__main__":

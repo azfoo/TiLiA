@@ -233,9 +233,10 @@ class Build:
         self._build_sdist()
         exe_cmd = "exe-cmd={"
         for item in self._get_exe_args():
-            v = item.lstrip("--").split("=")
-            exe_cmd += f""""{v[0]}":{'true' if len(v) == 1 else f'"{v[1]}"'},"""
+            v = item.lstrip("-").split("=")
+            exe_cmd += f""""{v[0]}":{"true" if len(v) == 1 else f'"{v[1]}"'},"""
         exe_cmd += f'''"script-name":"{self._get_main_file().as_posix()}"''' + "}"
+        exe_cmd.replace('"output-filename"', '"output-file"')
 
         if "mac" in self.build_os:
             self.outdir = self.outdir / "tilia.app" / "Contents" / "MacOS"
