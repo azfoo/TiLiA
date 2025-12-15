@@ -15,7 +15,7 @@ build_os = ""
 buildlib = Path(__file__).parents[1] / "build"
 toml_file = Path(__file__).parents[1] / "pyproject.toml"
 pkg_cfg = "tilia.nuitka-package.config.yml"
-outdir = ""
+outdir = Path()
 out_filename = ""
 
 if not toml_file.exists():
@@ -62,7 +62,7 @@ def _get_nuitka_toml() -> list[str]:
 
 
 def _set_out_filename(name: str, version: str):
-    def _clean_version(v: str) -> tuple[str]:
+    def _clean_version(v: str) -> list[str]:
         return v.strip("v ").split(".")
 
     global out_filename
@@ -88,49 +88,32 @@ def _get_exe_cmd() -> list[str]:
         f"--file-version={version}",
         f"--output-filename={out_filename}",
         "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
+        f"--macos-app-icon={icon_path}",
+        "--macos-app-mode=gui",
+        f"--macos-app-version={version}",
+        "--mode=app",
+        "--windows-console-mode=attach",
+        f"--windows-icon-from-ico={icon_path}",
+        f"--linux-icon={icon_path}",
     ]
-    if "mac" in build_os:
-        exe_args.extend(
-            [
-                f"--macos-app-icon={icon_path}",
-                "--macos-app-mode=gui",
-                f"--macos-app-version={version}",
-                "--mode=app",
-            ]
-        )
-    elif "windows" in build_os:
-        exe_args.extend(
-            [
-                "--windows-console-mode=attach",
-                f"--windows-icon-from-ico={icon_path}",
-                "--mode=onefile",
-            ]
-        )
-    else:
-        exe_args.extend(
-            [
-                f"--linux-icon={icon_path}",
-                "--mode=onefile",
-            ]
-        )
 
     return exe_args
 
 
-def _get_sdist() -> str:
+def _get_sdist() -> Path:
     for f in outdir.iterdir():
         if "".join(f.suffixes[-2:]) == ".tar.gz":
             return f
     raise Exception(f"Could not find sdist in {outdir}:", [*outdir.iterdir()])
 
 
-def _get_main_file() -> tuple[bool, str]:
+def _get_main_file() -> Path:
     main = _create_lib()
     _update_yml()
     return main
 
 
-def _create_lib() -> tuple[Path, str, str]:
+def _create_lib() -> Path:
     sdist = _get_sdist()
     base = ".".join(sdist.name.split(".")[:-2])
     tilia = f"{base}/tilia"
@@ -220,7 +203,8 @@ def _build_exe():
 
 def build():
     _handle_inputs()
-    dotenv.set_key("tilia.env", "ENVIRONMENT", "prod")
+    old_env_var = dotenv.dotenv_values(".tilia.env").get("ENVIRONMENT", "")
+    dotenv.set_key(".tilia.env", "ENVIRONMENT", "prod")
     if buildlib.exists():
         _print(["Cleaning build folder..."], P.ERROR)
         for root, dirs, files in os.walk(buildlib, False):
@@ -236,17 +220,20 @@ def build():
     try:
         _build_sdist()
         _build_exe()
+        if os.environ.get("GITHUB_OUTPUT"):
+            if "mac" in build_os:
+                global outdir
+                outdir = outdir / "tilia.app" / "Contents" / "MacOS"
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write(f"out-filename={(outdir / out_filename).as_posix()}\n")
         os.chdir(old_dir)
-        if "mac" in build_os:
-            global outdir
-            outdir = outdir / "tilia.app" / "Contents" / "MacOS"
-        with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-            f.write(f"out-filename={(outdir / out_filename).as_posix()}\n")
+        dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)
     except Exception as e:
         _print(["Build failed!", e.__str__()], P.ERROR)
         _print([traceback.format_exc()])
         os.chdir(old_dir)
-        exit(1)
+        dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
