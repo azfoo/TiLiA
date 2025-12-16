@@ -48,6 +48,7 @@ build = [
     "ImageIO; sys_platform == 'darwin'",
     "Nuitka",
     "pyyaml",
+    "setuptools; python_version >= '3.12'",
     "wheel"
 ]
 ci-tests = [
