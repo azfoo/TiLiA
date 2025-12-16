@@ -76,7 +76,9 @@ jobs:
         id: set-path
         if: runner.os == 'Linux'
         shell: bash
-        run: echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
+          ldd libqxcb.so
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
@@ -109,10 +111,11 @@ jobs:
         run: |
           if [ -d "${{ needs.build.outputs.linux-build }}" ]; then
             if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
-              then echo -e "\033[1;92mLinux works in a clean environment!\033[0m";
-            else
-              echo -e "\033[1;91mLinux didn't work...\n\tCheck libraries with previous step?\033[0m" &&
-              echo "ldd ${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
+              then
+                echo "Linux works in a clean environment!";
+              else
+                echo "Linux didn't work...\n\tCheck libraries with previous step?" &&
+                echo "ldd ${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
             fi;
           fi
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
