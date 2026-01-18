@@ -247,6 +247,13 @@ class Build:
             f.write(f"out-filename={(self.outdir / self.out_filename).as_posix()}\n")
             f.write(f"release-name={' '.join(self.out_filename.split('-')[:2])}")
 
+        print(
+            f"""Writing to output:
+            {exe_cmd}\n
+            out-filename={(self.outdir / self.out_filename).as_posix()}\n
+            release-name={' '.join(self.out_filename.split('-')[:2])}"""
+        )
+
 
 def setup_parser():
     parser = argparse.ArgumentParser(exit_on_error=True)
