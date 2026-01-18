@@ -111,15 +111,9 @@ apt_packages_runtime=(
   libxcb-keysyms1
   libxcb-randr0
   libxcb-render-util0
-  libxcb-util
-  libxcb-util-image
-  libxcb-util-keysyms
-  libxcb-util-renderutil
-  libxcb-util-wm
   libxcb-xinerama0
   libxcb-xkb-dev
   libxkbcommon-dev
-  libxcbcommon-x11
   libopengl-dev
   libvulkan-dev
   )

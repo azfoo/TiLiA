@@ -201,12 +201,14 @@ class Build:
             yaml.dump(yml, f)
 
     def _get_exe_args(self) -> list[str]:
-        icon_path = Path(__file__).parents[1] / "tilia" / "ui" / "img" / "main_icon.ico"
+        icon_path = (
+            Path(__file__).parents[1] / "tilia" / "ui" / "img" / "main_icon.ico"
+        ).as_posix()
         exe_args = [
             f"--file-version={self.version}",
             "--mode=app",
             "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}/{VERSION}",
-            f"--output-dir={self.outdir}",
+            f"--output-dir={self.outdir.as_posix()}",
             f"--output-filename={self.out_filename}",
             f"--product-name={self.name}",
             "--report=compilation-report.xml",
