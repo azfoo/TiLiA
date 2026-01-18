@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
-          ldd libqxcb.so
+          # ldd libqxcb.so
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
