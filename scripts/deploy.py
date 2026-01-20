@@ -91,11 +91,14 @@ def _get_exe_cmd() -> list[str]:
         f"--macos-app-icon={icon_path}",
         "--macos-app-mode=gui",
         f"--macos-app-version={version}",
-        "--mode=app",
         "--windows-console-mode=attach",
         f"--windows-icon-from-ico={icon_path}",
         f"--linux-icon={icon_path}",
     ]
+    if "macos" in build_os:
+        exe_args.append("--mode=app")
+    else:
+        exe_args.append("--mode=onefile")
 
     return exe_args
 
