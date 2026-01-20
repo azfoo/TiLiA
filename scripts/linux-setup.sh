@@ -101,8 +101,8 @@ apt_packages_pw_deps=(
   libudev-dev
   )
 
-$SUDO apt-get update
-$SUDO apt-get install -y --no-install-recommends \
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends \
   "${apt_packages[@]}" \
   "${apt_packages_runtime[@]}" \
   "${apt_packages_ffmpeg[@]}" \
