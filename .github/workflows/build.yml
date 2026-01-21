@@ -78,13 +78,14 @@ jobs:
         shell: bash
         run: |
           echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
-          ldd /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
+          sudo apt-get install lib-tree
+          libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
           name: tilia-${{ matrix.os }}
-          path: build
+          path: ${{ steps.build-exe.outputs.out-filename }}
           retention-days: 1
 
   deploy:
