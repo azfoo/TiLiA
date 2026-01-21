@@ -15,7 +15,12 @@ jobs:
       linux-build: ${{ steps.set-path.outputs.path }}
     strategy:
       matrix:
-        os: [macos-latest, macos-15-intel, ubuntu-latest, windows-latest]
+        os: [
+          # macos-latest,
+          # macos-15-intel,
+          ubuntu-latest,
+          # windows-latest
+          ]
     env:
       DISPAY: ":99.0"
       QT_DEBUG_PLUGINS: 1
@@ -78,7 +83,7 @@ jobs:
         shell: bash
         run: |
           echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
-          sudo apt-get install lib-tree
+          sudo apt-get install libtree
           libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
       - name: Upload executable
