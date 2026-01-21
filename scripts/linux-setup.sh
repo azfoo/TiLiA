@@ -76,7 +76,7 @@ apt_packages_runtime=(
   libxrandr2
   libxtst-dev
   libdrm-dev
-  libxcb-cursor0
+  libxcb-cursor-dev
   libxcb-icccm4
   libxcb-image0
   libxcb-keysyms1
