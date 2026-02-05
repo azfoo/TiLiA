@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import QMenu
 from tilia.requests import get, Get
 from tests.mock import patch_file_dialog
 from tilia.ui import commands
+from tilia.ui.commands import CommandQAction
 
 
 def get_blank_file_data():
@@ -146,11 +147,19 @@ def reloadable(save_path):
     return check_and_reload
 
 
-def get_action(menu, name):
+def get_command_action(menu: QMenu, command_name: str) -> CommandQAction | None:
     for action in menu.actions():
-        if action.text().replace("&", "") == name:
+        if isinstance(action, CommandQAction) and action.command_name == command_name:
             return action
     return None
+
+
+def get_command_names(menu: QMenu) -> list[str]:
+    command_names = []
+    for action in menu.actions():
+        if isinstance(action, CommandQAction):
+            command_names.append(action.command_name)
+    return command_names
 
 
 def get_submenu(menu, name):
