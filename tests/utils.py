@@ -1,6 +1,8 @@
+import importlib.util
 import json
 from contextlib import contextmanager
 from pathlib import Path
+from pprint import pformat
 from typing import Callable
 
 from PyQt6.QtWidgets import QMenu
@@ -92,13 +94,33 @@ def undoable():
     yield
     state_after = get(Get.APP_STATE)
     commands.execute("edit.undo")
-    assert get(Get.APP_STATE) == state_before
+
+    try:
+        assert get(Get.APP_STATE) == state_before
+    except AssertionError as e:
+        if importlib.util.find_spec("deepdiff") is None:
+            state_diff = (
+                "Consider installing `deepdiff` library for debugging app states."
+            )
+        else:
+            import deepdiff
+
+            state_diff = pformat(deepdiff.DeepDiff(get(Get.APP_STATE), state_before))
+        raise AssertionError("Undoing did not preserve state.\n" + state_diff) from e
+
     commands.execute("edit.redo")
-    assert get(Get.APP_STATE) == state_after
-    # Debug tip: use the deepdiff library to compare states
-    # import deepdiff
-    # from pprint import pprint
-    # pprint(deepdiff.DeepDiff(get(Get.APP_STATE), state_before))
+    try:
+        assert get(Get.APP_STATE) == state_after
+    except AssertionError as e:
+        if importlib.util.find_spec("deepdiff") is None:
+            state_diff = (
+                "Consider installing `deepdiff` library for debugging app states."
+            )
+        else:
+            import deepdiff
+
+            state_diff = pformat(deepdiff.DeepDiff(get(Get.APP_STATE), state_after))
+        raise AssertionError("Redoing did not preserve state.\n" + state_diff) from e
 
 
 def reloadable(save_path):
