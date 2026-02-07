@@ -69,7 +69,7 @@ def _set_out_filename(name: str, version: str):
     if _clean_version(version) == _clean_version(ref_name):
         out_filename = f"{name}-v{version}-{build_os}"
     else:
-        out_filename = f"{name}-v{version}[{ref_name}]-{build_os}"
+        out_filename = f"{name}-v{version}-{ref_name}-{build_os}"
 
 
 def _get_exe_cmd() -> list[str]:
@@ -81,7 +81,7 @@ def _get_exe_cmd() -> list[str]:
         sys.executable,
         "-m",
         "nuitka",
-        f"--output-dir={outdir}",
+        f"--output-dir={outdir}/exe",
         "--report=compilation-report.xml",
         "--assume-yes-for-downloads",
         f"--product-name={name}",
@@ -228,9 +228,8 @@ def build():
                 global outdir
                 outdir = outdir / "tilia.app" / "Contents" / "MacOS"
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                f.write(f"out-filename-full={(outdir / out_filename).as_posix()}\n")
                 f.write(
-                    f"out-filename-rel={(outdir / out_filename).relative_to(Path(__file__).parents[1]).as_posix()}\n"
+                    f"out-filename-full={(outdir / 'exe' / out_filename).as_posix()}\n"
                 )
         os.chdir(old_dir)
         dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)

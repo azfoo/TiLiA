@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tilia-${{ matrix.os }}
-          path: ${{ steps.build-exe.outputs.out-filename-rel }}
+          path: build/exe
           retention-days: 1
 
   deploy:
