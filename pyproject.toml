@@ -46,7 +46,7 @@ Repository = "https://github.com/TimeLineAnnotator/desktop"
 build = [
     "build",
     "ImageIO; sys_platform == 'darwin'",
-    "Nuitka",
+    "Nuitka == 2.8.9",
     "pyyaml",
     "setuptools; python_version >= '3.12'",
     "wheel"
