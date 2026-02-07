@@ -83,7 +83,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          echo "path=${{ steps.build-exe.outputs.out-filepath }}" >> "$GITHUB_OUTPUT"
+          echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
           sudo apt-get install libtree
           libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
@@ -115,13 +115,13 @@ jobs:
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
-          if [ -d "build/${{ needs.build.outputs.linux-build }}" ]; then
-            if echo "timeout 30 build/${{ needs.build.outputs.linux-build }}" | bash;
+          if [ -d "build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" ]; then
+            if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
               then
                 echo "Linux works in a clean environment!";
               else
                 echo "Linux didn't work...\n\tCheck libraries with previous step?" &&
-                echo "ldd build/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
+                echo "ldd build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
             fi;
           fi
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
