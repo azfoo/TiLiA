@@ -65,7 +65,7 @@ jobs:
         run: |
           brew install coreutils
           echo "Checking dependencies"
-          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filename-full }}" | bash || true
+          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Test executable [Linux, Windows]
@@ -74,8 +74,8 @@ jobs:
         shell: bash
         run: |
           echo "Checking dependencies"
-          echo "timeout 30 ${{ steps.build-exe.outputs.out-filename-full }}" | bash || true
-          echo "ldd ${{ steps.build-exe.outputs.out-filename-full }}" | bash
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
+          echo "ldd ${{ steps.build-exe.outputs.out-filepath }}" | bash
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Set Linux exe path
@@ -83,14 +83,14 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          echo "path=${{ steps.build-exe.outputs.out-filename-rel }}" >> "$GITHUB_OUTPUT"
+          echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
           sudo apt-get install libtree
           libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: tilia-${{ matrix.os }}
+          name: ${{ steps.build-exe.outputs.out-filename }}
           path: build/*/exe
           retention-days: 1
 
@@ -108,20 +108,20 @@ jobs:
       - name: Download executable
         uses: actions/download-artifact@v4
         with:
-          path: build
-          pattern: '*/exe/TiLiA-v*'
+          path: build/
+          pattern: 'TiLiA-v*'
           merge-multiple: true
 
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
-          if [ -d "${{ needs.build.outputs.linux-build }}" ]; then
-            if echo "timeout 30 ${{ needs.build.outputs.linux-build }}" | bash;
+          if [ -d "build/${{ needs.build.outputs.linux-build }}" ]; then
+            if echo "timeout 30 build/${{ needs.build.outputs.linux-build }}" | bash;
               then
                 echo "Linux works in a clean environment!";
               else
                 echo "Linux didn't work...\n\tCheck libraries with previous step?" &&
-                echo "ldd ${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
+                echo "ldd build/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
             fi;
           fi
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
@@ -133,4 +133,4 @@ jobs:
           make_latest: ${{github.event_name == 'push'}}
           generate_release_notes: true
           files: |
-            */TiLiA-v*-*
+            build/TiLiA-v*
