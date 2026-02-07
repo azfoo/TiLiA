@@ -109,7 +109,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: build
-          pattern: build/*/exe/TiLiA-v*
+          pattern: '*/exe/TiLiA-v*'
           merge-multiple: true
 
       - name: Test Linux still works in a clean environment
