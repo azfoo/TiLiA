@@ -1,7 +1,7 @@
 from colorama import Fore
 import dotenv
 from enum import Enum
-from nuitka.distutils.DistutilCommands import build as n_build
+from nuitka.distutils.DistutilsCommands import build as n_build
 import os
 from pathlib import Path
 from subprocess import check_call
