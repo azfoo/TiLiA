@@ -11,6 +11,8 @@ jobs:
     name: Build with Nuitka
     continue-on-error: true
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     outputs:
       linux-build: ${{ steps.set-path.outputs.path }}
     strategy:
@@ -22,7 +24,6 @@ jobs:
           # windows-latest
           ]
     env:
-      DISPAY: ":99.0"
       QT_DEBUG_PLUGINS: 1
 
     steps:
@@ -31,7 +32,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 'pypy3.11'
           cache: "pip"
 
       - name: Setup additional Linux dependencies
@@ -64,7 +65,7 @@ jobs:
         run: |
           brew install coreutils
           echo "Checking dependencies"
-          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
+          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filename-full }}" | bash || true
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Test executable [Linux, Windows]
@@ -73,8 +74,8 @@ jobs:
         shell: bash
         run: |
           echo "Checking dependencies"
-          echo "timeout 30 ${{ steps.build-exe.outputs.out-filename }}" | bash || true
-          echo "ldd ${{ steps.build-exe.outputs.out-filename }}" | bash
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filename-full }}" | bash || true
+          echo "ldd ${{ steps.build-exe.outputs.out-filename-full }}" | bash
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Set Linux exe path
@@ -82,7 +83,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
+          echo "path=${{ steps.build-exe.outputs.out-filename-rel }}" >> "$GITHUB_OUTPUT"
           sudo apt-get install libtree
           libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
@@ -90,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tilia-${{ matrix.os }}
-          path: ${{ steps.build-exe.outputs.out-filename }}
+          path: ${{ steps.build-exe.outputs.out-filename-rel }}
           retention-days: 1
 
   deploy:
@@ -100,7 +101,6 @@ jobs:
     permissions:
       contents: write
     env:
-      DISPAY: ":99.0"
       QT_DEBUG_PLUGINS: 1
     steps:
       - uses: actions/checkout@v4
