@@ -228,7 +228,10 @@ def build():
                 global outdir
                 outdir = outdir / "tilia.app" / "Contents" / "MacOS"
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                f.write(f"out-filename={(outdir / out_filename).as_posix()}\n")
+                f.write(f"out-filename-full={(outdir / out_filename).as_posix()}\n")
+                f.write(
+                    f"out-filename-rel={(outdir / out_filename).relative_to(Path(__file__).parents[1]).as_posix()}\n"
+                )
         os.chdir(old_dir)
         dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)
     except Exception as e:
