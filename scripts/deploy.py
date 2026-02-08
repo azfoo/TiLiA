@@ -136,11 +136,13 @@ def _create_lib() -> Path:
         assert main in f.getnames(), f"Could not locate {main}"
         f.extractall(
             lib,
-            filter=lambda x, _: x
-            if x.name.startswith(tilia)
-            or x.name.startswith("TiLiA.egg-info")
-            or x.name in ext_data
-            else None,
+            filter=lambda x, _: (
+                x
+                if x.name.startswith(tilia)
+                or x.name.startswith("TiLiA.egg-info")
+                or x.name in ext_data
+                else None
+            ),
         )
 
     os.chdir(lib / base)
