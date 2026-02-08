@@ -115,15 +115,15 @@ jobs:
       - name: Test Linux still works in a clean environment
         continue-on-error: true
         run: |
-          if [ -d "build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" ]; then
-            if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
+          [ -e build/ubuntu/exe/${{ needs.build.outputs.linux-build }} ]
+           && chmod ugo+x build/ubuntu/exe/${{ needs.build.outputs.linux-build }} && if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
               then
                 echo "Linux works in a clean environment!";
               else
                 echo "Linux didn't work...\n\tCheck libraries with previous step?" &&
                 echo "ldd build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
             fi;
-          fi
+            || echo "file not found!"
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Upload
