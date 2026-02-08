@@ -647,7 +647,7 @@ class TestRelativePaths:
         new_media = old_media.rename(new_folder / media)
 
         # open file at new folder
-        with (patch_file_dialog(True, [str(new_tla)])):
+        with patch_file_dialog(True, [str(new_tla)]):
             user_actions.trigger(TiliaAction.FILE_OPEN)
 
         assert tilia.player.media_path == str(new_media)

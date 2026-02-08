@@ -463,8 +463,7 @@ class TimelineUIs:
 
         if not timeline_ui:
             raise ValueError(
-                f"Can't process left click: no timeline with view '{view}' on"
-                f" {self}"
+                f"Can't process left click: no timeline with view '{view}' on {self}"
             )
 
         if (

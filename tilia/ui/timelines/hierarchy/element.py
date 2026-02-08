@@ -433,7 +433,7 @@ class HierarchyUI(TimelineUIElement):
 
     @staticmethod
     def frame_to_body_extremity(
-        extremity: Literal[Extremity.PRE_START, Extremity.POST_END]
+        extremity: Literal[Extremity.PRE_START, Extremity.POST_END],
     ):
         try:
             return {
