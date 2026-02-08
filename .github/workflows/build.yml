@@ -116,15 +116,18 @@ jobs:
         continue-on-error: true
         run: |
           if [ -e build/ubuntu/exe/${{ needs.build.outputs.linux-build }} ];
-          then chmod ugo+x build/ubuntu/exe/${{ needs.build.outputs.linux-build }} &&
-            if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
-              then
-                echo "Linux works in a clean environment!";
+            then
+              chmod ugo+x build/ubuntu/exe/${{ needs.build.outputs.linux-build }};
+              if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
+                then
+                  echo "Linux works in a clean environment!";
               else
                 echo "Linux didn't work...\n\tCheck libraries with previous step?" &&
                 echo "ldd build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
-            fi;
-          else echo "file not found!"
+              fi;
+          else
+            echo "file not found!";
+          fi
           ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Upload
