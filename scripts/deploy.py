@@ -214,7 +214,7 @@ def _build_exe():
     _print(["Compilation report:"])
     _print(
         etree.tostring(
-            etree.parse(main_file / "compilation-report.xml"), pretty_print=True
+            etree.parse(main_file.parent / "compilation-report.xml"), pretty_print=True
         )
     )
 
