@@ -9,7 +9,23 @@ if __name__ == "__main__":
 
         boot()
     except ImportError as e:
+        import subprocess
         import traceback
 
-        print([*traceback.walk_tb(e.__traceback__)][0][0].f_code.co_filename)
-        print(e.path)
+        root_path = Path(
+            [*traceback.walk_tb(e.__traceback__)][0][0].f_code.co_filename
+        ).parent
+        missing_deps = subprocess.Popen(
+            [
+                "ldd",
+                (root_path / "PySide6/qt-plugins/platforms/libqxcb.so").as_posix(),
+                "|",
+                "grep",
+                '"not found"',
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        for line in missing_deps.stdout.readlines():
+            dep = line.strip().rstrip(" => not found")
+            print(dep)
