@@ -20,7 +20,7 @@ jobs:
         os: [
           # macos-latest,
           # macos-15-intel,
-          ubuntu-latest,
+          ubuntu-22.04,
           # windows-latest
           ]
     env:
@@ -98,7 +98,7 @@ jobs:
   deploy:
     name: Create release
     needs: build
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-22.04"
     permissions:
       contents: write
     env:
