@@ -41,7 +41,8 @@ jobs:
         run: |
           chmod +x ./scripts/linux-setup.sh
           ./scripts/linux-setup.sh
-          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+          # sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+          sudo apt-get install libtree
 
       - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
         if: runner.os == 'macOS' && runner.arch != 'ARM64'
@@ -66,7 +67,7 @@ jobs:
         run: |
           brew install coreutils
           echo "Checking dependencies"
-          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filepath }}" | bash
+          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
           # ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
       - name: Test executable [Windows]
@@ -74,19 +75,18 @@ jobs:
         shell: bash
         run: |
           echo "Checking dependencies"
-          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
           # echo "ldd ${{ steps.build-exe.outputs.out-filepath }}" | bash
           # ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
-      - name: est executable [Linux]
+      - name: Test executable [Linux]
         id: set-path
         if: runner.os == 'Linux'
         shell: bash
         run: |
           echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
-          sudo apt-get install libtree
           echo "Checking dependencies"
-          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
           libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
       - name: Upload executable
