@@ -41,7 +41,7 @@ jobs:
         run: |
           chmod +x ./scripts/linux-setup.sh
           ./scripts/linux-setup.sh
-          # sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
 
       - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
         if: runner.os == 'macOS' && runner.arch != 'ARM64'
