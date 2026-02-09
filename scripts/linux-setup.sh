@@ -1,23 +1,4 @@
 #!/usr/bin/env bash
-# SPDX-License-Identifier: GPL-3.0-only
-# MuseScore-Studio-CLA-applies
-#
-# MuseScore Studio
-# Music Composition & Notation
-#
-# Copyright (C) 2021 MuseScore Limited
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License version 3 as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 echo "Setup Linux build environment"
 trap 'echo Setup failed; exit 1' ERR
@@ -31,7 +12,6 @@ df -h .
 apt_packages=(
   coreutils
   curl
-  # desktop-file-utils # installs `desktop-file-validate` for appimagetool
   gawk
   git
   lcov
@@ -42,7 +22,6 @@ apt_packages=(
   libgcrypt20-dev
   libgl1-mesa-dev
   libglib2.0-dev
-  # libgpgme-dev # install for appimagetool
   libjack-dev
   libnss3-dev
   libportmidi-dev
@@ -54,13 +33,10 @@ apt_packages=(
   make
   p7zip-full
   sed
-  software-properties-common # installs `add-apt-repository`
   unzip
   wget
-  # zsync # installs `zsyncmake` for appimagetool
   )
 
-# MuseScore compiles without these but won't run without them
 apt_packages_runtime=(
   # Alphabetical order please!
   libdbus-1-3
