@@ -49,7 +49,11 @@ def _handle_inputs():
     global ref_name, build_os, outdir
     ref_name = sys.argv[1]
     build_os = "-".join(
-        [x for x in sys.argv[2].split("-") if not x.isdigit() and x != "latest"]
+        [
+            x
+            for x in sys.argv[2].split("-")
+            if not x.replace(".", "", 1).isdigit() and x != "latest"
+        ]
     )
     outdir = buildlib / build_os
 
