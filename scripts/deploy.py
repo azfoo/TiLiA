@@ -1,6 +1,7 @@
 from colorama import Fore
 import dotenv
 from enum import Enum
+from lxml import etree
 from nuitka.distutils.DistutilsCommands import build as n_build
 import os
 from pathlib import Path
@@ -33,6 +34,7 @@ else:
 class P(Enum):
     CMD = Fore.BLUE
     ERROR = Fore.RED
+    OK = Fore.GREEN
 
 
 def _print(text: list[str | list[str]], p_type: P | None = None):
@@ -208,6 +210,13 @@ def _build_exe():
 
     _print(["Building exe with command:", exe_cmd], P.CMD)
     check_call(exe_cmd)
+    _print(["Build complete!"], P.OK)
+    _print(["Compilation report:"])
+    _print(
+        etree.tostring(
+            etree.parse(main_file / "compilation-report.xml"), pretty_print=True
+        )
+    )
 
 
 def build():
