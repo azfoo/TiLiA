@@ -36,112 +36,110 @@ jobs:
           python-version: 3.11
           cache: "pip"
 
-  #     - name: Setup additional Linux dependencies
-  #       if: runner.os == 'Linux'
-  #       run: |
-  #         chmod +x ./scripts/linux-setup.sh
-  #         ./scripts/linux-setup.sh
-  #         sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
+      - name: Setup additional Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x ./scripts/linux-setup.sh
+          ./scripts/linux-setup.sh
+          sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
 
-  #     - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
-  #       if: runner.os == 'macOS' && runner.arch != 'ARM64'
-  #       run: |
-  #         brew remove --force --ignore-dependencies openssl@3
-  #         brew cleanup openssl@3
+      - name: Remove problematic brew libs (see Nuitka/Nuitka#2853)
+        if: runner.os == 'macOS' && runner.arch != 'ARM64'
+        run: |
+          brew remove --force --ignore-dependencies openssl@3
+          brew cleanup openssl@3
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e . --group build
 
-      - name: run python
-        run: python -m tilia
-  #     - name: Build executable
-  #       id: build-exe
-  #       shell: bash
-  #       run: |
-  #         echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
+      - name: Build executable
+        id: build-exe
+        shell: bash
+        run: |
+          echo "python scripts/deploy.py ${{github.ref_name}} ${{matrix.os}}" | bash
 
-  #     - name: Test executable [mac]
-  #       if: runner.os == 'macOS'
-  #       shell: bash
-  #       run: |
-  #         brew install coreutils
-  #         echo "Checking dependencies"
-  #         echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
-  #         ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
+      - name: Test executable [mac]
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install coreutils
+          echo "Checking dependencies"
+          echo "gtimeout 10 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
-  #     - name: Test executable [Linux, Windows]
-  #       id: test-exe
-  #       if: runner.os != 'macOS'
-  #       shell: bash
-  #       run: |
-  #         echo "Checking dependencies"
-  #         echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
-  #         echo "ldd ${{ steps.build-exe.outputs.out-filepath }}" | bash
-  #         ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
+      - name: Test executable [Linux, Windows]
+        id: test-exe
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          echo "Checking dependencies"
+          echo "timeout 30 ${{ steps.build-exe.outputs.out-filepath }}" | bash || true
+          echo "ldd ${{ steps.build-exe.outputs.out-filepath }}" | bash
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
 
-  #     - name: Set Linux exe path
-  #       id: set-path
-  #       if: runner.os == 'Linux'
-  #       shell: bash
-  #       run: |
-  #         echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
-  #         sudo apt-get install libtree
-  #         libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
+      - name: Set Linux exe path
+        id: set-path
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          echo "path=${{ steps.build-exe.outputs.out-filename }}" >> "$GITHUB_OUTPUT"
+          sudo apt-get install libtree
+          libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
-  #     - name: Upload executable
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ steps.build-exe.outputs.out-filename }}
-  #         path: build/*/exe
-  #         retention-days: 1
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build-exe.outputs.out-filename }}
+          path: build/*/exe
+          retention-days: 1
 
-  # deploy:
-  #   name: Create release
-  #   needs: build
-  #   runs-on: "ubuntu-22.04"
-  #   permissions:
-  #     contents: write
-  #   env:
-  #     QT_DEBUG_PLUGINS: 1
-  #     QT_QPA_PLATFORM: offscreen
-  #   steps:
-  #     - uses: actions/checkout@v4
+  deploy:
+    name: Create release
+    needs: build
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+    env:
+      QT_DEBUG_PLUGINS: 1
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Download executable
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         path: build/
-  #         pattern: 'TiLiA-v*'
-  #         merge-multiple: true
+      - name: Download executable
+        uses: actions/download-artifact@v4
+        with:
+          path: build/
+          pattern: 'TiLiA-v*'
+          merge-multiple: true
 
-  #     - name: Test Linux still works in a clean environment
-  #       continue-on-error: true
-  #       run: |
-  #         if [ -e build/ubuntu/exe/${{ needs.build.outputs.linux-build }} ];
-  #           then
-  #             chmod ugo+x build/ubuntu/exe/${{ needs.build.outputs.linux-build }};
-  #             if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
-  #               then
-  #                 echo "Linux works in a clean environment!";
-  #             else
-  #               echo "Linux didn't work... Check libraries with previous step?" &&
-  #               echo "ldd build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
-  #             fi;
-  #         else
-  #           echo "file not found!";
-  #         fi
-  #         ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
-  #         ldd /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so | grep "not found"
-  #         sudo apt-get install libtree
-  #         libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
+      - name: Test Linux still works in a clean environment
+        continue-on-error: true
+        run: |
+          if [ -e build/ubuntu/exe/${{ needs.build.outputs.linux-build }} ];
+            then
+              chmod ugo+x build/ubuntu/exe/${{ needs.build.outputs.linux-build }};
+              if echo "timeout 30 build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash;
+                then
+                  echo "Linux works in a clean environment!";
+              else
+                echo "Linux didn't work... Check libraries with previous step?" &&
+                echo "ldd build/ubuntu/exe/${{ needs.build.outputs.linux-build }}" | bash || echo "Couldn't get libraries";
+              fi;
+          else
+            echo "file not found!";
+          fi
+          ls build -ltraR |egrep -v '\.$|\.\.|\.:|\.\/|total|^d' |sed '/^$/d' || true
+          ldd /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so | grep "not found"
+          sudo apt-get install libtree
+          libtree /home/runner/.cache/TiLiA/0.5.15.1/PySide6/qt-plugins/platforms/libqxcb.so
 
-  #     - name: Upload
-  #       uses: "softprops/action-gh-release@v2"
-  #       with:
-  #         tag_name: ${{github.ref_name}}
-  #         make_latest: ${{github.event_name == 'push'}}
-  #         generate_release_notes: true
-  #         files: |
-  #           build/TiLiA-v*
+      - name: Upload
+        uses: "softprops/action-gh-release@v2"
+        with:
+          tag_name: ${{github.ref_name}}
+          make_latest: ${{github.event_name == 'push'}}
+          generate_release_notes: true
+          files: |
+            build/TiLiA-v*
