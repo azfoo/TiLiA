@@ -94,7 +94,7 @@ def test_with_timelines_scale_not_provided_answer_yes_but_dont_confirm_crop(
     assert marker_tl[0].get_data("time") == 50 * EXAMPLE_MEDIA_SCALE_FACTOR
 
 
-def test_with_timelines_scale_not_provied_answer_crop(
+def test_with_timelines_scale_not_provided_answer_crop(
     cli, tilia_state, marker_tl, user_actions
 ):
     for time in [5, 50]:

@@ -312,11 +312,11 @@ class TimelineUIs:
     def _remove_from_timeline_uis_set(self, timeline_ui: TimelineUI) -> None:
         try:
             self._timeline_uis.remove(timeline_ui)
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
                 f"Can't remove timeline ui '{timeline_ui}' from {self}: not in"
                 " self.timeline_uis."
-            )
+            ) from e
 
     def _add_to_timeline_ui_select_order(self, tl_ui: TimelineUI) -> None:
         self._select_order.insert(0, tl_ui)
@@ -324,18 +324,18 @@ class TimelineUIs:
     def _remove_from_timeline_ui_select_order(self, tl_ui: TimelineUI) -> None:
         try:
             self._select_order.remove(tl_ui)
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
                 f"Can't remove timeline ui '{tl_ui}' from select order: not in select"
                 " order."
-            )
+            ) from e
 
     def _send_to_top_of_select_order(self, tl_ui: TimelineUI):
         self._select_order.remove(tl_ui)
         self._select_order.insert(0, tl_ui)
 
     def add_timeline_view_to_scene(self, view: QGraphicsView, ordinal: int) -> None:
-        view.proxy = self.scene.addWidget(view)
+        self.scene.addWidget(view)
         y = sum(tlui.get_data("height") for tlui in sorted(self)[: ordinal - 1])
         view.move(0, y)
         self.update_height()
@@ -1038,8 +1038,8 @@ class TimelineUIs:
 
         try:
             return selector_to_func[selector](get_by_kinds(kinds))
-        except KeyError:
-            raise NotImplementedError(f"Can't select with {selector=}")
+        except KeyError as e:
+            raise NotImplementedError(f"Can't select with {selector=}") from e
 
     def on_zoom(self, is_zoom_in: bool, zoom_factor: float = ZOOM_FACTOR):
         prev_smooth_scroll = settings.get("general", "prioritise_performance")

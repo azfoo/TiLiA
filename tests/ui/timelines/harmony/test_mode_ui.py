@@ -72,7 +72,7 @@ class TestCopyPaste:
         click_mode_ui(tlui[1])
         actions.trigger(TiliaAction.TIMELINE_ELEMENT_PASTE)
         assert len(tlui) == 2
-        for attr, value in attributes_to_copy.items():
+        for attr in attributes_to_copy.keys():
             assert tlui[1].get_data(attr) == attributes_to_copy[attr]
 
     def test_paste_multiple_into_element(self, tlui):
@@ -102,5 +102,5 @@ class TestCopyPaste:
         click_mode_ui(target_mui)
         actions.trigger(TiliaAction.TIMELINE_ELEMENT_PASTE)
         assert len(tlui) == 6
-        for attr, value in attributes_to_copy.items():
+        for attr in attributes_to_copy.keys():
             assert target_mui.get_data(attr) == attributes_to_copy[attr]

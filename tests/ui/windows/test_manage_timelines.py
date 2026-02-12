@@ -9,8 +9,8 @@ from tilia.ui.windows.manage_timelines import ManageTimelines
 
 
 def assert_timeline_order(tls: Timelines, expected: list[Timeline]):
-    for tl, expected in zip(sorted(tls), expected):
-        assert tl == expected
+    for tl, e in zip(sorted(tls), expected, strict=True):
+        assert tl == e
 
 
 def assert_list_widget_order(window: ManageTimelines, expected: list[Timeline]):
