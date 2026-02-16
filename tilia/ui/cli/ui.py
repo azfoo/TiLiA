@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 
 import argparse
@@ -92,8 +93,13 @@ class CLI:
         """
         print(f"--- TiLiA v{VERSION} CLI ---")
         print(tilia.constants.NOTICE)
+        clear_stdin()
         while True:
-            cmd = input(">>> ")
+            try:
+                cmd = input(">>> ")
+            except (EOFError, KeyboardInterrupt) as e:
+                io.output(f"{type(e).__name__}: {e}. Exiting CLI.", color=Fore.YELLOW)
+                return
             self.parse_and_run(cmd)
 
     def parse_and_run(self, cmd):
@@ -161,3 +167,27 @@ def on_ask_yes_or_no(title: str, prompt: str) -> bool:
 
 def on_ask_should_save_changes() -> tuple[bool, bool]:
     return True, ask_yes_or_no("Save changes to current file?")
+
+
+def clear_stdin():
+    # Clear any pending input from the standard input buffer.
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        elif os.name == "posix":
+            import select
+
+            stdin, _, _ = select.select([sys.stdin], [], [], 0)
+            if stdin:
+                if sys.stdin.isatty():
+                    from termios import TCIFLUSH, tcflush
+
+                    tcflush(sys.stdin.fileno(), TCIFLUSH)
+                else:
+                    while sys.stdin.read(1024):
+                        pass
+    except ImportError:
+        pass
