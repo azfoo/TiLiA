@@ -91,6 +91,9 @@ class CLI:
         """
         Launches the CLI.
         """
+
+        _attach_parent_console()
+
         print(f"--- TiLiA v{VERSION} CLI ---")
         print(tilia.constants.NOTICE)
         clear_stdin()
@@ -191,3 +194,131 @@ def clear_stdin():
                         pass
     except ImportError:
         pass
+
+
+def _attach_parent_console() -> bool:
+    """Attach to a parent console or TTY across platforms so `input()` works.
+
+    - If `sys.stdin` is already a TTY, return True.
+    - On Windows: try `AttachConsole(ATTACH_PARENT_PROCESS)` and fall back to
+      `AllocConsole()`, then reopen `CONIN$`/`CONOUT$` and bind Python std streams.
+    - On POSIX: try `/dev/tty`, then search parent processes' TTY via `ps` and
+      open that device and dup() it onto stdin/stdout/stderr.
+
+    Returns True if a usable interactive console/tty was attached; False otherwise.
+    """
+    try:
+        if sys.stdin and sys.stdin.isatty():
+            return True
+    except Exception:
+        pass
+
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            ATTACH_PARENT_PROCESS = -1
+            attached = kernel32.AttachConsole(ATTACH_PARENT_PROCESS) != 0
+            if not attached:
+                # Create a new console window as a fallback
+                if kernel32.AllocConsole() == 0:
+                    return False
+
+            try:
+                fdin = os.open("CONIN$", os.O_RDONLY)
+                fdout = os.open("CONOUT$", os.O_RDWR)
+                sys.stdin = os.fdopen(fdin, "r", encoding="utf-8", errors="ignore")
+                sys.stdout = os.fdopen(
+                    fdout, "w", encoding="utf-8", errors="ignore", buffering=1
+                )
+                sys.stderr = os.fdopen(
+                    os.dup(fdout), "w", encoding="utf-8", errors="ignore", buffering=1
+                )
+            except Exception:
+                # If reopening streams fails, at least report attached state
+                return attached or True
+
+            return True
+        except Exception:
+            return False
+
+    # POSIX platforms
+    # 1) Try /dev/tty
+    try:
+        fd = os.open("/dev/tty", os.O_RDWR)
+        os.dup2(fd, 0)
+        os.dup2(fd, 1)
+        os.dup2(fd, 2)
+        os.close(fd)
+        sys.stdin = os.fdopen(0, "r", encoding="utf-8", errors="ignore")
+        sys.stdout = os.fdopen(1, "w", encoding="utf-8", errors="ignore", buffering=1)
+        sys.stderr = os.fdopen(2, "w", encoding="utf-8", errors="ignore", buffering=1)
+        return True
+    except Exception:
+        pass
+
+    # 2) Walk parent PIDs and try to find a TTY using `ps` or /proc (Linux)
+    try:
+        import subprocess
+
+        ppid = os.getppid()
+        seen = set()
+        while ppid and ppid not in seen and ppid != 1:
+            seen.add(ppid)
+            # Ask ps for the controlling tty of the parent process
+            try:
+                out = subprocess.check_output(
+                    ["ps", "-p", str(ppid), "-o", "tty="], text=True
+                )
+                tty = out.strip()
+            except Exception:
+                tty = ""
+
+            if tty and tty != "?":
+                # Normalize tty to a device path
+                tty_path = tty if tty.startswith("/dev/") else f"/dev/{tty}"
+                try:
+                    fd = os.open(tty_path, os.O_RDWR)
+                    os.dup2(fd, 0)
+                    os.dup2(fd, 1)
+                    os.dup2(fd, 2)
+                    os.close(fd)
+                    sys.stdin = os.fdopen(0, "r", encoding="utf-8", errors="ignore")
+                    sys.stdout = os.fdopen(
+                        1, "w", encoding="utf-8", errors="ignore", buffering=1
+                    )
+                    sys.stderr = os.fdopen(
+                        2, "w", encoding="utf-8", errors="ignore", buffering=1
+                    )
+                    return True
+                except Exception:
+                    # couldn't open that tty, continue walking
+                    pass
+
+            # Try reading parent PID from /proc (Linux) to walk further up
+            try:
+                with open(f"/proc/{ppid}/stat", "r") as f:
+                    fields = f.read().split()
+                    # ppid is field 4 in /proc/<pid>/stat
+                    ppid = int(fields[3])
+                    continue
+            except Exception:
+                # fallback to asking ps for the parent's parent
+                try:
+                    out2 = subprocess.check_output(
+                        ["ps", "-p", str(ppid), "-o", "ppid="], text=True
+                    )
+                    out2 = out2.strip()
+                    if out2:
+                        ppid = int(out2)
+                        continue
+                    else:
+                        break
+                except Exception:
+                    break
+
+    except Exception:
+        pass
+
+    return False

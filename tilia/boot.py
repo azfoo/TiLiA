@@ -32,6 +32,7 @@ def handle_exception(type, value, tb):
 
 
 def boot():
+    print("__compiled__" in globals())
     sys.excepthook = handle_exception
 
     args = setup_parser()
