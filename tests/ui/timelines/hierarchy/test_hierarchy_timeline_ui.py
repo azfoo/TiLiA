@@ -564,7 +564,7 @@ class TestCreateChild:
         tlui.select_element(tlui[0])
 
         settings.set("hierarchy_timeline", "prompt_create_level_below", True)
-        with Serve(Get.FROM_USER_YES_OR_NO, False):
+        with patch_yes_or_no_dialog(False):
             commands.execute("timeline.hierarchy.create_child")
 
         assert len(tlui) == 1
@@ -577,7 +577,7 @@ class TestCreateChild:
             tlui.select_element(tlui[0])
 
             settings.set("hierarchy_timeline", "prompt_create_level_below", True)
-            with Serve(Get.FROM_USER_YES_OR_NO, True):
+            with patch_yes_or_no_dialog(True):
                 commands.execute("timeline.hierarchy.create_child")
 
             assert len(tlui) == 2
@@ -591,7 +591,7 @@ class TestCreateChild:
             tlui.select_element(tlui[0])
 
             settings.set("hierarchy_timeline", "prompt_create_level_below", True)
-            with Serve(Get.FROM_USER_YES_OR_NO, True):
+            with patch_yes_or_no_dialog(True):
                 commands.execute("timeline.hierarchy.create_child")
 
             assert len(tlui) == 3
@@ -607,7 +607,7 @@ class TestCreateChild:
             tlui.select_element(tlui[0])
 
             settings.set("hierarchy_timeline", "prompt_create_level_below", True)
-            with Serve(Get.FROM_USER_YES_OR_NO, True):
+            with patch_yes_or_no_dialog(True):
                 commands.execute("timeline.hierarchy.create_child")
 
             assert len(tlui) == 4

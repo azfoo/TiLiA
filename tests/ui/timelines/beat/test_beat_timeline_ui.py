@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from tests.mock import Serve
+from tests.mock import Serve, patch_yes_or_no_dialog
 from tests.utils import undoable
 from tilia.requests import Post, post
 from tilia.enums import Side
@@ -554,7 +554,7 @@ class TestFillWithBeats:
 
         response = (True, (beat_tlui.timeline, BeatTimeline.FillMethod.BY_AMOUNT, 100))
         with Serve(Get.FROM_USER_BEAT_TIMELINE_FILL_METHOD, response):
-            with Serve(Get.FROM_USER_YES_OR_NO, True):
+            with patch_yes_or_no_dialog(True):
                 with undoable():
                     commands.execute("timeline.beat.fill")
 
@@ -564,7 +564,7 @@ class TestFillWithBeats:
         beat_tlui.create_beat(0)
         response = (True, (beat_tlui.timeline, BeatTimeline.FillMethod.BY_AMOUNT, 100))
         with Serve(Get.FROM_USER_BEAT_TIMELINE_FILL_METHOD, response):
-            with Serve(Get.FROM_USER_YES_OR_NO, False):
+            with patch_yes_or_no_dialog(False):
                 commands.execute("timeline.beat.fill")
 
         assert len(beat_tlui) == 1
