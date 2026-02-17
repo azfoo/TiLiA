@@ -1,7 +1,7 @@
 import pytest
 
-from tests.mock import Serve
-from tilia.requests import post, Post, Get
+from tests.mock import patch_yes_or_no_dialog
+from tilia.requests import post, Post
 from tilia.ui.windows import WindowKind
 
 
@@ -10,7 +10,7 @@ def media_metadata_window(qtui):
     post(Post.WINDOW_OPEN, WindowKind.MEDIA_METADATA)
     window = qtui._windows[WindowKind.MEDIA_METADATA]
     yield window
-    with Serve(Get.FROM_USER_YES_OR_NO, True):
+    with patch_yes_or_no_dialog(True):
         window.close()
 
 
@@ -34,7 +34,7 @@ def test_edit_field_value(qtui, media_metadata_window, tilia_state):
 def test_do_not_confirm_close(qtui, media_metadata_window, tilia_state):
     prev_title = tilia_state.metadata["title"]
     media_metadata_window.metadata["title"].setText("New Title")
-    with Serve(Get.FROM_USER_YES_OR_NO, False):
+    with patch_yes_or_no_dialog(False):
         media_metadata_window.close()
 
     assert qtui.is_window_open(WindowKind.MEDIA_METADATA)
@@ -44,7 +44,7 @@ def test_do_not_confirm_close(qtui, media_metadata_window, tilia_state):
 def test_confirm_close_discards_changes(qtui, media_metadata_window, tilia_state):
     prev_title = tilia_state.metadata["title"]
     media_metadata_window.metadata["title"].setText("New Title")
-    with Serve(Get.FROM_USER_YES_OR_NO, True):
+    with patch_yes_or_no_dialog(True):
         media_metadata_window.close()
 
     assert not qtui.is_window_open(WindowKind.MEDIA_METADATA)

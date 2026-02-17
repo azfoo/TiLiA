@@ -1,6 +1,6 @@
 import pytest
 
-from tests.mock import PatchPost, Serve, ServeSequence
+from tests.mock import PatchPost, ServeSequence, patch_yes_or_no_dialog, Serve
 from tilia.requests import Post, Get
 from tilia.timelines.timeline_kinds import TimelineKind
 
@@ -19,23 +19,23 @@ class TestCreate:
 
 class TestTimelines:
     def tests_scales_timelines_when_media_duration_changes(
-        self, marker_tl, tilia_state
+        self, marker_tl, tilia_state, tluis  # needed for patch_yes_or_no
     ):
         marker_tl.create_marker(10)
-        with Serve(Get.FROM_USER_YES_OR_NO, True):
+        with patch_yes_or_no_dialog(True):
             tilia_state.duration = 200
         assert marker_tl[0].get_data("time") == 20
 
     def tests_does_not_scale_timelines_when_media_duration_changes_if_user_refuses(
-        self, marker_tl, tilia_state
+        self, marker_tl, tilia_state, tluis  # needed for patch_yes_or_no
     ):
         marker_tl.create_marker(10)
-        with Serve(Get.FROM_USER_YES_OR_NO, False):
+        with patch_yes_or_no_dialog(False):
             tilia_state.duration = 200
         assert marker_tl[0].get_data("time") == 10
 
     def test_scale_timeline_when_media_duration_changes_if_user_refuses_crop(
-        self, marker_tlui, tilia_state
+        self, marker_tlui, tilia_state, tluis  # needed for patch_yes_or_no
     ):
         marker_tlui.create_marker(90)
         with ServeSequence(Get.FROM_USER_YES_OR_NO, [False, False]):

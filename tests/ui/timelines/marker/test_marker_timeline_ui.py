@@ -613,14 +613,14 @@ def test_clear(tluis, qtui, marker_tlui, tilia_state):
         tilia_state.current_time = i
         commands.execute("timeline.marker.add")
 
-    with Serve(Get.FROM_USER_YES_OR_NO, True):
+    with patch_yes_or_no_dialog(True):
         commands.execute("timeline.clear", marker_tlui)
 
     assert len(marker_tlui) == 0
 
 
 def test_delete(tluis, qtui, marker_tlui, tilia_state):
-    with Serve(Get.FROM_USER_YES_OR_NO, True):
+    with patch_yes_or_no_dialog(True):
         commands.execute("timeline.delete", marker_tlui)
 
     assert tluis.is_empty
