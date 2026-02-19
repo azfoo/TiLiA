@@ -62,7 +62,7 @@ def boot():
 
 
 def setup_parser():
-    parser = argparse.ArgumentParser(exit_on_error=False)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--file", nargs="?", default="")
     parser.add_argument("--user-interface", "-i", choices=["qt", "cli"], default="qt")
     return parser.parse_args()
