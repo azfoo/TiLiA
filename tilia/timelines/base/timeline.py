@@ -146,7 +146,10 @@ class Timeline(ABC, Generic[TC]):
             if d.is_dir() and d.name not in ["base", "__pycache__", "collection"]
         ]
         for pkg in packages:
-            importlib.import_module(pkg)
+            try:
+                importlib.import_module(pkg)
+            except ModuleNotFoundError:
+                print(f"Could not find timeline class in {pkg}.")
 
     @classmethod
     def get_kinds_by_flag(cls, flag: TimelineFlag | list[TimelineFlag]):
