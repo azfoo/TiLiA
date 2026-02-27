@@ -1,3 +1,5 @@
+from typing import Literal
+
 import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
@@ -10,22 +12,15 @@ from tilia.ui import commands
 from tilia.ui.windows.manage_timelines import ManageTimelines
 
 
-def assert_timeline_order(tls: Timelines, expected: list[Timeline]):
+def assert_order_is_correct(tls: Timelines, expected: list[Timeline]):
+    # assert timeline order
     for tl, expected in zip(sorted(tls), expected):
         assert tl == expected
 
-
-def assert_list_widget_order(window: ManageTimelines, expected: list[Timeline]):
+    # assert list widget order
     for i, tl in enumerate(expected):
         tlui = get(Get.TIMELINE_UI, tl.id)
-        assert window.list_widget.item(i).timeline_ui == tlui
-
-
-def assert_order_is_correct(
-    tls: Timelines, window: ManageTimelines, expected: list[Timeline]
-):
-    assert_timeline_order(tls, expected)
-    assert_list_widget_order(window, expected)
+        assert ManageTimelines().list_widget.item(i).timeline_ui == tlui
 
 
 class TestChangeTimelineVisibility:
@@ -59,80 +54,90 @@ class TestChangeTimelineVisibility:
 
 class TestChangeTimelineOrder:
     @pytest.fixture(autouse=True)
-    def setup_timelines(self, tls):
+    def setup_timelines(self, tluis, tls):
         with Serve(Get.FROM_USER_STRING, (True, "")):
             commands.execute("timelines.add.marker")
             commands.execute("timelines.add.marker")
             commands.execute("timelines.add.marker")
         return list(tls)
 
-    def test_increase_ordinal(self, tls, manage_timelines, setup_timelines):
+    @staticmethod
+    def click_set_ordinal_button(button: Literal["up", "down"], row: int):
+        """Toggles timeline visibility using the ManageTimelines window."""
+        mt = ManageTimelines()
+        mt.list_widget.setCurrentRow(row)
+        if button == "up":
+            button = mt.up_button
+        elif button == "down":
+            button = mt.down_button
+        else:
+            assert False, "Invalid button value."
+
+        QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        mt.close()
+
+    def test_increase_ordinal(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
 
-        manage_timelines.list_widget.setCurrentRow(1)
-        manage_timelines.up_button.click()
+        self.click_set_ordinal_button("up", 1)
 
-        assert_order_is_correct(tls, manage_timelines, [tl1, tl0, tl2])
+        assert_order_is_correct(tls, [tl1, tl0, tl2])
 
-    def test_increase_ordinal_undo(self, tls, manage_timelines, setup_timelines):
+    def test_increase_ordinal_undo(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(1)
-        manage_timelines.up_button.click()
 
+        self.click_set_ordinal_button("up", 1)
         commands.execute("edit.undo")
 
-        assert_order_is_correct(tls, manage_timelines, [tl0, tl1, tl2])
+        assert_order_is_correct(tls, [tl0, tl1, tl2])
 
-    def test_increase_ordinal_redo(self, tls, manage_timelines, setup_timelines):
+    def test_increase_ordinal_redo(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(1)
-        manage_timelines.up_button.click()
 
+        self.click_set_ordinal_button("up", 1)
         commands.execute("edit.undo")
         commands.execute("edit.redo")
 
-        assert_order_is_correct(tls, manage_timelines, [tl1, tl0, tl2])
+        assert_order_is_correct(tls, [tl1, tl0, tl2])
 
     def test_increase_ordinal_with_first_selected_does_nothing(
-        self, tls, manage_timelines, setup_timelines
+        self, tls, setup_timelines
     ):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(0)
-        manage_timelines.up_button.click()
 
-        assert_order_is_correct(tls, manage_timelines, [tl0, tl1, tl2])
+        self.click_set_ordinal_button("up", 0)
 
-    def test_decrease_ordinal(self, tls, manage_timelines, setup_timelines):
+        assert_order_is_correct(tls, [tl0, tl1, tl2])
+
+    def test_decrease_ordinal(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(0)
-        manage_timelines.down_button.click()
 
-        assert_order_is_correct(tls, manage_timelines, [tl1, tl0, tl2])
+        self.click_set_ordinal_button("down", 0)
 
-    def test_decrease_ordinal_undo(self, tls, manage_timelines, setup_timelines):
+        assert_order_is_correct(tls, [tl1, tl0, tl2])
+
+    def test_decrease_ordinal_undo(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(0)
-        manage_timelines.down_button.click()
 
+        self.click_set_ordinal_button("down", 0)
         commands.execute("edit.undo")
 
-        assert_order_is_correct(tls, manage_timelines, [tl0, tl1, tl2])
+        assert_order_is_correct(tls, [tl0, tl1, tl2])
 
-    def test_decrease_ordinal_redo(self, tls, manage_timelines, setup_timelines):
+    def test_decrease_ordinal_redo(self, tls, setup_timelines):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(0)
-        manage_timelines.down_button.click()
 
+        self.click_set_ordinal_button("down", 0)
         commands.execute("edit.undo")
         commands.execute("edit.redo")
 
-        assert_order_is_correct(tls, manage_timelines, [tl1, tl0, tl2])
+        assert_order_is_correct(tls, [tl1, tl0, tl2])
 
     def test_decrease_ordinal_with_last_selected_does_nothing(
-        self, tls, manage_timelines, setup_timelines
+        self, tls, setup_timelines
     ):
         tl0, tl1, tl2 = setup_timelines
-        manage_timelines.list_widget.setCurrentRow(2)
-        manage_timelines.down_button.click()
 
-        assert_order_is_correct(tls, manage_timelines, [tl0, tl1, tl2])
+        self.click_set_ordinal_button("down", 2)
+
+        assert_order_is_correct(tls, [tl0, tl1, tl2])
