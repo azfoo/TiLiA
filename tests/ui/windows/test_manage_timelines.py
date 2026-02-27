@@ -1,4 +1,6 @@
 import pytest
+from PyQt6.QtCore import Qt
+from PyQt6.QtTest import QTest
 
 from tests.mock import Serve
 from tilia.requests import Get, get
@@ -26,39 +28,33 @@ def assert_order_is_correct(
     assert_list_widget_order(window, expected)
 
 
-@pytest.fixture
-def manage_timelines(qtui):
-    mt = ManageTimelines()
-    yield mt
-    mt.close()
-
-
 class TestChangeTimelineVisibility:
-    def set_is_visible(self, manage_timelines, row: int, is_visible: bool):
-        manage_timelines.list_widget.setCurrentRow(row)
-        manage_timelines.checkbox.setChecked(is_visible)
+    @staticmethod
+    def toggle_timeline_is_visible(row: int = 0):
+        """Toggles timeline visibility using the Manage Timelines window."""
+        mt = ManageTimelines()
+        mt.list_widget.setCurrentRow(row)
+        QTest.mouseClick(mt.checkbox, Qt.MouseButton.LeftButton)
+        mt.close()
 
-    def test_hide(self, marker_tl, manage_timelines):
-        marker_tl.set_data("is_visible", True)
-        self.set_is_visible(manage_timelines, 0, False)
-        assert marker_tl.get_data("is_visible") is False
+    def test_hide(self, marker_tlui):
+        commands.execute("timeline.set_is_visible", marker_tlui, True)
+        self.toggle_timeline_is_visible()
+        assert marker_tlui.get_data("is_visible") is False
 
-    def test_show(self, marker_tl, manage_timelines):
-        marker_tl.set_data("is_visible", False)
-        self.set_is_visible(manage_timelines, 0, True)
-        assert marker_tl.get_data("is_visible") is True
+    def test_show(self, marker_tlui):
+        commands.execute("timeline.set_is_visible", marker_tlui, False)
+        self.toggle_timeline_is_visible()
+        assert marker_tlui.get_data("is_visible") is True
 
-    def test_hide_then_show(self, marker_tl, manage_timelines):
-        marker_tl.set_data("is_visible", True)
-        self.set_is_visible(manage_timelines, 0, False)
-        self.set_is_visible(manage_timelines, 0, True)
-        assert marker_tl.get_data("is_visible") is True
-
-    def test_show_then_hide(self, marker_tl, manage_timelines):
-        marker_tl.set_data("is_visible", False)
-        self.set_is_visible(manage_timelines, 0, True)
-        self.set_is_visible(manage_timelines, 0, False)
-        assert marker_tl.get_data("is_visible") is False
+    def test_toggle_visibility_multiple_times(self, marker_tlui):
+        commands.execute("timeline.set_is_visible", marker_tlui, True)
+        for i in range(10):
+            self.toggle_timeline_is_visible()
+            if i % 2 == 1:
+                assert marker_tlui.get_data("is_visible") is True
+            else:
+                assert marker_tlui.get_data("is_visible") is False
 
 
 class TestChangeTimelineOrder:
