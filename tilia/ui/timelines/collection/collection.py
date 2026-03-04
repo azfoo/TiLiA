@@ -463,7 +463,6 @@ class TimelineUIs:
         SERVES = {
             (Get.TIMELINE_UI, self.get_timeline_ui),
             (Get.TIMELINE_UI_BY_ATTR, self.get_timeline_ui_by_attr),
-            (Get.TIMELINE_UIS_BY_ATTR, self.get_timeline_uis_by_attr),
             (Get.TIMELINE_UIS, self.get_timeline_uis),
             (Get.TIMELINE_UI_ELEMENT, self.get_timeline_ui_element),
             (Get.TIMELINE_ELEMENTS_SELECTED, self.get_timeline_elements_selected),
