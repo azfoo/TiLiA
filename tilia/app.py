@@ -60,7 +60,6 @@ class App:
     def _setup_requests(self):
         LISTENS = {
             (Post.APP_CLEAR, self.on_clear),
-            (Post.APP_FILE_LOAD, self.on_file_load),
             (Post.APP_MEDIA_LOAD, self.load_media),
             (Post.APP_STATE_RESTORE, self.on_restore_state),
             (Post.APP_STATE_RECOVER, self.recover_to_state),
@@ -162,6 +161,7 @@ class App:
         if not success:
             self.on_restore_state(prev_state)
             return
+        post(Post.APP_FILE_LOADED, file)
 
         self.file_manager.file = file
         self.update_recent_files()
