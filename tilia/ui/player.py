@@ -35,7 +35,6 @@ class PlayerToolbar(QToolBar):
         LISTENS = {
             (Post.PLAYER_CURRENT_TIME_CHANGED, self.on_player_current_time_changed),
             (Post.FILE_MEDIA_DURATION_CHANGED, self.on_media_duration_changed),
-            (Post.PLAYER_MEDIA_UNLOADED, self.on_media_unload),
             (Post.PLAYER_STOPPED, self.on_stop),
             (Post.PLAYER_UPDATE_CONTROLS, self.on_update_controls),
             (Post.PLAYER_UI_UPDATE, self.on_ui_update_silent),
@@ -73,12 +72,6 @@ class PlayerToolbar(QToolBar):
     def on_media_duration_changed(self, duration: float):
         self.duration_string = format_media_time(duration)
         self.update_time_string()
-
-    def on_media_unload(self) -> None:
-        self.duration_string = format_media_time(0)
-        self.current_time_string = format_media_time(0)
-        self.update_time_string()
-        self.on_update_controls(PlayerStatus.NO_MEDIA)
 
     def update_time_string(self):
         self.time_label.setText(f"{self.current_time_string}/{self.duration_string}")
