@@ -69,8 +69,6 @@ class Player(ABC):
                 Post.PLAYER_SEEK_IF_NOT_PLAYING,
                 functools.partial(self.on_seek, if_paused=True),
             ),
-            (Post.PLAYER_REQUEST_TO_UNLOAD_MEDIA, self.unload_media),
-            (Post.PLAYER_REQUEST_TO_LOAD_MEDIA, self.load_media),
             (Post.PLAYER_EXPORT_AUDIO, self.on_export_audio),
             (Post.PLAYER_CURRENT_LOOP_CHANGED, self.on_loop_changed),
         }

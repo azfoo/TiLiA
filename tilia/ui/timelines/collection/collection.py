@@ -430,14 +430,6 @@ class TimelineUIs:
             (Post.SLIDER_DRAG_END, lambda: self.set_is_dragging(False)),
             (Post.SLIDER_DRAG_START, lambda: self.set_is_dragging(True)),
             (Post.PLAYER_CURRENT_TIME_CHANGED, self.on_media_time_change),
-            (
-                Post.VIEW_ZOOM_IN,
-                functools.partial(self.on_zoom, True),
-            ),
-            (
-                Post.VIEW_ZOOM_OUT,
-                functools.partial(self.on_zoom, False),
-            ),
             (Post.SELECTION_BOX_SELECT_ITEM, self.on_selection_box_select_item),
             (Post.SELECTION_BOX_DESELECT_ITEM, self.on_selection_box_deselect_item),
             (Post.TIMELINE_WIDTH_SET_DONE, self.on_timeline_width_set_done),
