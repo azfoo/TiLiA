@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from tilia.enums import Side
 from tilia.requests import Post, Get, get, listen
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.timelines.base.timeline import TimelineUI
@@ -35,19 +34,25 @@ class AudioWaveTimelineUI(TimelineUI):
             )
             self.timeline.refresh()
 
-    def on_side_arrow_press(self, side: Side):
+    def on_horizontal_arrow_press(self, arrow: str):
         if not self.has_selected_elements:
             return
 
-        self._deselect_all_but_last()
+        if arrow not in ["right", "left"]:
+            raise ValueError(f"Invalid arrow '{arrow}'.")
+
+        if arrow == "right":
+            self._deselect_all_but_last()
+        else:
+            self._deselect_all_but_first()
 
         selected_element = self.element_manager.get_selected_elements()[0]
-        if side == side.RIGHT:
-            element_to_select = self.get_next_element(selected_element)
-        elif side == side.LEFT:
-            element_to_select = self.get_previous_element(selected_element)
+        if arrow == "right":
+            element_to_select = self.element_manager.get_next_element(selected_element)
         else:
-            raise ValueError(f"Invalid side '{side}'.")
+            element_to_select = self.element_manager.get_previous_element(
+                selected_element
+            )
 
         if element_to_select:
             self.deselect_element(selected_element)

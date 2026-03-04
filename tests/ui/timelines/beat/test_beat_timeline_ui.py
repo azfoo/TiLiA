@@ -5,7 +5,6 @@ import pytest
 from tests.mock import Serve, patch_yes_or_no_dialog
 from tests.utils import undoable
 from tilia.requests import Post, post
-from tilia.enums import Side
 from tilia.requests import Get
 from tilia.timelines.beat.timeline import BeatTimeline
 from tilia.settings import settings
@@ -156,10 +155,10 @@ class TestSelect:
         beat1 = beat_tlui[1]
 
         beat_tlui.select_element(beat0)
-        beat_tlui.on_side_arrow_press(Side.RIGHT)
+        beat_tlui.on_horizontal_arrow_press("right")
         assert beat_tlui.selected_elements == [beat1]
 
-        beat_tlui.on_side_arrow_press(Side.RIGHT)
+        beat_tlui.on_horizontal_arrow_press("right")
         assert beat_tlui.selected_elements == [beat1]
 
     def test_on_left_arrow_press_one_element_selected(self, beat_tlui):
@@ -170,10 +169,10 @@ class TestSelect:
         beat1 = beat_tlui[1]
 
         beat_tlui.select_element(beat1)
-        beat_tlui.on_side_arrow_press(Side.LEFT)
+        beat_tlui.on_horizontal_arrow_press("left")
         assert beat_tlui.selected_elements == [beat0]
 
-        beat_tlui.on_side_arrow_press(Side.LEFT)
+        beat_tlui.on_horizontal_arrow_press("left")
         assert beat_tlui.selected_elements == [beat0]
 
     def test_on_right_arrow_press_more_than_one_element_selected(self, beat_tlui):
@@ -191,7 +190,7 @@ class TestSelect:
         beat_tlui.select_element(beat1)
         beat_tlui.select_element(beat2)
 
-        beat_tlui.on_side_arrow_press(Side.RIGHT)
+        beat_tlui.on_horizontal_arrow_press("right")
         assert beat_tlui.selected_elements == [beat3]
 
     def test_on_left_arrow_press_more_than_one_element_selected(self, beat_tlui):
@@ -209,7 +208,7 @@ class TestSelect:
         beat_tlui.select_element(beat2)
         beat_tlui.select_element(beat3)
 
-        beat_tlui.on_side_arrow_press(Side.LEFT)
+        beat_tlui.on_horizontal_arrow_press("left")
         assert beat_tlui.selected_elements == [beat0]
 
 
