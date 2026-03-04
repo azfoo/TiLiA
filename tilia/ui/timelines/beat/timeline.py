@@ -1,7 +1,6 @@
 import copy
 
 from tilia.requests import get, Get, Post, listen
-from tilia.enums import Side
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui import commands
@@ -213,25 +212,6 @@ class BeatTimelineUI(TimelineUI):
         beat_index = self.timeline.components.index(beat)
         measure_index, _ = self.timeline.get_measure_index(beat_index)
         return self.timeline.should_display_measure_number(measure_index)
-
-    def on_side_arrow_press(self, side: Side):
-        if not self.has_selected_elements:
-            return
-
-        if side == Side.RIGHT:
-            self._deselect_all_but_last()
-            selected_element = self.selected_elements[0]
-            element_to_select = self.get_next_element(selected_element)
-        elif side == Side.LEFT:
-            self._deselect_all_but_first()
-            selected_element = self.selected_elements[0]
-            element_to_select = self.get_previous_element(selected_element)
-        else:
-            raise ValueError(f"Invalid side '{side}'.")
-
-        if element_to_select:
-            self.element_manager.deselect_element(selected_element)
-            self.select_element(element_to_select)
 
     def on_measure_number_change_done(self, start_index: int):
         for beat_ui in self[start_index:]:

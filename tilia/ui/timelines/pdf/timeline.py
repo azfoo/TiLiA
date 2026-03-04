@@ -11,7 +11,6 @@ import tilia.errors
 from tilia.media.player.base import MediaTimeChangeReason
 from tilia.timelines.component_kinds import ComponentKind
 from tilia.requests import Get, get, listen, Post
-from tilia.enums import Side
 from tilia.timelines.timeline_kinds import TimelineKind
 from tilia.ui.timelines.base.element import TimelineUIElement
 from tilia.ui.timelines.base.timeline import (
@@ -146,24 +145,6 @@ class PdfTimelineUI(TimelineUI):
         if len(self.selected_elements) > 1:
             for element in self.selected_elements[:-1]:
                 self.element_manager.deselect_element(element)
-
-    def on_side_arrow_press(self, side: Side):
-        if not self.has_selected_elements:
-            return
-
-        self._deselect_all_but_last()
-
-        selected_element = self.element_manager.get_selected_elements()[0]
-        if side == Side.RIGHT:
-            element_to_select = self.get_next_element(selected_element)
-        elif side == Side.LEFT:
-            element_to_select = self.get_previous_element(selected_element)
-        else:
-            raise ValueError(f"Invalid side '{side}'.")
-
-        if element_to_select:
-            self.deselect_element(selected_element)
-            self.select_element(element_to_select)
 
     def validate_copy(self, elements: list[TimelineUIElement]) -> None:
         pass
