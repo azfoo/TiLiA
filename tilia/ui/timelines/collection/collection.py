@@ -1109,7 +1109,6 @@ class TimelineUIs:
             TimelineSelector.FIRST: filter_if_first_on_select_order,
             TimelineSelector.SELECTED: filter_if_has_selected_elements,
             TimelineSelector.PASTE: filter_for_pasting,
-            TimelineSelector.ANY: filter_if_first_on_select_order,
         }
 
         try:
@@ -1517,8 +1516,6 @@ class TimelineUIs:
 
 
 class TimelineSelector(Enum):
-    ANY = auto()
-    EXPLICIT = auto()
     SELECTED = auto()
     ALL = auto()
     FIRST = auto()
