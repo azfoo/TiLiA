@@ -169,7 +169,7 @@ class QtUI:
 
     def _setup_requests(self):
         LISTENS = {
-            (Post.APP_FILE_LOAD, self.on_file_load),
+            (Post.APP_FILE_LOADED, self.on_file_loaded),
             (Post.PLAYBACK_AREA_SET_WIDTH, self.on_timeline_set_width),
             (Post.WINDOW_OPEN, self.on_window_open),
             (Post.WINDOW_CLOSE, self.on_window_close),
@@ -322,7 +322,7 @@ class QtUI:
     def get_window_state(self):
         return self.main_window.saveState()
 
-    def on_file_load(self, file: TiliaFile) -> None:
+    def on_file_loaded(self, file: TiliaFile) -> None:
         geometry, state = settings.get_geometry_and_state_from_path(file.file_path)
         if geometry and state:
             self.main_window.restoreGeometry(geometry)

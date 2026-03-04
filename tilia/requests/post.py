@@ -8,7 +8,7 @@ from tilia.log import logger
 class Post(Enum):
     UI_EXIT = auto()
     APP_CLEAR = auto()
-    APP_FILE_LOAD = auto()
+    APP_FILE_LOADED = auto()
     APP_MEDIA_LOAD = auto()
     APP_SETUP_FILE = auto()
     APP_STATE_RECORD = auto()
