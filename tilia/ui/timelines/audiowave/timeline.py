@@ -61,8 +61,11 @@ class AudioWaveTimelineUI(TimelineUI):
     def get_inspector_dict(self):
         start_time = self.selected_elements[0].get_data("start")
         end_time = self.selected_elements[-1].get_data("end")
+        a_sum = sum([e.get_data("amplitude") for e in self.selected_elements])
+        amplitude = f"{a_sum / len(self.selected_elements): .3f} (rms)"
 
         return {
             "Start / End": f"{format_media_time(start_time)} /"
             + f"{format_media_time(end_time)}",
+            "Amplitude": amplitude,
         }
