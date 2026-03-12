@@ -1,6 +1,6 @@
 from tilia.ui import commands
 from tilia.ui.commands import get_qaction, CommandQAction
-from tilia.ui.menus import MenuItemKind, TiliaMenu
+from tilia.ui.menus import MenuItemKind, TiliaMenu, TiliaMenuItem
 from tilia.requests import get, Get
 
 
@@ -23,10 +23,7 @@ class TimelineUIContextMenu(TiliaMenu):
         self.check_move_down()
         self.add_default_actions()
 
-    def get_timeline_ui_for_selector(self):
-        return [self.timeline_ui]
-
-    def add_action(self, name: str):
+    def add_action(self, name: TiliaMenuItem):
         action = get_qaction(name)
         action.triggered.disconnect()
         action.triggered.connect(lambda: commands.execute(name, self.timeline_ui))
