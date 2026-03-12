@@ -20,7 +20,7 @@ class MenuItemKind(Enum):
     SUBMENU = auto()
 
 
-TiliaMenuItem: TypeAlias = None | type[QMenu]
+TiliaMenuItem: TypeAlias = None | type[QMenu] | str
 
 
 class TiliaMenu(QMenu):
@@ -53,10 +53,10 @@ class TiliaMenu(QMenu):
         self.class_to_submenu[cls] = submenu
         self.addMenu(submenu)
 
-    def add_action(self, name: str):
+    def add_action(self, name: TiliaMenuItem):
         self.addAction(get_qaction(name))
 
-    def get_submenu(self, cls: type[TiliaMenu]):
+    def get_submenu(self, cls: type[QMenu]):
         return self.class_to_submenu[cls]
 
 
