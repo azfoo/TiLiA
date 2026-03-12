@@ -265,7 +265,7 @@ class TimelineUIs:
         if isinstance(kind, TimelineKind):
             kind = [kind]
 
-        # Passing method names is allowed to enable calling methods overriden by TimelineUI subclasses,
+        # Passing method names is allowed to enable calling methods overridden by TimelineUI subclasses,
         # as we wouldn't be able to pass a different callback for each subclass.
         method_name = callback if isinstance(callback, str) else None
 
