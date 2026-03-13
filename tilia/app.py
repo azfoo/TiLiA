@@ -39,7 +39,6 @@ class App:
         undo_manager: UndoManager,
         player: Player,
     ):
-        self._id_counter = itertools.count()
         self.player: Player | None = None
         self.file_manager = file_manager
         self.clipboard = clipboard
@@ -47,6 +46,7 @@ class App:
         self.player = player
         self.duration = 0.0
         self.should_scale_timelines = "prompt"
+        self.reset_id_generator()
         self._setup_timelines()
         self.file_manager.file.timelines_hash = self.get_timelines_state()[1]
         self._setup_requests()
@@ -275,11 +275,30 @@ class App:
             repeat_identifier=repeat_identifier,
         )
 
-    def get_id(self) -> int:
+    def get_id(self) -> str:
         """
-        Returns an id unique to the current file.
+        Returns an ID string.
+        IDs are unique accross timeline component and timelines.
+        Other IDs might contain duplicates.
         """
-        return next(self._id_counter)
+        timeline_ids = {c.id for c in self.timelines}
+        component_lists = [
+            tl.components for tl in self.timelines if tl.components is not None
+        ]
+        component_ids = set()
+        for component_list in component_lists:
+            component_ids = component_ids.union({c.id for c in component_list})
+        existing_ids = timeline_ids.union(component_ids)
+
+        next_id = next(self._id_counter)
+        # Increments counter until a unique id is found.
+        # Could easily be optimised.
+        while str(next_id) in existing_ids:
+            next_id = next(self._id_counter)
+        return str(next_id)
+
+    def reset_id_generator(self):
+        self._id_counter = itertools.count()
 
     def on_media_duration_changed(self, duration: float):
         if not self.timelines.is_blank and duration != self.duration:
@@ -407,6 +426,7 @@ class App:
             self.player.clear()
             self.set_file_media_duration(0.0)
         self.undo_manager.clear()
+        self.reset_id_generator()
         post(Post.REQUEST_CLEAR_UI)
 
     def reset_undo_manager(self):

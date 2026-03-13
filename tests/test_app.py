@@ -15,6 +15,7 @@ from tests.mock import (
     patch_yes_or_no_dialog,
     patch_ask_for_string_dialog,
 )
+from tests.utils import save_and_reopen
 from tilia.media.player import YouTubePlayer, QtAudioPlayer
 from tilia.settings import settings
 
@@ -668,3 +669,58 @@ class TestSave:
         assert contents["media_path"] == url
 
     # TODO: add tests for saving paths as Posix paths
+
+
+class TestIDs:
+    @staticmethod
+    def assert_ids_are_unique(tls, expected_id_count: int):
+        timeline_ids = {tl.id for tl in tls}
+        component_ids = set()
+        for tl in tls:
+            for component in tl:
+                component_ids.add(component.id)
+
+        assert len(timeline_ids.union(component_ids)) == expected_id_count
+
+    @staticmethod
+    def create_timelines_and_components(timeline_count: int, component_count: int):
+        """Helper function to create timelines and components in loops."""
+        for i in range(timeline_count):
+            commands.execute("timelines.add.marker", name="")
+            for j in range(component_count):
+                commands.execute("timeline.marker.add", time=j)
+
+    def test_timeline_ids_are_unique(self, tls, tluis):
+        timeline_count = 100
+        self.create_timelines_and_components(timeline_count, 0)
+        self.assert_ids_are_unique(tls, timeline_count)
+
+    def test_timeline_component_ids_are_unique(self, tls, tluis):
+        component_count = 100
+        self.create_timelines_and_components(1, component_count)
+        assert len({c.id for c in tls[0]}) == component_count
+
+    def test_ids_are_unique_between_timeline_and_components(self, tls, tluis):
+        timeline_count = 10
+        component_count = 10
+        self.create_timelines_and_components(timeline_count, component_count)
+
+        self.assert_ids_are_unique(
+            tls, (timeline_count * component_count) + timeline_count
+        )
+
+    def test_are_unique_between_files_only_timelines(self, tls, tluis, tmp_path):
+        self.create_timelines_and_components(10, 0)
+        save_and_reopen(tmp_path)
+        self.create_timelines_and_components(10, 0)
+        self.assert_ids_are_unique(tls, 21)  # 20 marker timelines + 1 slider timeline
+
+    def test_are_unique_between_files_timelines_and_components(
+        self, tls, tluis, tmp_path
+    ):
+        self.create_timelines_and_components(5, 5)
+        save_and_reopen(tmp_path)
+        self.create_timelines_and_components(5, 5)
+        self.assert_ids_are_unique(
+            tls, 61
+        )  # 10 marker timelines + 1 slider timeline + 50 components
