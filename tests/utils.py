@@ -7,7 +7,7 @@ from typing import Callable
 
 from PyQt6.QtWidgets import QMenu
 
-from tilia.requests import get, Get
+from tilia.requests import get, Get, Post, post
 from tests.mock import patch_file_dialog
 from tilia.ui import commands
 from tilia.ui.commands import CommandQAction
@@ -179,3 +179,16 @@ def get_main_window_menu(qtui, name):
 
 def get_actions_in_menu(menu: QMenu):
     return [action for action in menu.actions() if not action.isSeparator()]
+
+
+def save_tilia_to_tmp_path(tmp_path, filename: str = "test") -> Path:
+    tmp_file_path = (tmp_path / (filename + ".tla")).resolve().__str__()
+    with patch_file_dialog(True, [tmp_file_path]):
+        commands.execute("file.save_as")
+    return tmp_file_path
+
+
+def save_and_reopen(tmp_path, filename: str = "test") -> None:
+    file_path = save_tilia_to_tmp_path(tmp_path, filename)
+    post(Post.APP_CLEAR)
+    commands.execute("file.open", path=file_path)
