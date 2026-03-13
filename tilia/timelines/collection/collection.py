@@ -52,6 +52,7 @@ class Timelines:
             (Get.TIMELINE, self.get_timeline),
             (Get.TIMELINE_ORDINAL_FOR_NEW, self.serve_ordinal_for_new_timeline),
             (Get.TIMELINE_BY_ATTR, self.get_timeline_by_attr),
+            (Get.TIMELINES_BY_ATTR, self.get_timelines_by_attr),
             (Get.METRIC_POSITION, self.get_metric_position),
         }
 

@@ -51,6 +51,7 @@ class Get(Enum):
     TIMELINE = auto()
     TIMELINES = auto()
     TIMELINE_BY_ATTR = auto()
+    TIMELINES_BY_ATTR = auto()
     TIMELINE_COLLECTION = auto()
     TIMELINE_ORDINAL_FOR_NEW = auto()
     TIMELINE_UI = auto()
