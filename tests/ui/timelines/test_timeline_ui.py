@@ -283,9 +283,9 @@ def test_set_is_visible(tls, marker_tlui):
     with undoable():
         commands.execute("timeline.set_is_visible", marker_tlui, False)
 
-    assert marker_tlui.view.isVisible() is False
+    assert not marker_tlui.view.isVisible()
 
     with undoable():
         commands.execute("timeline.set_is_visible", marker_tlui, True)
 
-    assert marker_tlui.view.isVisible() is True
+    assert marker_tlui.view.isVisible()
