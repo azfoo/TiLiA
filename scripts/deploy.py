@@ -255,16 +255,16 @@ def build():
         _build_exe()
         if os.environ.get("GITHUB_OUTPUT"):
             if "mac" in build_os:
-                os.rename(
-                    outdir / "exe" / "tilia.app",
-                    outdir / "exe" / (out_filename + ".app"),
-                )
-                out_filepath = outdir / "exe" / (out_filename + ".app")
+                out_filepath = outdir / "exe" / "tilia.app"
             else:
                 out_filepath = outdir / "exe" / out_filename
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                 f.write(f"out-filepath={out_filepath.as_posix()}\n")
                 f.write(f"out-filename={out_filename}\n")
+                if "mac" in build_os:
+                    f.write(
+                        f"zip-filepath={outdir.as_posix()}/exe/{out_filename}.zip\n"
+                    )
         os.chdir(old_dir)
         dotenv.set_key(".tilia.env", "ENVIRONMENT", old_env_var)
     except Exception as e:
