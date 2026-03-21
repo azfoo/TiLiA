@@ -123,7 +123,6 @@ jobs:
 
   deploy:
     name: Create release
-    continue-on-error: true
     needs: build
     runs-on: "ubuntu-latest"
     permissions:
@@ -166,9 +165,22 @@ jobs:
 
       - name: Upload
         uses: "softprops/action-gh-release@v2"
+        id: release
         with:
           tag_name: ${{github.ref_name}}
           make_latest: ${{github.event_name == 'push'}}
           generate_release_notes: true
           files: |
             build/*/exe/TiLiA-v*
+
+      - name: Check output
+        run: |
+          echo "Counting assets released..."
+          if [ -n "${{ fromJSON(steps.release.outputs.assets)[3].id }}" ] && [ -z "${{ fromJSON(steps.release.outputs.assets)[4].id }}" ];
+            then
+              echo "4 assets found!"
+            else
+              echo "::error::Incorrect number of assets! Potential errors in build."
+              echo assets: ${{ steps.release.outputs.assets }}
+              exit 1;
+            fi;
