@@ -33,6 +33,6 @@ You need Python >=3.10 to build and test TiLiA. You will also need to have ffmpe
 # Developing for TiLiA
 For a better development experience, we recommend the installation of a few more packages:
 ```
-pip install --group dev --group testing
+pip install --group dev
 pre-commit install
 ```
