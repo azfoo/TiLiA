@@ -12,6 +12,7 @@ description = "A GUI for creating and visualizing annotations over audio and vid
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
+    "chardet<6.0.0",
     "colorama~=0.4.6",
     "httpx~=0.28.1",
     "isodate~=0.7.2",
