@@ -62,6 +62,7 @@ ci-tests = [
 dev = [
     "icecream>=2.1.0",
     "pre-commit",
+    {include-group = "testing"},
 ]
 testing = [
     "pytest>=8.0.0",
