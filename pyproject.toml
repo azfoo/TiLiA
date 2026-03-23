@@ -59,6 +59,7 @@ ci-tests = [
     "coverage-badge>=1.0.0",
     "ruff>=0.15.0",
     "pytest-cov>=6.0.0",
+    "pytest-timeout",
 ]
 dev = [
     "icecream>=2.1.0",
@@ -92,6 +93,7 @@ env = [
     "ENVIRONMENT=test",
     "QT_QPA_PLATFORM=offscreen",
 ]
+timeout = 10
 
 [tool.ruff]
 exclude = ["tilia/dev"]
