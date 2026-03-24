@@ -9,6 +9,16 @@ def get_tilia_class_string(self: Any) -> str:
     return self.__class__.__name__ + "-" + str(id(self))
 
 
+def get_sibling_packages(m_name: str, m_file: str):
+    parent_path = Path(os.path.dirname(m_file)).parent
+    parent_package = ".".join(m_name.split(".")[:-2])
+    return [
+        ".".join([parent_package, d.name])
+        for d in parent_path.iterdir()
+        if d.is_dir() and d.name not in ["base", "collection", "__pycache__"]
+    ]
+
+
 def open_with_os(path: Path) -> None:
     if not os.path.exists(path):
         raise FileNotFoundError(f"File not found: {path}")

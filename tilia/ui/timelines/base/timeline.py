@@ -1,9 +1,7 @@
 from __future__ import annotations
 import functools
 import importlib
-import os
 from abc import ABC
-from pathlib import Path
 from typing import (
     Any,
     TYPE_CHECKING,
@@ -30,6 +28,7 @@ from tilia.ui.timelines.copy_paste import (
     get_copy_data_from_element,
 )
 from tilia.ui import commands
+from tilia.utils import get_sibling_packages
 from ..view import TimelineView
 from ...coords import time_x_converter
 from ...windows import WindowKind
@@ -118,12 +117,7 @@ class TimelineUI(ABC):
 
     @classmethod
     def ensure_subclasses_are_available(cls):
-        timelines_dir = Path(os.path.dirname(__file__)).parent
-        packages = [
-            "tilia.ui.timelines." + d.name
-            for d in timelines_dir.iterdir()
-            if d.is_dir() and d.name not in ["base", "__pycache__"]
-        ]
+        packages = get_sibling_packages(__name__, __file__)
         for pkg in packages:
             importlib.import_module(pkg)
 
