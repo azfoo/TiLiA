@@ -166,6 +166,23 @@ def _create_lib() -> Path:
     return lib / tilia
 
 
+def _get_implicit_imports():
+    from tilia.utils import get_sibling_packages
+
+    tls = [
+        tl + ".timeline"
+        for tl in get_sibling_packages(
+            "tilia.timelines.base.timeline",
+            (Path(__file__).parent.parent / "tilia/timelines/base/timeline").as_posix(),
+        )
+    ]
+    tluis = get_sibling_packages(
+        "tilia.ui.timelines.base.timeline",
+        (Path(__file__).parent.parent / "tilia/ui/timelines/base/timeline").as_posix(),
+    )
+    return tls + tluis
+
+
 def _update_yml():
     if not Path(pkg_cfg).exists():
         return
@@ -191,6 +208,7 @@ def _update_yml():
                 },
                 {"include-metadata": ["TiLiA"]},
             ],
+            "implicit-imports": [{"depends": _get_implicit_imports()}],
         }
     )
 
