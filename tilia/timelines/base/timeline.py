@@ -3,10 +3,8 @@ from __future__ import annotations
 import functools
 import bisect
 import importlib
-import os
 from abc import ABC
 from enum import Enum, auto
-from pathlib import Path
 from typing import Any, Callable, TYPE_CHECKING, TypeVar, Generic, Set
 
 from tilia.timelines import serialize
@@ -16,6 +14,7 @@ from tilia.exceptions import (
     SetTimelineDataError,
     GetTimelineDataError,
 )
+from tilia.utils import get_sibling_packages
 from .validators import (
     validate_string,
     validate_read_only,
@@ -137,15 +136,10 @@ class Timeline(ABC, Generic[TC]):
 
     @classmethod
     def ensure_subclasses_are_available(cls):
-        timelines_dir = Path(os.path.dirname(__file__)).parent
-        packages = [
-            "tilia.timelines." + d.name + ".timeline"
-            for d in timelines_dir.iterdir()
-            if d.is_dir() and d.name not in ["base", "__pycache__", "collection"]
-        ]
+        packages = get_sibling_packages(__name__, __file__)
         for pkg in packages:
             try:
-                importlib.import_module(pkg)
+                importlib.import_module(pkg + ".timeline")
             except ModuleNotFoundError:
                 print(f"Could not find timeline class in {pkg}.")
 
