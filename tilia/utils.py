@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from pkgutil import iter_modules
 from typing import Any
 
 
@@ -14,8 +15,8 @@ def get_sibling_packages(m_name: str, m_file: str):
     parent_package = ".".join(m_name.split(".")[:-2])
     return [
         ".".join([parent_package, d.name])
-        for d in parent_path.iterdir()
-        if d.is_dir() and d.name not in ["base", "collection", "__pycache__"]
+        for d in iter_modules([parent_path])
+        if d.ispkg and d.name not in ["base", "collection", "__pycache__"]
     ]
 
 
