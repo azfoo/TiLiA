@@ -56,7 +56,9 @@ class Player(ABC):
         return get_tilia_class_string(self)
 
     def _setup_commands(self):
-        commands.register("media.stop", self.stop, text="Stop", icon="stop15")
+        commands.register(
+            "media.stop", self.stop, text="Stop", icon="MediaPlaybackStop"
+        )
 
     def _setup_requests(self):
         LISTENS = {
