@@ -204,7 +204,6 @@ class TimelineUIs:
             functools.partial(self.on_timeline_paste_element, type="complete"),
             text="Pas&te complete",
             shortcut="Ctrl+Shift+V",
-            icon="paste_with_data30",
         )
 
         commands.register(
