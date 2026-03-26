@@ -4,10 +4,9 @@ from PySide6.QtWidgets import (
     QSlider,
     QToolBar,
 )
-from PySide6.QtGui import QIcon, QAction, QPixmap
+from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import Qt
 
-from tilia.dirs import IMG_DIR
 from tilia.ui import commands
 from tilia.ui.format import format_media_time
 from tilia.requests import Post, post, listen, stop_listening_to_all, get, Get
@@ -140,26 +139,24 @@ class PlayerToolbar(QToolBar):
 
     def add_play_toggle(self):
         def on_play_toggle(checked: bool) -> None:
+            self.play_toggle_action.setIcon(
+                QIcon.fromTheme(
+                    QIcon.ThemeIcon.MediaPlaybackPause
+                    if checked
+                    else QIcon.ThemeIcon.MediaPlaybackStart
+                )
+            )
             post(Post.PLAYER_TOGGLE_PLAY_PAUSE, checked)
 
-        play_toggle_icon = QIcon()
-        play_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "play15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.Off,
-        )
-        play_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "pause15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.On,
-        )
         self.play_toggle_action = QAction(self)
         self.play_toggle_action.setText("Play / Pause")
         self.play_toggle_action.triggered.connect(
             lambda checked: on_play_toggle(checked)
         )
         self.play_toggle_action.setCheckable(True)
-        self.play_toggle_action.setIcon(play_toggle_icon)
+        self.play_toggle_action.setIcon(
+            QIcon.fromTheme(QIcon.ThemeIcon.MediaPlaybackStart)
+        )
         self.play_toggle_action.setShortcut("Space")
         self.tooltipped_widgets[self.play_toggle_action] = "Play / Pause (Space)"
         self.addAction(self.play_toggle_action)
@@ -173,23 +170,14 @@ class PlayerToolbar(QToolBar):
         def on_loop_changed(checked: bool) -> None:
             post(Post.PLAYER_TOGGLE_LOOP, checked)
 
-        loop_toggle_icon = QIcon()
-        loop_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "loop15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.On,
-        )
-        loop_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "no_loop15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.Off,
-        )
         self.loop_toggle_action = QAction(self)
         self.loop_toggle_action.setText("Toggle Loop")
         self.loop_toggle_action.triggered.connect(
             lambda checked: on_loop_changed(checked)
         )
-        self.loop_toggle_action.setIcon(loop_toggle_icon)
+        self.loop_toggle_action.setIcon(
+            QIcon.fromTheme(QIcon.ThemeIcon.MediaPlaylistRepeat)
+        )
         self.loop_toggle_action.setCheckable(True)
         self.tooltipped_widgets[self.loop_toggle_action] = "Toggle Loop"
         self.addAction(self.loop_toggle_action)
@@ -201,26 +189,24 @@ class PlayerToolbar(QToolBar):
 
     def add_volume_toggle(self):
         def on_volume_toggle(checked: bool) -> None:
+            self.volume_toggle_action.setIcon(
+                QIcon.fromTheme(
+                    QIcon.ThemeIcon.AudioVolumeMuted
+                    if checked
+                    else QIcon.ThemeIcon.AudioVolumeHigh
+                )
+            )
             post(Post.PLAYER_VOLUME_MUTE, checked)
             self.volume_slider.setEnabled(not checked)
 
-        volume_toggle_icon = QIcon()
-        volume_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "mute15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.On,
-        )
-        volume_toggle_icon.addPixmap(
-            QPixmap(str(IMG_DIR / "unmute15.png")),
-            QIcon.Mode.Normal,
-            QIcon.State.Off,
-        )
         self.volume_toggle_action = QAction(self)
         self.volume_toggle_action.setText("Toggle Volume")
         self.volume_toggle_action.triggered.connect(
             lambda checked: on_volume_toggle(checked)
         )
-        self.volume_toggle_action.setIcon(volume_toggle_icon)
+        self.volume_toggle_action.setIcon(
+            QIcon.fromTheme(QIcon.ThemeIcon.AudioVolumeHigh)
+        )
         self.volume_toggle_action.setCheckable(True)
         self.tooltipped_widgets[self.volume_toggle_action] = "Mute / Unmute"
         self.addAction(self.volume_toggle_action)
