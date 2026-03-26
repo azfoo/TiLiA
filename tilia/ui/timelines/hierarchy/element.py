@@ -4,14 +4,13 @@ from enum import Enum
 from typing import Literal
 
 from PySide6.QtCore import Qt, QRectF, QPointF
-from PySide6.QtGui import QColor, QPen, QFont, QFontMetrics, QPixmap
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPen
 from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsRectItem,
     QGraphicsTextItem,
 )
 
-from tilia.dirs import IMG_DIR
 from .context_menu import HierarchyContextMenu
 from .handles import HierarchyBodyHandle, HierarchyFrameHandle
 from ..cursors import CursorMixIn
@@ -784,7 +783,6 @@ class HierarchyCommentsIcon(CursorMixIn, QGraphicsTextItem):
 
 
 class HierarchyLoopIcon(QGraphicsPixmapItem):
-    ICON = str(IMG_DIR / "loop15.png")
     TOP_MARGIN = 1
     LEFT_MARGIN = 3
 
@@ -795,7 +793,9 @@ class HierarchyLoopIcon(QGraphicsPixmapItem):
         level: int,
     ):
         super().__init__()
-        self.setPixmap(QPixmap(self.ICON))
+        self.setPixmap(
+            QIcon.fromTheme(QIcon.ThemeIcon.MediaPlaylistRepeat).pixmap(15, 15)
+        )
         self.set_position(start_x, tl_height, level)
 
     def get_point(self, start_x: float, tl_height, level):
