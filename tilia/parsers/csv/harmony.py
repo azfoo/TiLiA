@@ -57,7 +57,7 @@ def _get_component_params_from_text(
     return success, params
 
 
-HARMONY_INVALID_SYMBOL_ERROR = '"{} is not a valid symbol for a harmony. Must be a chord symbol or a roman numeral."'
+HARMONY_INVALID_SYMBOL_ERROR = '"{} is not a valid symbol for a harmony. Must be a letter symbol or a roman numeral."'
 MODE_INVALID_SYMBOL_ERROR = '"{} is not a valid symbol for a key."'
 
 

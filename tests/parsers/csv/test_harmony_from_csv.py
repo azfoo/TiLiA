@@ -128,7 +128,7 @@ class TestByTime:
             [
                 "time,harmony_or_key,symbol,display_mode",
                 "0,harmony,C",
-                "10,harmony,D,chord",
+                "10,harmony,D,letter",
             ]
         )
         success, errors = call_patched_import_by_time_func(harmony_tl, data)

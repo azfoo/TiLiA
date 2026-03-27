@@ -75,7 +75,7 @@ class Harmony(PointLikeTimelineComponent):
         inversion: int = 0,
         applied_to: int = 0,
         level: int = 1,
-        display_mode: Literal["chord", "roman", "custom"] = "chord",
+        display_mode: Literal["letter", "roman", "custom"] = "letter",
         custom_text: str = "",
         custom_text_font_type: Literal["analytic", "normal"] = "analytic",
         comments="",
@@ -170,7 +170,7 @@ def _get_music21_object_from_text(
     text = _replace_special_abbreviations(text)
     if text.startswith(tuple(NOTE_NAME_TO_INT)) and not prefixed_accidental:
         try:
-            return music21.harmony.ChordSymbol(text), "chord"
+            return music21.harmony.ChordSymbol(text), "letter"
         # This is a bare expect because I don't know
         # exactly what exceptions music21 can throw.
         except:  # noqa
@@ -178,8 +178,8 @@ def _get_music21_object_from_text(
     elif text.startswith(("I", "i", "V", "v")):
         try:
             roman_numeral = music21.roman.RomanNumeral(prefixed_accidental + text, key)
-            chord_common_name = music21.chord.Chord(roman_numeral.pitches).commonName
-            roman_numeral.chord_type = CHORD_COMMON_NAME_TO_TYPE[chord_common_name]
+            letter_common_name = music21.chord.Chord(roman_numeral.pitches).commonName
+            roman_numeral.letter_type = CHORD_COMMON_NAME_TO_TYPE[letter_common_name]
             return roman_numeral, "roman"
         except (ValueError, KeyError):
             pass
@@ -194,7 +194,7 @@ def _get_params_from_music21_object(
     accidental = int(obj.root().alter)
     inversion = obj.inversion() if obj.inversion() else 0
     if kind == "roman":
-        quality = obj.chord_type
+        quality = obj.impliedQuality
         applied_to = (
             ROMAN_TO_INT[obj.secondaryRomanNumeral.figure.upper()]
             if obj.secondaryRomanNumeral

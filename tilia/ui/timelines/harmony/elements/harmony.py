@@ -69,7 +69,7 @@ class HarmonyUI(TimelineUIElement):
         return self.timeline_ui.get_key_by_time(self.get_data("time"))
 
     @property
-    def chord_symbol(self):
+    def letter_symbol(self):
         symbol = music21.harmony.ChordSymbol(
             INT_TO_NOTE_NAME[self.get_data("step")]
             + Accidental.get_from_int(
@@ -88,13 +88,13 @@ class HarmonyUI(TimelineUIElement):
 
     @property
     def roman_numeral(self):
-        return self.chord_symbol.romanNumeral
+        return self.letter_symbol.romanNumeral
 
     @property
     def label(self):
         match self.get_data("display_mode"):
-            case "chord":
-                return self.chord_symbol_label
+            case "letter":
+                return self.letter_symbol_label
             case "roman":
                 return self.roman_numeral_label
             case "custom":
@@ -105,7 +105,7 @@ class HarmonyUI(TimelineUIElement):
     @property
     def alternate_label(self):
         return (
-            self.chord_symbol_label
+            self.letter_symbol_label
             if self.get_data("display_mode") == "roman"
             else self.roman_numeral_label
         )
@@ -122,8 +122,8 @@ class HarmonyUI(TimelineUIElement):
         )
 
     @property
-    def chord_symbol_label(self):
-        figure = self.chord_symbol.figure
+    def letter_symbol_label(self):
+        figure = self.letter_symbol.figure
         match self.get_data("quality"):
             case "Italian":
                 return "It6+"
