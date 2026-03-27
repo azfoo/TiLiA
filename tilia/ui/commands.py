@@ -81,7 +81,9 @@ def register(
         action.setShortcut(QKeySequence(shortcut))
 
     if icon:
-        if icon in QIcon.ThemeIcon._member_names_:
+        if QIcon.hasThemeIcon(icon):
+            action.setIcon(QIcon.fromTheme(icon))
+        elif icon in QIcon.ThemeIcon._member_names_:
             action.setIcon(QIcon.fromTheme(getattr(QIcon.ThemeIcon, icon)))
         else:
             action.setIcon(QIcon(str(get_img_path(icon))))

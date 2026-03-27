@@ -7,7 +7,14 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6 import QtGui
-from PySide6.QtCore import QKeyCombination, Qt, qInstallMessageHandler, QUrl, QtMsgType
+from PySide6.QtCore import (
+    QEvent,
+    QKeyCombination,
+    QUrl,
+    Qt,
+    QtMsgType,
+    qInstallMessageHandler,
+)
 from PySide6.QtGui import QIcon, QFontDatabase, QDesktopServices, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -65,11 +72,19 @@ from tilia.requests import Post, listen, post, serve, Get, get
 
 class TiliaMainWindow(QMainWindow):
     def __init__(self):
+        QIcon.setThemeSearchPaths([(Path(__file__).parent / "icons").as_posix()])
+        QIcon.setThemeName("tilia" + QApplication.styleHints().colorScheme().name)
         super().__init__()
         self.setWindowTitle(tilia.constants.APP_NAME)
         self.setWindowIcon(QIcon(str(IMG_DIR / "main_icon.png")))
         self.setStatusTip("Main window")
         qInstallMessageHandler(self.handle_qt_log_message)
+
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == event.Type.ThemeChange:
+            QIcon.setThemeName("tilia" + QApplication.styleHints().colorScheme().name)
+
+        return super().changeEvent(event)
 
     @staticmethod
     def handle_qt_log_message(type, _, msg):
