@@ -57,7 +57,7 @@ class BeatTimelineUI(TimelineUI):
             TimelineSelector.FIRST,
             text="Add beat at current position",
             shortcut="b",
-            icon="beat_add",
+            icon="beat-add",
         )
 
         cls.register_timeline_command(
@@ -66,7 +66,7 @@ class BeatTimelineUI(TimelineUI):
             cls.on_set_measure_number,
             TimelineSelector.SELECTED,
             text="Set measure number",
-            icon="beat_set_number",
+            icon="beat-number-set",
         )
 
         cls.register_timeline_command(
@@ -75,7 +75,7 @@ class BeatTimelineUI(TimelineUI):
             cls.on_reset_measure_number,
             TimelineSelector.SELECTED,
             text="Reset measure number",
-            icon="beat_reset_number",
+            icon="beat-number-reset",
         )
 
         cls.register_timeline_command(
@@ -84,7 +84,7 @@ class BeatTimelineUI(TimelineUI):
             cls.on_distribute,
             TimelineSelector.SELECTED,
             text="Distribute",
-            icon="beat_distribute",
+            icon="beat-distribute",
         )
 
         cls.register_timeline_command(
