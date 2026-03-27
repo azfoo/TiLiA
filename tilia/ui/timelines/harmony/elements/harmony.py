@@ -289,13 +289,12 @@ class HarmonyBody(QGraphicsTextItem):
 
     @staticmethod
     def get_font(font_type):
-        return QFont("MusAnalysis" if font_type == "analytic" else "Georgia", 10)
+        return QFont("MusAnalysis" if font_type == "analytic" else "Arial", 10)
 
     def get_point(self, x: float, y: float):
         return QPointF(
             x - self.boundingRect().width() / 2,
-            y
-            + (self.REGULAR_FONT_Y_OFFSET if self.font().family() == "Georgia" else 0),
+            y + (self.REGULAR_FONT_Y_OFFSET if self.font().family() == "Arial" else 0),
         )
 
     def set_position(self, x, y):
