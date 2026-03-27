@@ -57,7 +57,7 @@ class MarkerTimelineUI(TimelineUI):
             TimelineSelector.FIRST,
             text="Add marker at current position",
             shortcut="m",
-            icon="add_marker30",
+            icon="marker-add",
         )
 
     def on_add(self, time: float | None = None):

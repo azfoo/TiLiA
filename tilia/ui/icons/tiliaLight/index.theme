@@ -1,0 +1,11 @@
+[Icon Theme]
+Name=Light
+Comment=Light theme
+Directories=actions/256
+
+[actions/256]
+Size=256
+Type=Scalable
+MinSize=1
+MaxSize=256
+Context=Actions
