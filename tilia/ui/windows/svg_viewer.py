@@ -11,7 +11,7 @@ from PySide6.QtCore import (
     QKeyCombination,
     QPointF,
 )
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
 from PySide6.QtWidgets import (
     QFrame,
@@ -594,6 +594,7 @@ class SvgGraphicsView(QGraphicsView):
         self.setFrameShadow(QFrame.Shadow.Sunken)
         self.setFrameShape(QFrame.Shape.Panel)
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
+        self.setBackgroundBrush(QColor("white"))
         self.get_times = get_times
         self.current_viewport_x = {0: 0.0, 1: 0.0}
         self.current_viewport_y_center = 0.0
