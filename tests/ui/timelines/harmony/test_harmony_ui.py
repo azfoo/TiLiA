@@ -58,7 +58,7 @@ class TestCopyPaste:
             "applied_to": 4,
             "inversion": 1,
             "comments": "some comments",
-            "display_mode": "chord",
+            "display_mode": "letter",
             "custom_text": "some custom text",
         }
         _, copied_hui = tlui.create_harmony(0, **attributes_to_copy)
@@ -90,7 +90,7 @@ class TestCopyPaste:
             "applied_to": 4,
             "inversion": 1,
             "comments": "some comments",
-            "display_mode": "chord",
+            "display_mode": "letter",
             "custom_text": "some custom text",
         }
         for i in range(3):
