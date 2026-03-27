@@ -112,7 +112,7 @@ class PdfTimelineUI(TimelineUI):
             TimelineSelector.FIRST,
             text="Add PDF marker",
             shortcut="p",
-            icon="pdf_add",
+            icon="pdf-add",
         )
 
     def on_add(self, time: float | None = None, page_number: int | None = None):

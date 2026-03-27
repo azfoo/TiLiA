@@ -39,24 +39,24 @@ class HarmonyTimelineUI(TimelineUI):
     @classmethod
     def register_commands(cls, collection: TimelineUIs):
         args = [
-            ("add_harmony", "Add harmony", "h", "harmony_add", TimelineSelector.FIRST),
+            ("add_harmony", "Add harmony", "h", "harmony-add", TimelineSelector.FIRST),
             (
                 "component.display_as_chord",
                 "Display as chord symbol",
                 "",
-                "harmony_display_chord",
+                "harmony-display-letter",
                 TimelineSelector.SELECTED,
             ),
             (
                 "component.display_as_roman",
                 "Display as roman numeral",
                 "",
-                "harmony_display_roman",
+                "harmony-display-roman",
                 TimelineSelector.SELECTED,
             ),
             ("hide_keys", "Hide keys", "", "", TimelineSelector.FIRST),
             ("show_keys", "Show keys", "", "", TimelineSelector.FIRST),
-            ("add_mode", "Add mode", "", "mode_add", TimelineSelector.FIRST),
+            ("add_mode", "Add mode", "", "mode-add", TimelineSelector.FIRST),
         ]
 
         for name, text, shortcut, icon, selector in args:
