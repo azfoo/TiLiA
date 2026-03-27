@@ -23,7 +23,7 @@ Here are some examples of TiLiA visualizations:
 - 7 kinds of timelines
     - AudioWave: visualize audio files through bars that represent changes in amplitude
     - Beat: beat and measure markers with support for numbering
-    - Harmony: Roman numeral and chord symbol labels using a specialized font, including proper display of inversion numerals, quality symbols and applied chords
+    - Harmony: Roman numeral and letter symbol labels using a specialized font, including proper display of inversion numerals, quality symbols and applied chords
     - Hierarchy: nested and levelled units organized in arbitrarily complex hierarchical structures
     - Marker: simple, labelled markers to indicate discrete events
     - PDF: visualize PDF files synced to playback

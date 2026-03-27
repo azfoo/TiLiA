@@ -8,5 +8,5 @@ class HarmonyTimelineToolbar(TimelineToolbar):
         "timeline.harmony.add_harmony",
         "timeline.harmony.add_mode",
         "timeline.harmony.component.display_as_roman",
-        "timeline.harmony.component.display_as_chord",
+        "timeline.harmony.component.display_as_letter",
     ]

@@ -41,8 +41,8 @@ class HarmonyTimelineUI(TimelineUI):
         args = [
             ("add_harmony", "Add harmony", "h", "harmony-add", TimelineSelector.FIRST),
             (
-                "component.display_as_chord",
-                "Display as chord symbol",
+                "component.display_as_letter",
+                "Display as letter",
                 "",
                 "harmony-display-letter",
                 TimelineSelector.SELECTED,
@@ -274,9 +274,9 @@ class HarmonyTimelineUI(TimelineUI):
         return True
 
     @with_elements
-    def on_component_display_as_chord(self, elements: list[ModeUI | HarmonyUI]):
+    def on_component_display_as_letter(self, elements: list[ModeUI | HarmonyUI]):
         harmonies = [elm for elm in elements if isinstance(elm, HarmonyUI)]
-        self.set_elements_attr(harmonies, "display_mode", "chord")
+        self.set_elements_attr(harmonies, "display_mode", "letter")
         return True
 
     @with_elements

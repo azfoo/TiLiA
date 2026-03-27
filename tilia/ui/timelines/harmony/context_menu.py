@@ -27,7 +27,7 @@ class HarmonyContextMenu(TimelineUIElementContextMenu):
         (MenuItemKind.COMMAND, "timeline.component.paste"),
         (MenuItemKind.SEPARATOR, None),
         (MenuItemKind.COMMAND, "timeline.harmony.component.display_as_roman"),
-        (MenuItemKind.COMMAND, "timeline.harmony.component.display_as_chord"),
+        (MenuItemKind.COMMAND, "timeline.harmony.component.display_as_letter"),
         (MenuItemKind.SEPARATOR, None),
         (MenuItemKind.COMMAND, "timeline.component.delete"),
     ]
