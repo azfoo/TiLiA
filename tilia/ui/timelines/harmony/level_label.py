@@ -16,7 +16,7 @@ class LevelLabel(QGraphicsTextItem):
         self.set_position(x, y)
 
     def _setup_font(self):
-        font = QFont("Liberation Sans", 9)
+        font = QFont("Arial", 9)
         self.setFont(font)
         self.setDefaultTextColor(QColor("gray"))
 

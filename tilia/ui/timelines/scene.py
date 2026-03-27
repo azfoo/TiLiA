@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsRectItem
-from PySide6.QtGui import QColor, QPen, QBrush, QFont, QFontMetrics
+from PySide6.QtGui import QColor, QPen, QBrush, QFontMetrics
 
 from tilia.settings import settings
 from tilia.requests import Get, get, listen, Post
@@ -31,13 +31,12 @@ class TimelineScene(QGraphicsScene):
         )
 
     def _setup_text(self, text: str):
-        self.font = QFont()
-        self.text = self.addText(self._get_elided_text(text), self.font)
+        self.text = self.addText(self._get_elided_text(text), self.font())
         self.text.setDefaultTextColor(QColor("black"))
         self.text.setPos(*self.text_pos)
 
     def _get_elided_text(self, text: str):
-        return QFontMetrics(self.font).elidedText(
+        return QFontMetrics(self.font()).elidedText(
             text,
             Qt.TextElideMode.ElideRight,
             get(Get.LEFT_MARGIN_X) - self.LABEL_Y_MARGIN - 10,
