@@ -100,7 +100,7 @@ class App:
         )
 
         commands.register(
-            "open_autosaves_folder",
+            "folder.open.autosaves",
             tilia.dirs.open_autosaves_dir,
             "Open autosa&ves folder...",
         ),
