@@ -20,9 +20,9 @@ Usage:
     commands.register(
         'example.command',
         callback_function,
-        text='Menu Text',  # Optional: for display in Qt interface
-        shortcut='Ctrl+E',  # Optional: keyboard shortcut
-        icon='example_icon'   # Optional: icon name in IMG_DIR (without extension)
+        text='Menu Text',       # Optional: for display in Qt interface
+        shortcut='Ctrl+E',      # Optional: keyboard shortcut
+        icon='example_icon'     # Optional: icon name in icon directory (without extension)
     )
 
     # Execute a command
@@ -35,7 +35,6 @@ import traceback
 from typing import Callable
 
 import tilia.errors
-from tilia.dirs import IMG_DIR
 
 from PySide6.QtWidgets import QMainWindow, QWidget
 from PySide6.QtGui import QAction, QKeySequence, QIcon
@@ -51,10 +50,6 @@ class CommandQAction(QAction):
     def __init__(self, command_name: str, parent: QMainWindow | QWidget | None):
         super().__init__(parent)
         self.command_name = command_name
-
-
-def get_img_path(basename: str):
-    return IMG_DIR / f"{basename}.png"
 
 
 def register(
@@ -85,8 +80,6 @@ def register(
             action.setIcon(QIcon.fromTheme(icon))
         elif icon in QIcon.ThemeIcon._member_names_:
             action.setIcon(QIcon.fromTheme(getattr(QIcon.ThemeIcon, icon)))
-        else:
-            action.setIcon(QIcon(str(get_img_path(icon))))
     action.setIconVisibleInMenu(False)
 
     if callback:
