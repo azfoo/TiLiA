@@ -22,7 +22,7 @@ Usage:
         callback_function,
         text='Menu Text',       # Optional: for display in Qt interface
         shortcut='Ctrl+E',      # Optional: keyboard shortcut
-        icon='example_icon'     # Optional: icon name in icon directory (without extension)
+        icon='example_icon'     # Optional: icon name in icon directory (without extension); see ./icons/README.md
     )
 
     # Execute a command
