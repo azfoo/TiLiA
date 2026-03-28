@@ -111,7 +111,7 @@ class FileMenu(TiliaMenu):
         (MenuItemKind.SUBMENU, LoadMediaMenu),
         (MenuItemKind.COMMAND, "window.open.metadata"),
         (MenuItemKind.SEPARATOR, None),
-        (MenuItemKind.COMMAND, "open_autosaves_folder"),
+        (MenuItemKind.COMMAND, "folder.open.autosaves"),
     ]
 
 
