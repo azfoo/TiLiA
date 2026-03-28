@@ -1,0 +1,18 @@
+[Icon Theme]
+Name=hicolor
+Comment=where theme-independent icons live
+Directories=actions/256,apps/256
+
+[actions/256]
+Size=256
+Type=Scalable
+MinSize=1
+MaxSize=256
+Context=Actions
+
+[apps/256]
+Size=256
+Type=Scalable
+MinSize=1
+MaxSize=2048
+Context=Applications
