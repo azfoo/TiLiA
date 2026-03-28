@@ -1,11 +1,9 @@
 import math
-from pathlib import Path
 
 from PySide6.QtWidgets import (
     QGraphicsItem,
 )
 
-from tilia.dirs import IMG_DIR
 from tilia.requests import Post, post
 from tilia.timelines.score.components.note import pitch
 from tilia.ui.timelines.score import attrs
@@ -116,7 +114,7 @@ class NoteUI(TimelineUIElement):
             self.accidental = NoteAccidental(
                 *self.get_accidental_position(accidental_number, scale_factor),
                 self.get_accidental_height(accidental_number, scale_factor),
-                self.get_accidental_icon_path(accidental_number),
+                self.get_accidental_icon_name(accidental_number),
             )
             self.scene.addItem(self.accidental)
         else:
@@ -202,7 +200,7 @@ class NoteUI(TimelineUIElement):
         )
 
     @staticmethod
-    def get_accidental_icon_path(accidental: int) -> Path:
+    def get_accidental_icon_name(accidental: int) -> str:
         file_name = {
             -2: "double-flat",
             -1: "flat",
@@ -210,7 +208,7 @@ class NoteUI(TimelineUIElement):
             1: "sharp",
             2: "double-sharp",
         }[accidental]
-        return IMG_DIR / f"accidental-{file_name}.svg"
+        return f"accidental-{file_name}"
 
     def get_accidental_position(
         self, accidental: int, scale_factor: float

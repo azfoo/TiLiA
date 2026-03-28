@@ -25,10 +25,10 @@ class Clef(PointLikeTimelineComponent):
 
     KIND = ComponentKind.CLEF
     ICON = {
-        "C": "clef-alto.svg",
-        "F": "clef-bass.svg",
-        "G": "clef-treble.svg",
-        "G-8": "clef-treble-8vb.svg",
+        "C": "clef-alto",
+        "F": "clef-bass",
+        "G": "clef-treble",
+        "G-8": "clef-treble-8vb",
     }
 
     validators = {
@@ -65,6 +65,10 @@ class Clef(PointLikeTimelineComponent):
             self.line_number = line_number
             self.step = step
             self.octave = octave
+            if icon:
+                icon = icon.removesuffix(".svg")
+                if icon not in self.ICON.values():
+                    icon = "clef-unknown"
             self.icon = icon
 
         super().__init__(timeline, id)
@@ -85,22 +89,22 @@ class Clef(PointLikeTimelineComponent):
             self.line_number = 1
             self.step = 3
             self.octave = 3
-            self.icon = "clef-bass.svg"
+            self.icon = "clef-bass"
         elif shorthand == Clef.Shorthand.TREBLE:
             self.line_number = -1
             self.step = 4
             self.octave = 4
-            self.icon = "clef-treble.svg"
+            self.icon = "clef-treble"
         elif shorthand == Clef.Shorthand.TREBLE_8VB:
             self.line_number = -1
             self.step = 4
             self.octave = 3
-            self.icon = "clef-treble-8vb.svg"
+            self.icon = "clef-treble-8vb"
         elif shorthand == Clef.Shorthand.ALTO:
             self.line_number = 0
             self.step = 0
             self.octave = 4
-            self.icon = "clef-alto.svg"
+            self.icon = "clef-alto"
         else:
             raise ValueError(f"Invalid shorthand: {shorthand}")
 

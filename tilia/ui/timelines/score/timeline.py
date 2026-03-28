@@ -4,10 +4,9 @@ import math
 from typing import Callable, Any, Iterable
 
 from PySide6.QtCore import Qt, QRectF, QPointF
-from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtGui import QIcon, QColor
 from PySide6.QtWidgets import QGraphicsRectItem
 
-from tilia.dirs import IMG_DIR
 import tilia.errors
 from tilia.exceptions import GetComponentDataError, NoReplyToRequest
 from tilia.requests import Get, get, listen, Post, post
@@ -86,7 +85,8 @@ class ScoreTimelineUI(TimelineUI):
     def _setup_pixmaps(self):
         self.pixmaps = {
             "time signature": {
-                n: QPixmap(self.get_time_signature_pixmap_path(n)) for n in range(10)
+                n: QIcon.fromTheme(self.get_time_signature_icon_name(n)).pixmap(48, 48)
+                for n in range(10)
             },
         }
 
@@ -102,8 +102,8 @@ class ScoreTimelineUI(TimelineUI):
             return viewer
 
     @staticmethod
-    def get_time_signature_pixmap_path(n: int) -> str:
-        return str((IMG_DIR / f"time-signature-{n}.svg").resolve())
+    def get_time_signature_icon_name(n: int) -> str:
+        return f"time-signature-{n}"
 
     def on_settings_updated(self, updated_settings):
         if "score_timeline" in updated_settings:
