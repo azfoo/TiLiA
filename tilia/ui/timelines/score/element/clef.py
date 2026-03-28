@@ -1,10 +1,7 @@
-from pathlib import Path
-
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from tilia.dirs import IMG_DIR
 from tilia.timelines.score.components import Clef
 from tilia.ui.timelines.score.element.with_collision import (
     TimelineUIElementWithCollision,
@@ -17,10 +14,10 @@ class ClefUI(TimelineUIElementWithCollision):
         self._setup_body()
 
     @property
-    def icon_path(self):
+    def icon_name(self) -> str:
         if not self.get_data("icon"):
-            return IMG_DIR / "clef-unknown.svg"
-        return IMG_DIR / self.get_data("icon")
+            "clef-unknown"
+        return self.get_data("icon")
 
     def _setup_body(self):
         self.body = ClefBody(
@@ -29,12 +26,12 @@ class ClefUI(TimelineUIElementWithCollision):
                 self.get_data("staff_index")
             ),
             self.height(),
-            self.icon_path,
+            self.icon_name,
         )
         self.body.moveBy(self.x_offset, 0)
         self.scene.addItem(self.body)
 
-    def height(self) -> float:
+    def height(self) -> int:
         return self.timeline_ui.get_height_for_symbols_above_staff()
 
     def child_items(self):
@@ -69,17 +66,17 @@ class ClefUI(TimelineUIElementWithCollision):
 
 
 class ClefBody(QGraphicsPixmapItem):
-    def __init__(self, x: float, y: float, height: float, path: Path):
+    def __init__(self, x: float, y: float, height: int, icon_name: str):
         super().__init__()
-        self.set_icon(str(path.resolve()))
+        self.set_icon(icon_name)
         self.set_height(height)
         self.set_position(x, y)
 
-    def set_icon(self, path: str):
-        self._pixmap = QPixmap(path)
-        self.setPixmap(QPixmap(path))
+    def set_icon(self, icon_name: str):
+        self._pixmap = QIcon.fromTheme(icon_name).pixmap(48, 48)
+        self.setPixmap(self._pixmap)
 
-    def set_height(self, height: float):
+    def set_height(self, height: int):
         self.setPixmap(
             self._pixmap.scaledToHeight(
                 height, mode=Qt.TransformationMode.SmoothTransformation
