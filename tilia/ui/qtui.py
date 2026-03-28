@@ -59,7 +59,6 @@ from .windows.about import About
 from .windows.inspect import Inspect
 from .windows.settings import SettingsWindow
 from .windows.kinds import WindowKind
-from ..dirs import IMG_DIR
 from ..media.player import QtVideoPlayer, QtAudioPlayer, YouTubePlayer
 from tilia import constants
 from tilia.log import logger
@@ -75,7 +74,7 @@ class TiliaMainWindow(QMainWindow):
         QIcon.setThemeName("tilia" + QApplication.styleHints().colorScheme().name)
         super().__init__()
         self.setWindowTitle(tilia.constants.APP_NAME)
-        self.setWindowIcon(QIcon(str(IMG_DIR / "main_icon.png")))
+        self.setWindowIcon(QIcon.fromTheme("tilia"))
         self.setStatusTip("Main window")
         qInstallMessageHandler(self.handle_qt_log_message)
 

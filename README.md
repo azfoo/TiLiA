@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://tilia-app.com/">
-    <img src="docs/img/logo.png" alt="drawing" width="100" >
+    <img src="tilia/ui/icons/hicolor/apps/256/tilia.svg" alt="drawing" width="100" >
   </a>
 </p>
 TiLiA (TimeLine Annotator) is a GUI for producing and displaying complex annotations with video and audio files. It is a full-featured, easy-to-use set of tools for researchers and enthusiasts to better analyze their media of interest without needing to rely on textual representations (like music scores). It is written in Python, using the PySide library for its GUI.

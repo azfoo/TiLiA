@@ -100,21 +100,21 @@ def _get_exe_cmd() -> list[str]:
     name = options.get("project", {}).get("name", "TiLiA")
     version = options.get("project", {}).get("version", "0")
     _set_out_filename(name, version)
-    icon_path = Path(__file__).parents[1] / "tilia" / "ui" / "img" / "main_icon.ico"
+    icon_path = Path(__file__).parents[1] / "docs" / "img" / "main_icon.ico"
     exe_args = [
         sys.executable,
         "-m",
         "nuitka",
-        f"--output-dir={outdir}/exe",
+        f"--output-dir={(outdir / 'exe').as_posix()}",
         f"--product-name={name}",
         f"--file-version={version}",
         f"--output-filename={out_filename}",
-        f"--macos-app-icon={icon_path}",
+        f"--macos-app-icon={icon_path.as_posix()}",
         "--macos-app-mode=gui",
         f"--macos-app-version={version}",
         "--windows-console-mode=attach",
-        f"--windows-icon-from-ico={icon_path}",
-        f"--linux-icon={icon_path}",
+        f"--windows-icon-from-ico={icon_path.as_posix()}",
+        f"--linux-icon={icon_path.as_posix()}",
     ]
 
     return exe_args
