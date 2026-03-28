@@ -119,10 +119,12 @@ tilia = [
     "../.tilia.env",
     "../tilia.nuitka-package.config.yml", # because we build from sdist
     "../LICENSE",
-    "ui/img/*",
-    "ui/fonts/*",
     "media/player/youtube.html",
     "media/player/youtube.css",
     "parsers/score/svg_maker.html",
     "parsers/score/timewise_to_partwise.xsl",
+    "ui/fonts/*",
+    "ui/icons/*/index.theme",
+    "ui/icons/*/actions/256/*",
+    "ui/icons/*/apps/256/*",
 ]
