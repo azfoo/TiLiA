@@ -15,7 +15,7 @@ def get_sibling_packages(m_name: str, m_file: str):
     parent_package = ".".join(m_name.split(".")[:-2])
     return [
         ".".join([parent_package, d.name])
-        for d in iter_modules([parent_path])
+        for d in iter_modules([parent_path.as_posix()])
         if d.ispkg and d.name not in ["base", "collection", "__pycache__"]
     ]
 
