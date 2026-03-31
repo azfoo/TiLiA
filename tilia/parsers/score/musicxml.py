@@ -190,9 +190,14 @@ def notes_from_musicXML(
                     measure_nums = list(metric_pos_to_attr[staff_no][attr_type].keys())
                     current_mp_index = bisect(measure_nums, measure)
                     if current_mp_index == 0:
-                        errors.append(
-                            f"Cannot create {attr_type} for measure {measure}. {measure} is smaller than the smallest measure found in the provided file {measure_nums[0]}."
-                        )
+                        if len(measure_nums):
+                            errors.append(
+                                f"Cannot create {attr_type} for measure {measure}. {measure} is smaller than the smallest measure found in the provided file {measure_nums[0]}."
+                            )
+                        else:
+                            errors.append(
+                                f"No {attr_type} found for measure {measure} of staff {staff_no} of part {part_id}."
+                            )
                         continue
                     if measure_nums[current_mp_index - 1] == measure:
                         continue
