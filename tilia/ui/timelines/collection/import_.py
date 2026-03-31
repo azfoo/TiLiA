@@ -100,7 +100,7 @@ def _get_by_time_or_by_measure_from_user():
 def _validate_timeline_kind_on_import(timeline_uis: TimelineUIs, tlkind: TlKind):
     if not timeline_uis.get_timeline_uis_by_attr("TIMELINE_KIND", tlkind):
         tilia.errors.display(
-            tilia.errors.CSV_IMPORT_FAILED,
+            tilia.errors.IMPORT_FAILED,
             f"No timelines of type '{tlkind}' found.",
         )
         return False
@@ -110,7 +110,7 @@ def _validate_timeline_kind_on_import(timeline_uis: TimelineUIs, tlkind: TlKind)
 def _confirm_timeline_overwrite_on_import():
     return get(
         Get.FROM_USER_YES_OR_NO,
-        "Import from CSV",
+        "Import",
         "Selected timeline is not empty. Existing components will be deleted when importing. Are you sure you want to continue?",
     )
 
@@ -134,6 +134,6 @@ def _get_beat_timeline_ui_for_import_from_csv(timeline_uis: TimelineUIs):
 def _display_import_from_csv_errors(success: bool, errors: list[str]):
     errors_str = "\n".join(errors)
     if success:
-        tilia.errors.display(tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, errors_str)
+        tilia.errors.display(tilia.errors.IMPORT_SUCCESS_ERRORS, errors_str)
     else:
-        tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, errors_str)
+        tilia.errors.display(tilia.errors.IMPORT_FAILED, errors_str)

@@ -1320,11 +1320,9 @@ class TimelineUIs:
         if not success:
             post(Post.APP_STATE_RESTORE, prev_state)
             if errors:
-                tilia.errors.display(tilia.errors.CSV_IMPORT_FAILED, "\n".join(errors))
+                tilia.errors.display(tilia.errors.IMPORT_FAILED, "\n".join(errors))
         elif success and errors:
-            tilia.errors.display(
-                tilia.errors.CSV_IMPORT_SUCCESS_ERRORS, "\n".join(errors)
-            )
+            tilia.errors.display(tilia.errors.IMPORT_SUCCESS_ERRORS, "\n".join(errors))
 
         return success
 
