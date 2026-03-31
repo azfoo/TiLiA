@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Optional, Tuple, Literal
+from typing import Optional, Tuple, Literal, cast
 
-from tilia.parsers import csv, score
+from tilia.parsers.csv import marker, hierarchy, beat
+from tilia.parsers.score import musicxml
 from tilia.requests import get, Get, post, Post
 from tilia.timelines.base.timeline import Timeline
 from tilia.timelines.beat.timeline import BeatTimeline
@@ -114,8 +115,8 @@ def setup_import_file_and_target_args(subparser):
 def validate_timelines_for_import(
     tl: Timeline,
     ref_tl: Optional[Timeline],
-    kind_str: Literal["marker", "hierarchy"],
-    by: Literal["by-measure", "by-time"],
+    kind_str: Literal["beat", "hierarchy", "marker", "score"],
+    by: Optional[Literal["by-measure", "by-time"]],
 ) -> Tuple[bool, str]:
     success = True
     error_message = ""
@@ -180,8 +181,6 @@ def import_timeline(namespace):
         )
         return
 
-    ref_tl: BeatTimeline | None
-
     if measure_or_time and measure_or_time not in ["by-measure", "by-time"]:
         raise ValueError(
             f"Unknown value: {measure_or_time}. Should be 'by-measure' or 'by-time'"
@@ -193,26 +192,24 @@ def import_timeline(namespace):
 
     errors = None
     if tl_kind == "marker":
-        tl: MarkerTimeline
+        tl = cast(MarkerTimeline, tl)
         if measure_or_time == "by-measure":
-            success, errors = csv.marker.import_by_measure(tl, ref_tl, file)
+            success, errors = marker.import_by_measure(tl, ref_tl, file)
         else:
-            success, errors = csv.marker.import_by_time(tl, file)
+            success, errors = marker.import_by_time(tl, file)
     elif tl_kind == "hierarchy":
-        tl: HierarchyTimeline
+        tl = cast(HierarchyTimeline, tl)
         if measure_or_time == "by-measure":
-            success, errors = csv.hierarchy.import_by_measure(tl, ref_tl, file)
+            success, errors = hierarchy.import_by_measure(tl, ref_tl, file)
         else:
-            success, errors = csv.hierarchy.import_by_time(tl, file)
+            success, errors = hierarchy.import_by_time(tl, file)
     elif tl_kind == "beat":
-        tl: BeatTimeline
-        success, errors = csv.beat.beats_from_csv(tl, file)
+        tl = cast(BeatTimeline, tl)
+        success, errors = beat.beats_from_csv(tl, file)
 
     elif tl_kind == "score":
-        tl: ScoreTimeline
-        success, errors = score.musicxml.notes_from_musicXML(
-            tl, ref_tl, str(file.resolve())
-        )
+        tl = cast(ScoreTimeline, tl)
+        success, errors = musicxml.notes_from_musicXML(tl, ref_tl, str(file.resolve()))
     else:
         raise ValueError(f"Unknown timeline kind: {tl_kind}")
 
@@ -227,20 +224,22 @@ def import_timeline(namespace):
 def get_timelines_for_import(
     target_ordinal: int,
     target_name: str,
-    reference_ordinal: int | None,
-    reference_name: str | None,
-    measure_or_time: Literal["by-measure", "by-time"],
-) -> Tuple[Timeline, Timeline | None]:
+    reference_ordinal: Optional[int],
+    reference_name: Optional[str],
+    measure_or_time: Optional[Literal["by-measure", "by-time"]],
+) -> Tuple[Timeline, Optional[BeatTimeline]]:
     target_tl = get_timeline_for_import(target_ordinal, target_name)
 
     if measure_or_time == "by-measure":
-        reference_tl = get_timeline_for_import(reference_ordinal, reference_name)
+        reference_tl = cast(
+            BeatTimeline, get_timeline_for_import(reference_ordinal, reference_name)
+        )
         return target_tl, reference_tl
     else:
         return target_tl, None
 
 
-def get_timeline_for_import(ordinal: int, name: str) -> Timeline:
+def get_timeline_for_import(ordinal: Optional[int], name: Optional[str]) -> Timeline:
     if ordinal is not None:
         tl = get(Get.TIMELINE_BY_ATTR, "ordinal", ordinal)
         if not tl:
