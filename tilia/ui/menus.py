@@ -138,7 +138,9 @@ class AddTimelinesMenu(TiliaMenu):
             for kind in TimelineKind
             if kind != TimelineKind.SLIDER_TIMELINE
         ]
-        self.items = [(MenuItemKind.COMMAND, command) for command in commands]
+        self.items = [
+            (MenuItemKind.COMMAND, command) for command in commands.__reversed__()
+        ]
         super().__init__()
 
 
