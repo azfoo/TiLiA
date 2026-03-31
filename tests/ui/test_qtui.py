@@ -54,7 +54,7 @@ class TestImport:
             post(Post.IMPORT_CSV, TimelineKind.MARKER_TIMELINE)
 
         tilia_errors.assert_error()
-        tilia_errors.assert_in_error_title("import")
+        tilia_errors.assert_in_error_title("Import")
         tilia_errors.assert_in_error_message("CSV")
 
     def test_raises_error_if_invalid_musicXML(
@@ -70,7 +70,7 @@ class TestImport:
             post(Post.IMPORT_MUSICXML)
 
         tilia_errors.assert_error()
-        tilia_errors.assert_in_error_title("import")
+        tilia_errors.assert_in_error_title("Import")
         tilia_errors.assert_in_error_message("musicXML")
 
 
