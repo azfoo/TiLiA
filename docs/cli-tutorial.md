@@ -137,12 +137,12 @@ timelines move ordinal 4 2
 ```
 
 Remove a timeline we don't need anymore:
-```
+``` bash
 timelines remove name "Themes"
 ```
 
 Check the final arrangement:
-```
+``` bash
 timelines list
 
 # Output
