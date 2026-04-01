@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import prettytable
 from colorama import Fore
+import os
 
 
 def output(message: str, color: Fore = None) -> None:
@@ -13,11 +14,13 @@ def output(message: str, color: Fore = None) -> None:
     print(message + Fore.RESET)
 
 
-def tabulate(headers: list[str], data: list[tuple[str, ...]]) -> None:
+def tabulate(headers: list[str], data: list[tuple[str, ...]], **kwargs) -> None:
     """
     Outputs table to user using PrettyTable.
     """
-    table = prettytable.PrettyTable()
+    table = prettytable.PrettyTable(
+        max_table_width=min(os.get_terminal_size().columns, 88), **kwargs
+    )
     table.field_names = headers
     table.add_rows(data)
     output(str(table))
