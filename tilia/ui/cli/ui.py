@@ -26,9 +26,8 @@ from tilia.ui.cli import (
     export,
     clear,
 )
-from tilia.ui.cli.io import ask_yes_or_no
+from tilia.ui.cli.io import ask_yes_or_no, tabulate
 from tilia.ui.cli.player import CLIVideoPlayer, CLIYoutubePlayer
-from tilia.constants import VERSION
 
 
 class CLI:
@@ -90,8 +89,12 @@ class CLI:
         """
         Launches the CLI.
         """
-        print(f"--- TiLiA v{VERSION} CLI ---")
-        print(tilia.constants.NOTICE)
+        tabulate(
+            [f"--- {tilia.constants.APP_NAME} v{tilia.constants.VERSION} CLI ---"],
+            [[tilia.constants.NOTICE]],
+            align="l",
+            border=False,
+        )
         while True:
             cmd = input(">>> ")
             self.parse_and_run(cmd)
