@@ -39,7 +39,7 @@ class CLI:
         self.subparsers = self.parser.add_subparsers(dest="command")
         self.setup_parsers()
         self.exception = None
-
+        self._save_verbosity()
         listen(
             self, Post.DISPLAY_ERROR, self.on_request_to_display_error
         )  # ignores error title
@@ -47,6 +47,10 @@ class CLI:
         serve(self, Get.PLAYER_CLASS, self.get_player_class)
         serve(self, Get.FROM_USER_YES_OR_NO, on_ask_yes_or_no)
         serve(self, Get.FROM_USER_SHOULD_SAVE_CHANGES, on_ask_should_save_changes)
+
+    def _save_verbosity(self):
+        self._initial_verbosity = settings.get("dev", "log_requests")
+        _set_verbosity(False)
 
     def setup_parsers(self):
         clear.setup_parser(self.subparsers)
@@ -164,8 +168,8 @@ class CLI:
     def show_crash_dialog(exc_message) -> None:
         post(Post.DISPLAY_ERROR, "CLI has crashed", "Error: " + exc_message)
 
-    @staticmethod
-    def exit(code: int):
+    def exit(self, code: int):
+        _set_verbosity(self._initial_verbosity)
         raise SystemExit(code)
 
 
