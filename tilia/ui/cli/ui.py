@@ -58,6 +58,7 @@ class CLI:
         save.setup_parser(self.subparsers)
         script.setup_parser(self.subparsers, self.parse_and_run)
         timelines.setup_parser(self.subparsers)
+        self.subparsers.add_parser("about", help="About TiLiA").set_defaults(func=about)
 
     @staticmethod
     def parse_command(arg_string):
@@ -157,6 +158,19 @@ class CLI:
     @staticmethod
     def exit(code: int):
         raise SystemExit(code)
+
+
+def about(_):
+    tabulate(
+        ["where", "link"],
+        [
+            ["Website", tilia.constants.WEBSITE_URL],
+            ["GitHub", tilia.constants.GITHUB_URL],
+            ["Contact us", tilia.constants.EMAIL],
+        ],
+        header=False,
+        title=f"{tilia.constants.APP_NAME} v{tilia.constants.VERSION}",
+    )
 
 
 def on_ask_yes_or_no(title: str, prompt: str) -> bool:
