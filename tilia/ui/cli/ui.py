@@ -12,6 +12,7 @@ from tilia.exceptions import TiliaExit
 from tilia.media.player.qtplayer import QtPlayer
 from tilia.requests import Get, serve
 from tilia.requests.post import Post, listen, post
+from tilia.settings import settings
 from tilia.ui.cli import (
     components,
     load_media,
@@ -60,6 +61,12 @@ class CLI:
         script.setup_parser(self.subparsers, self.parse_and_run)
         timelines.setup_parser(self.subparsers)
         self.subparsers.add_parser("about", help="About TiLiA").set_defaults(func=about)
+        self.parser.add_argument(
+            "--verbose",
+            "-v",
+            action=argparse.BooleanOptionalAction,
+            help="Toggle console logging",
+        )
 
     @staticmethod
     def parse_command(arg_string):
@@ -122,6 +129,7 @@ class CLI:
         """
         try:
             namespace = self.parser.parse_args(cmd)
+            update_verbosity(namespace.verbose)
             if hasattr(namespace, "func"):
                 namespace.func(namespace)
             return False
@@ -172,6 +180,17 @@ def about(_):
         header=False,
         title=f"{tilia.constants.APP_NAME} v{tilia.constants.VERSION}",
     )
+
+
+def update_verbosity(verbose):
+    if verbose is None:
+        return
+    _set_verbosity(verbose)
+
+
+def _set_verbosity(verbose):
+    settings.set("dev", "log_requests", verbose)
+    post(Post.SETTINGS_UPDATED, [*{"dev": {"log_requests", verbose}}])
 
 
 def on_ask_yes_or_no(title: str, prompt: str) -> bool:
