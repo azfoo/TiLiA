@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import sys
-
 import argparse
+import sys
 import traceback
 
 from colorama import Fore
@@ -13,18 +12,18 @@ from tilia.media.player.qtplayer import QtPlayer
 from tilia.requests import Get, serve
 from tilia.requests.post import Post, listen, post
 from tilia.ui.cli import (
+    clear,
     components,
+    export,
+    generate_scripts,
+    io,
     load_media,
-    timelines,
-    script,
+    metadata,
+    open,
     quit,
     save,
-    io,
-    metadata,
-    generate_scripts,
-    open,
-    export,
-    clear,
+    script,
+    timelines,
 )
 from tilia.ui.cli.io import ask_yes_or_no
 from tilia.ui.cli.player import CLIVideoPlayer, CLIYoutubePlayer
