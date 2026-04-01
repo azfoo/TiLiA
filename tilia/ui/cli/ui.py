@@ -32,7 +32,9 @@ from tilia.ui.cli.player import CLIVideoPlayer, CLIYoutubePlayer
 
 class CLI:
     def __init__(self):
-        self.parser = argparse.ArgumentParser(exit_on_error=False)
+        self.parser = argparse.ArgumentParser(
+            exit_on_error=False, prog=tilia.constants.APP_NAME
+        )
         self.subparsers = self.parser.add_subparsers(dest="command")
         self.setup_parsers()
         self.exception = None
