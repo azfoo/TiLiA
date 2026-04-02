@@ -41,7 +41,7 @@ class TiliaLogger(logging.Logger):
         self._dump_count = count()
 
     def setup(self):
-        match env := os.environ.get("ENVIRONMENT"):
+        match env := os.environ.get("ENVIRONMENT", "dev"):
             case "test":
                 self.disabled = True
                 self.setup_sentry(env)
@@ -106,7 +106,8 @@ class TiliaLogger(logging.Logger):
         )
 
     def on_settings_updated(self):
-        self.console_handler.setLevel(self._get_console_level())
+        if hasattr(self, "console_handler"):
+            self.console_handler.setLevel(self._get_console_level())
 
     def on_user_set(self, email: str, name: str):
         sentry_sdk.set_user({"email": email, "name": name})
