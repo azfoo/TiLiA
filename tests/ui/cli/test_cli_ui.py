@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 
@@ -33,3 +35,11 @@ class TestCLI:
     def test_parse_command(self, cli, command, result):
 
         assert cli.parse_command(command) == result
+
+    def test_toggle_verbose(self, cli):
+        with patch("tilia.log.logger.on_settings_updated") as logger:
+            cli.parse_and_run("metadata set-media-length 60")
+            cli.parse_and_run("-v metadata set-media-length 60")
+            cli.parse_and_run("--no-v metadata set-media-length 60")
+
+        assert logger._mock_call_count == 2
