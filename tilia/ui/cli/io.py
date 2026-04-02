@@ -18,9 +18,11 @@ def tabulate(headers: list[str], data: list[tuple[str, ...]], **kwargs) -> None:
     """
     Outputs table to user using PrettyTable.
     """
-    table = prettytable.PrettyTable(
-        max_table_width=min(os.get_terminal_size().columns, 80), **kwargs
-    )
+    try:
+        table_width = min(os.get_terminal_size().columns, 80)
+    except OSError:
+        table_width = 80
+    table = prettytable.PrettyTable(max_table_width=table_width, **kwargs)
     table.field_names = headers
     table.add_rows(data)
     output(str(table))
