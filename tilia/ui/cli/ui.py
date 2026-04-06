@@ -11,6 +11,7 @@ from tilia.exceptions import TiliaExit
 from tilia.media.player.qtplayer import QtPlayer
 from tilia.requests import Get, serve
 from tilia.requests.post import Post, listen, post
+from tilia.settings import settings
 from tilia.ui.cli import (
     clear,
     components,
@@ -37,7 +38,7 @@ class CLI:
         self.subparsers = self.parser.add_subparsers(dest="command")
         self.setup_parsers()
         self.exception = None
-
+        self._save_verbosity()
         listen(
             self, Post.DISPLAY_ERROR, self.on_request_to_display_error
         )  # ignores error title
@@ -45,6 +46,10 @@ class CLI:
         serve(self, Get.PLAYER_CLASS, self.get_player_class)
         serve(self, Get.FROM_USER_YES_OR_NO, on_ask_yes_or_no)
         serve(self, Get.FROM_USER_SHOULD_SAVE_CHANGES, on_ask_should_save_changes)
+
+    def _save_verbosity(self):
+        self._initial_verbosity = settings.get("dev", "log_requests")
+        _set_verbosity(False)
 
     def setup_parsers(self):
         clear.setup_parser(self.subparsers)
@@ -155,8 +160,8 @@ class CLI:
     def show_crash_dialog(exc_message) -> None:
         post(Post.DISPLAY_ERROR, "CLI has crashed", "Error: " + exc_message)
 
-    @staticmethod
-    def exit(code: int):
+    def exit(self, code: int):
+        _set_verbosity(self._initial_verbosity)
         raise SystemExit(code)
 
 
@@ -171,6 +176,11 @@ def about(_):
         header=False,
         title=f"{tilia.constants.APP_NAME} v{tilia.constants.VERSION}",
     )
+
+
+def _set_verbosity(verbose):
+    settings.set("dev", "log_requests", verbose)
+    post(Post.SETTINGS_UPDATED, [*{"dev": {"log_requests", verbose}}])
 
 
 def on_ask_yes_or_no(title: str, prompt: str) -> bool:
