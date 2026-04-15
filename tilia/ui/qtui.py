@@ -69,6 +69,7 @@ class TiliaMainWindow(QMainWindow):
         self.setWindowIcon(QIcon(str(IMG_DIR / "main_icon.png")))
         self.setStatusTip("Main window")
         qInstallMessageHandler(self.handle_qt_log_message)
+        self.setAcceptDrops(True)
 
     @staticmethod
     def handle_qt_log_message(type, _, msg):
@@ -137,6 +138,22 @@ class TiliaMainWindow(QMainWindow):
 
         if zoom_level != 1.0:
             commands.execute("view.zoom.out", zoom_level)
+
+    @staticmethod
+    def _is_single_local_tla_file(urls: list[QUrl]):
+        if len(urls) != 1:
+            return False
+        url = urls[0]
+        return url.isLocalFile() and url.path().endswith(".tla")
+
+    def dragEnterEvent(self, event: QtGui.QDragEnterEvent) -> None:
+        if self._is_single_local_tla_file(event.mimeData().urls()):
+            event.acceptProposedAction()
+        return super().dragEnterEvent(event)
+
+    def dropEvent(self, event: QtGui.QDropEvent) -> None:
+        super().dropEvent(event)
+        commands.execute("file.open", event.mimeData().urls()[0].toLocalFile())
 
 
 class QtUI:
