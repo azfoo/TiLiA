@@ -7,7 +7,6 @@ import traceback
 from colorama import Fore
 
 import tilia.constants
-from tilia.exceptions import TiliaExit
 from tilia.media.player.qtplayer import QtPlayer
 from tilia.requests import Get, serve
 from tilia.requests.post import Post, listen, post
@@ -59,7 +58,7 @@ class CLI:
         load_media.setup_parser(self.subparsers, self.parse_and_run)
         metadata.setup_parser(self.subparsers)
         open.setup_parser(self.subparsers)
-        quit.setup_parser(self.subparsers)
+        quit.setup_parser(self.subparsers, self.exit)
         save.setup_parser(self.subparsers)
         script.setup_parser(self.subparsers, self.parse_and_run)
         timelines.setup_parser(self.subparsers)
@@ -103,8 +102,11 @@ class CLI:
             border=False,
         )
         while True:
-            cmd = input(">>> ")
-            self.parse_and_run(cmd)
+            try:
+                cmd = input(">>> ")
+                self.parse_and_run(cmd)
+            except EOFError:
+                self.exit(1)
 
     def parse_and_run(self, cmd):
         """Returns True if command was unsuccessful, False otherwise"""
@@ -136,8 +138,6 @@ class CLI:
         except SystemExit as err:
             self.exception = err
             return True
-        except TiliaExit:
-            sys.exit(0)
         except Exception as err:
             self.exception = err
             post(Post.DISPLAY_ERROR, "CLI error", traceback.format_exc())
@@ -160,9 +160,10 @@ class CLI:
     def show_crash_dialog(exc_message) -> None:
         post(Post.DISPLAY_ERROR, "CLI has crashed", "Error: " + exc_message)
 
-    def exit(self, code: int):
+    def exit(self, code: int, *_):
         _set_verbosity(self._initial_verbosity)
-        raise SystemExit(code)
+        io.output("Quitting...")
+        sys.exit(code)
 
 
 def about(_):
