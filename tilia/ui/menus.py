@@ -242,4 +242,6 @@ class HelpMenu(TiliaMenu):
     items = [
         (MenuItemKind.COMMAND, "window.open.about"),
         (MenuItemKind.COMMAND, "open_website_help"),
+        (MenuItemKind.SEPARATOR, None),
+        (MenuItemKind.COMMAND, "help.check_for_updates"),
     ]

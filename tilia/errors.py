@@ -120,6 +120,12 @@ SCORE_STAFF_ID_ERROR = Error(
 INVALID_ID = Error(
     "Error parsing id", "'{}' is not parsable as a valid id. Using generated id."
 )
+VELOPACK_MANIFEST_NOT_FOUND = Error(
+    "Update check failed",
+    "Could not locate the Velopack app manifest (sq.version). Update checking is unavailable.",
+)
+VELOPACK_UPDATE_FAILED = Error("Update failed", "{}")
+GIT_PULL_FAILED = Error("Pull failed", "{}")
 
 
 def display(error: Error, *args):
