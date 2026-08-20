@@ -241,7 +241,7 @@ class TimelineUI(ABC):  # noqa: B024
     def set_width(self, width):
         self.scene.set_width(int(width))
         self.view.setFixedWidth(int(width))
-        self.element_manager.update_time_on_elements()
+        self._update_element_positions()
         self.scene.set_playback_line_pos(
             time_x_converter.get_x_by_time(get(Get.SELECTED_TIME))
         )
@@ -250,6 +250,11 @@ class TimelineUI(ABC):  # noqa: B024
             time_x_converter.get_x_by_time(loop_start),
             time_x_converter.get_x_by_time(loop_end),
         )
+
+    def _update_element_positions(self):
+        # overridable: timelines with very large element counts can override
+        # this to reposition visible elements first and defer the rest.
+        self.element_manager.update_time_on_elements()
 
     def update_ordinal(self):
         self.collection.update_timeline_ui_ordinal()
